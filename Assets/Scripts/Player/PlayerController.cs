@@ -63,7 +63,7 @@ public class PlayerController : MonoBehaviour {
 					currentChunk = chunk;
 
 					//	Generate chunks around player location
-					world.CheckSurroundingChunks(currentChunk.gameObject.transform.position);
+					world.DrawSurroundingChunks(currentChunk.gameObject.transform.position);
 				}
 			}
 			else

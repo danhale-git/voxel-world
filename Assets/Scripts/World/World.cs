@@ -14,6 +14,7 @@ public class World : MonoBehaviour
 	//	All chunks in the world
 	public static Dictionary<string, Chunk> chunks = new Dictionary<string, Chunk>();
 
+	//TOJOB	
 	//	Generate chunk name string based on position in world space
 	public static string ChunkName(Vector3 position)
 	{
@@ -31,11 +32,11 @@ public class World : MonoBehaviour
 		//	Create initial chunks
 		GenerateChunk(Vector3.zero);
 		DrawChunk(ChunkName(Vector3.zero));
-		CheckSurroundingChunks(Vector3.zero);
+		DrawSurroundingChunks(Vector3.zero);
 	}
 
 	//	Generate and draw chunks in a cube radius of veiwDistance around player
-	public void CheckSurroundingChunks(Vector3 centerChunk)
+	public void DrawSurroundingChunks(Vector3 centerChunk)
 	{
 		//	List the names of chunks within range
 		Dictionary<string, Vector3> chunksInRange = new Dictionary<string, Vector3>();

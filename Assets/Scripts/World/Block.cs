@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 public class Block
 {
@@ -37,7 +38,7 @@ public class Block
 		List<MeshFilter> meshFilters = new List<MeshFilter>();
 		
 		if(type == BlockType.AIR) { return meshFilters; }
-
+		
 		//	Iterate over all six faces
 		for(int i = 0; i < 6; i++)
 		{
@@ -47,7 +48,7 @@ public class Block
 				meshFilters.Add(DrawQuad( (BlockUtils.CubeFace)i ));
 			}
 		}
-		
+
 		return meshFilters;
 	}
 
@@ -55,10 +56,10 @@ public class Block
 	//			creating a bunch of quad gameobjects only
 	//			to destroy them in Chunk.MergeQuads()
 	//	Create quad representing one side of a cube
+	//	TOJOB
 	MeshFilter DrawQuad(BlockUtils.CubeFace face)
 	{
 		Mesh mesh = new Mesh();
-	    mesh.name = "ScriptedMesh" + face.ToString(); 
 
 		//	Get fixed cube attributes from static utility class
 		mesh.vertices = BlockUtils.GetVertices(face);
@@ -67,17 +68,18 @@ public class Block
 		
 		//	Good practice to recalculate bounds
 		mesh.RecalculateBounds();
-		
+
 		GameObject quad = new GameObject("Quad");
 		quad.transform.position = position;
-	    quad.transform.parent = owner.gameObject.transform;
-
+	    //quad.transform.parent = owner.gameObject.transform;
+		
      	MeshFilter meshFilter = (MeshFilter) quad.AddComponent(typeof(MeshFilter));
 		meshFilter.mesh = mesh;
-
+		
 		return meshFilter;
 	}
 
+	//TOJOB
 	//	Block face is on map edge or player can see through adjacent block
 	bool FaceExposed(BlockUtils.CubeFace face)
 	{	
@@ -110,7 +112,7 @@ public class Block
 		{
 			neighbourOwner = owner;
 		}
-
+		
 		return neighbourOwner.blocks[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z].seeThrough;
 	}
 }
