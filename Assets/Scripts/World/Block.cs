@@ -71,7 +71,7 @@ public class Block
 
 		GameObject quad = new GameObject("Quad");
 		quad.transform.position = position;
-	    //quad.transform.parent = owner.gameObject.transform;
+	    quad.transform.parent = owner.gameObject.transform;
 		
      	MeshFilter meshFilter = (MeshFilter) quad.AddComponent(typeof(MeshFilter));
 		meshFilter.mesh = mesh;
@@ -96,11 +96,10 @@ public class Block
 		   neighbour.z < 0 || neighbour.z >= World.chunkSize)
 		{
 			//	Next chunk in direction of neighbour
-			Vector3 nbrChunkPos = owner.chunkPosition + (faceDirection * World.chunkSize);
-			string nbrChunkName = World.ChunkName(nbrChunkPos);
+			Vector3 nbrChunkPos = owner.position + (faceDirection * World.chunkSize);
 
 			//	Neighbouring chunk does not exist (map edge)
-			if(!World.chunks.TryGetValue(nbrChunkName, out neighbourOwner))
+			if(!World.chunks.TryGetValue(nbrChunkPos, out neighbourOwner))
 			{
 				return true;
 			}			

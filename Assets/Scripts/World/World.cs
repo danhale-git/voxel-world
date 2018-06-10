@@ -12,16 +12,7 @@ public class World : MonoBehaviour
 	//	Height of world in chunks
 	public static int worldHeight = 2;
 	//	All chunks in the world
-	public static Dictionary<string, Chunk> chunks = new Dictionary<string, Chunk>();
-
-	//TOJOB	
-	//	Generate chunk name string based on position in world space
-	public static string ChunkName(Vector3 position)
-	{
-		return 	(int)position.x + "_" + 
-				(int)position.y + "_" + 
-			    (int)position.z;
-	}
+	public static Dictionary<Vector3, Chunk> chunks = new Dictionary<Vector3, Chunk>();
 																				
 	public static int worldSize = 2;
 	public Material defaultMaterial;
@@ -31,7 +22,7 @@ public class World : MonoBehaviour
 	{
 		//	Create initial chunks
 		GenerateChunk(Vector3.zero);
-		DrawChunk(ChunkName(Vector3.zero));
+		DrawChunk(Vector3.zero);
 		DrawSurroundingChunks(Vector3.zero);
 	}
 
@@ -39,18 +30,18 @@ public class World : MonoBehaviour
 	public void DrawSurroundingChunks(Vector3 centerChunk)
 	{
 		//	List the names of chunks within range
-		Dictionary<string, Vector3> chunksInRange = new Dictionary<string, Vector3>();
+		Dictionary<Vector3, Vector3> chunksInRange = new Dictionary<Vector3, Vector3>();
 		for(int x = -viewDistance; x < viewDistance; x++)
 			for(int z = -viewDistance; z < viewDistance; z++)
 				for(int y = -viewDistance; y < viewDistance; y++)
 				{
 					Vector3 offset = new Vector3(x, y, z) * chunkSize;
 					Vector3 location = centerChunk + offset;
-					chunksInRange.Add(ChunkName(location), location);
+					chunksInRange.Add(location, location);
 				}
 
 		//	Check chunk status, draw or generate accordingly
-		foreach(string chunkName in chunksInRange.Keys)
+		foreach(Vector3 chunkName in chunksInRange.Keys)
 		{
 			Chunk chunk;
 			if(!chunks.TryGetValue(chunkName, out chunk))
@@ -65,10 +56,10 @@ public class World : MonoBehaviour
 	void GenerateChunk(Vector3 position)
 	{
 		Chunk chunk = new Chunk(position, this);
-		chunks.Add(ChunkName(position), chunk);
+		chunks.Add(position, chunk);
 	}
 
-	void DrawChunk(string name)
+	void DrawChunk(Vector3 name)
 	{
 		Chunk chunk = chunks[name];
 		chunk.DrawBlocks();

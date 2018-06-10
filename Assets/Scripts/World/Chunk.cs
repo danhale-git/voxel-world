@@ -13,15 +13,16 @@ public class Chunk
 
 	//	Chunk size and position in world
 	int size;
-	public Vector3 chunkPosition;
+	public Vector3 position;
 
-	public Chunk(Vector3 position, World _world)
+	public Chunk(Vector3 _position, World _world)
 	{
 		//	Create GameObject
-		gameObject = new GameObject(World.ChunkName(position));
+		gameObject = new GameObject(_position.ToString());
 		gameObject.layer = 9;
 
 		world = _world;	//	for testing
+		position = _position;
 		
 		//	Apply chunk size
 		size = World.chunkSize;
@@ -30,9 +31,6 @@ public class Chunk
 		//	Set transform
 		gameObject.transform.parent = world.gameObject.transform;
 		gameObject.transform.position = position;
-		chunkPosition = new Vector3(	gameObject.transform.position.x,
-										gameObject.transform.position.y,
-										gameObject.transform.position.z);
 		
 		GenerateBlocks();		
 	}
@@ -44,21 +42,21 @@ public class Chunk
 			for(int z = 0; z < size; z++)
 			{
 				//	Get height of ground in this column
-				int groundHeight = NoiseUtils.GroundHeight( x + (int)chunkPosition.x,
-															z + (int)chunkPosition.z,
+				int groundHeight = NoiseUtils.GroundHeight( x + (int)position.x,
+															z + (int)position.z,
 															World.maxGroundHeight);
 				//	Generate column
 				for(int y = 0; y < size; y++)
 				{
 					//	Position of block in chunk
-					Vector3 position = new Vector3(x, y, z);
+					Vector3 blockPosition = new Vector3(x, y, z);
 					//	Position of block in world
-					Vector3 worldPosition = position + chunkPosition;
+					Vector3 blockPositionInWorld = blockPosition + this.position;
 
 					Block.BlockType type;
 
 					//	Set block type
-					if (worldPosition.y > groundHeight)
+					if (blockPositionInWorld.y > groundHeight)
 					{
 						type = Block.BlockType.AIR;
 					}
@@ -68,7 +66,7 @@ public class Chunk
 					}
 
 					//	Store new block in 3D array
-					blocks[x,y,z] = new Block(type, position, this);
+					blocks[x,y,z] = new Block(type, blockPosition, this);
 				}
 			}
 	}

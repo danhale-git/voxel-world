@@ -48,17 +48,15 @@ public class PlayerController : MonoBehaviour {
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.down), out hit, 1000f, chunkLayerMask))
         {
-			string chunkName = World.ChunkName(hit.transform.position);
-
 			Chunk chunk;			
 			//	Check if chunk exists
-            if(World.chunks.TryGetValue(chunkName, out chunk))
+            if(World.chunks.TryGetValue(hit.transform.position, out chunk))
 			{
 				//	Initialise currentChunk
 				if(currentChunk == null){ currentChunk = chunk; }
 
 				//	Check if player has moved to a different chunk
-				else if(chunkName != World.ChunkName(currentChunk.gameObject.transform.position))
+				else if(chunk.position != currentChunk.position)
 				{
 					currentChunk = chunk;
 
@@ -68,7 +66,7 @@ public class PlayerController : MonoBehaviour {
 			}
 			else
 			{
-				Debug.Log(World.ChunkName(hit.transform.position)+" not found! ("+hit.transform.gameObject.name+")");
+				Debug.Log("chunk at "+hit.transform.position+" not found! ("+hit.transform.gameObject.name+")");
 			}
         }
 	}
