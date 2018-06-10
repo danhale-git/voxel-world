@@ -19,6 +19,7 @@ public class Chunk
 	{
 		//	Create GameObject
 		gameObject = new GameObject(World.ChunkName(position));
+		gameObject.layer = 9;
 
 		world = _world;	//	for testing
 		
@@ -89,6 +90,9 @@ public class Chunk
 		
 		//	Merge quad meshes
 		MergeQuads(blockMeshes.ToArray());
+
+		MeshCollider collider = gameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
+		collider.sharedMesh = gameObject.transform.GetComponent<MeshFilter>().mesh;
 	}
 
 	//	Merge individual cube faces into one model represending entire chunk
