@@ -29,40 +29,44 @@ public class World : MonoBehaviour
 	//	Generate and draw chunks in a cube radius of veiwDistance around player
 	public void DrawSurroundingChunks(Vector3 centerChunk)
 	{
-		//	List the names of chunks within range
-		Dictionary<Vector3, Vector3> chunksInRange = new Dictionary<Vector3, Vector3>();
+		//	List the names of chunks in range of view distance + 1
+		List<Vector3> chunksInGenerateRange = new List<Vector3>();
+		for(int x = -viewDistance; x < viewDistance + 1; x++)
+			for(int z = -viewDistance; z < viewDistance + 1; z++)
+				for(int y = -viewDistance; y < viewDistance + 1; y++)
+				{
+					Vector3 offset = new Vector3(x, y, z) * chunkSize;
+					Vector3 location = centerChunk + offset;
+					GenerateChunk(location);
+				}
+
+		List<Vector3> chunksInDrawRange = new List<Vector3>();
 		for(int x = -viewDistance; x < viewDistance; x++)
 			for(int z = -viewDistance; z < viewDistance; z++)
 				for(int y = -viewDistance; y < viewDistance; y++)
 				{
 					Vector3 offset = new Vector3(x, y, z) * chunkSize;
 					Vector3 location = centerChunk + offset;
-					chunksInRange.Add(location, location);
+					DrawChunk(location);
 				}
-
-		//	Check chunk status, draw or generate accordingly
-		foreach(Vector3 chunkName in chunksInRange.Keys)
-		{
-			Chunk chunk;
-			if(!chunks.TryGetValue(chunkName, out chunk))
-			{
-				//	Generate then draw
-				GenerateChunk(chunksInRange[chunkName]);
-				DrawChunk(chunkName);
-			}
-		}
 	}
 
 	void GenerateChunk(Vector3 position)
 	{
+		if(chunks.ContainsKey(position)) { return; }
+
 		Chunk chunk = new Chunk(position, this);
 		chunks.Add(position, chunk);
+		
+		chunk.status = Chunk.Status.GENERATED;		
 	}
 
-	void DrawChunk(Vector3 name)
-	{
-		Chunk chunk = chunks[name];
+	void DrawChunk(Vector3 position)
+	{		
+		Chunk chunk = chunks[position];
+		if(chunk.status == Chunk.Status.DRAWN) { return; }
 		chunk.DrawBlocks();
+		chunk.status = Chunk.Status.DRAWN;
 	}
 }
 

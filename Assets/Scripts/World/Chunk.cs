@@ -9,6 +9,9 @@ public class Chunk
 	//	All blocks in this chunk
 	public Block[,,] blocks;
 
+	public enum Status {GENERATED, DRAWN}
+	public Status status;
+
 	World world;
 
 	//	Chunk size and position in world

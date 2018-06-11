@@ -101,7 +101,7 @@ public class Block
 			//	Neighbouring chunk does not exist (map edge)
 			if(!World.chunks.TryGetValue(nbrChunkPos, out neighbourOwner))
 			{
-				return true;
+				return false;
 			}			
 			//	Assign other owner
 			neighbour = BlockUtils.WrapBlockIndex(neighbour);
