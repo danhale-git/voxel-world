@@ -9,9 +9,11 @@ public class Chunk
 	//	All blocks in this chunk
 	public Block[,,] blocks;
 
+	//	Chunk status
 	public enum Status {GENERATED, DRAWN}
 	public Status status;
 
+	//	World controller Monobehaviour
 	World world;
 
 	//	Chunk size and position in world
@@ -24,7 +26,7 @@ public class Chunk
 		gameObject = new GameObject(_position.ToString());
 		gameObject.layer = 9;
 
-		world = _world;	//	for testing
+		world = _world;
 		position = _position;
 		
 		//	Apply chunk size
@@ -35,12 +37,14 @@ public class Chunk
 		gameObject.transform.parent = world.gameObject.transform;
 		gameObject.transform.position = position;
 		
+		//	Always generate blocks when a new chunk is created
 		GenerateBlocks();		
 	}
 
 	//	Choose types of all blocks in the chunk based on Perlin noise
 	void GenerateBlocks()
 	{
+		//	Iterate over all blocks in chunk
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
 			{
@@ -74,7 +78,7 @@ public class Chunk
 			}
 	}
 
-	//	Create all block face meshes in Block.Draw() then merge into one mesh attached to chunk GameObject
+	//	Create all block face meshes then merge into one mesh
 	public void DrawBlocks()
 	{
 		//	Meshes of all blocks in the chunk
@@ -86,17 +90,18 @@ public class Chunk
 				for(int y = 0; y < size; y++)
 				{
 					//	Create meshes for block and add to list to be merged
-					blockMeshes.AddRange(blocks[x,y,z].DrawBlock());
+					blockMeshes.AddRange(blocks[x,y,z].GetFaces());
 				}
 		
 		//	Merge quad meshes
 		MergeQuads(blockMeshes.ToArray());
 
+		//	Creat collider using new mesh
 		MeshCollider collider = gameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
 		collider.sharedMesh = gameObject.transform.GetComponent<MeshFilter>().mesh;
 	}
 
-	//	Merge individual cube faces into one model represending entire chunk
+	//	Merge individual cube faces into mesh
 	public void MergeQuads(MeshFilter[] blockMeshes)
 	{
 		//	Combine quad meshes

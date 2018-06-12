@@ -34,7 +34,8 @@ public class PlayerController : MonoBehaviour {
 		GetCurrentChunk();
 	}
 	
-	//	Raycase down to find current chunk
+	//	Raycast down to find current chunk
+	//	Generate more chunks if player has moved to a new chunk
 	void GetCurrentChunk()
 	{
 		//	Only do this once per second
@@ -66,42 +67,44 @@ public class PlayerController : MonoBehaviour {
 			}
 			else
 			{
+				//	Something strange happened
 				Debug.Log("chunk at "+hit.transform.position+" not found! ("+hit.transform.gameObject.name+")");
 			}
         }
 	}
 
 	//	Simple flying first person movement
+	//	Probably temporary
 	void Movement()
 	{
-		if(Input.GetKey(KeyCode.W))
+		if(Input.GetKey(KeyCode.W))	//	forward
 		{
 			transform.Translate((Vector3.forward * speed) * Time.deltaTime);
 		}
-		if(Input.GetKey(KeyCode.S))
+		if(Input.GetKey(KeyCode.S))	//	back
 		{
 			transform.Translate((Vector3.back * speed) * Time.deltaTime);
 		}
-		if(Input.GetKey(KeyCode.A))
+		if(Input.GetKey(KeyCode.A))	//	left
 		{
 			transform.Translate((Vector3.left * speed) * Time.deltaTime);
 		}
-		if(Input.GetKey(KeyCode.D))
+		if(Input.GetKey(KeyCode.D))	//	right
 		{
 			transform.Translate((Vector3.right * speed) * Time.deltaTime);
 		}
-		if(Input.GetKey(KeyCode.LeftControl))
+		if(Input.GetKey(KeyCode.LeftControl))	//	down
 		{
 			transform.Translate((Vector3.down * speed) * Time.deltaTime);
 		}
-		if(Input.GetKey(KeyCode.Space))
+		if(Input.GetKey(KeyCode.Space))	//	up
 		{
 			transform.Translate((Vector3.up * speed) * Time.deltaTime);
 		}
 		
-		float h = sensitivity * Input.GetAxis("Mouse X");
-        float v = -(sensitivity * Input.GetAxis("Mouse Y"));
-        transform.Rotate(0, h, 0);
-		mycam.gameObject.transform.Rotate(v, 0, 0);
+		float horizontal = sensitivity * Input.GetAxis("Mouse X");
+        float vertical = -(sensitivity * Input.GetAxis("Mouse Y"));
+        transform.Rotate(0, horizontal, 0);
+		mycam.gameObject.transform.Rotate(vertical, 0, 0);
 	}
 }

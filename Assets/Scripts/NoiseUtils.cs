@@ -4,7 +4,8 @@ using UnityEngine;
 
 public static class NoiseUtils
 {
-	// Generate 2D noise for ground height
+	//	All temporary for testing
+	//  Generate 2D noise for ground height
 	public static int GroundHeight(int x, int z, int maxHeight)
 	{
 		float height;

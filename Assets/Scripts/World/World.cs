@@ -4,9 +4,10 @@ using UnityEngine;
 
 public class World : MonoBehaviour
 {
-	public static int viewDistance = 2;
+	//	Number of chunks that are generated around the player
+	public static int viewDistance = 3;
 	//	Size of all chunks
-	public static int chunkSize = 16;
+	public static int chunkSize = 8;
 	//	Maximum height of non-air blocks
 	public static int maxGroundHeight = 20;
 	//	Height of world in chunks
@@ -17,7 +18,6 @@ public class World : MonoBehaviour
 	public static int worldSize = 2;
 	public Material defaultMaterial;
 
-	//	Iterate over all chunk locations in world, generate then draw chunks
 	void Start()
 	{
 		//	Create initial chunks
@@ -26,11 +26,12 @@ public class World : MonoBehaviour
 		DrawSurroundingChunks(Vector3.zero);
 	}
 
+	//	Temporary for testing and optimisation
 	//	Generate and draw chunks in a cube radius of veiwDistance around player
+	//	Called in PlayerController
 	public void DrawSurroundingChunks(Vector3 centerChunk)
 	{
-		//	List the names of chunks in range of view distance + 1
-		List<Vector3> chunksInGenerateRange = new List<Vector3>();
+		//	Generate chunks in view distance + 1
 		for(int x = -viewDistance; x < viewDistance + 1; x++)
 			for(int z = -viewDistance; z < viewDistance + 1; z++)
 				for(int y = -viewDistance; y < viewDistance + 1; y++)
@@ -40,7 +41,7 @@ public class World : MonoBehaviour
 					GenerateChunk(location);
 				}
 
-		List<Vector3> chunksInDrawRange = new List<Vector3>();
+		//	Graw chunks in view distance
 		for(int x = -viewDistance; x < viewDistance; x++)
 			for(int z = -viewDistance; z < viewDistance; z++)
 				for(int y = -viewDistance; y < viewDistance; y++)
@@ -51,16 +52,16 @@ public class World : MonoBehaviour
 				}
 	}
 
+	//	Generate chunk at position in world
 	void GenerateChunk(Vector3 position)
 	{
 		if(chunks.ContainsKey(position)) { return; }
-
 		Chunk chunk = new Chunk(position, this);
 		chunks.Add(position, chunk);
-		
 		chunk.status = Chunk.Status.GENERATED;		
 	}
 
+	//	Draw chunk at position key in dictionary
 	void DrawChunk(Vector3 position)
 	{		
 		Chunk chunk = chunks[position];

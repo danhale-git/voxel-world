@@ -33,7 +33,7 @@ public class Block
 	}
 
 	//	Generate meshes for exposed block faces
-	public List<MeshFilter> DrawBlock()
+	public List<MeshFilter> GetFaces()
 	{
 		List<MeshFilter> meshFilters = new List<MeshFilter>();
 		
@@ -55,8 +55,8 @@ public class Block
 	//	TODO: 	There must be a better way to do this than
 	//			creating a bunch of quad gameobjects only
 	//			to destroy them in Chunk.MergeQuads()
+
 	//	Create quad representing one side of a cube
-	//	TOJOB
 	MeshFilter DrawQuad(BlockUtils.CubeFace face)
 	{
 		Mesh mesh = new Mesh();
@@ -69,17 +69,18 @@ public class Block
 		//	Good practice to recalculate bounds
 		mesh.RecalculateBounds();
 
+		// Create gameobject for adding mesh
 		GameObject quad = new GameObject("Quad");
 		quad.transform.position = position;
 	    quad.transform.parent = owner.gameObject.transform;
 		
+		//	Add and return mes
      	MeshFilter meshFilter = (MeshFilter) quad.AddComponent(typeof(MeshFilter));
 		meshFilter.mesh = mesh;
 		
 		return meshFilter;
 	}
 
-	//TOJOB
 	//	Block face is on map edge or player can see through adjacent block
 	bool FaceExposed(BlockUtils.CubeFace face)
 	{	
@@ -103,7 +104,7 @@ public class Block
 			{
 				return false;
 			}			
-			//	Assign other owner
+			//	Convert local index to neighbouring chunk
 			neighbour = BlockUtils.WrapBlockIndex(neighbour);
 		}
 		//	Neighbour is in this chunk		
@@ -112,6 +113,7 @@ public class Block
 			neighbourOwner = owner;
 		}
 		
+		//	Check seeThrough in neighbour
 		return neighbourOwner.blocks[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z].seeThrough;
 	}
 }

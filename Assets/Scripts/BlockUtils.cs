@@ -17,6 +17,7 @@ public static class BlockUtils
 	public static Vector3 v6 = new Vector3(  0.5f,   0.5f, -0.5f );
 	public static Vector3 v7 = new Vector3( -0.5f,   0.5f, -0.5f );
 
+	//	Vertices for a cube
 	public static Vector3[] GetVertices(CubeFace face)
 	{
 		Vector3[] vertices = new Vector3[4];
@@ -191,8 +192,10 @@ public static class BlockUtils
 
 		for(int i = 0; i < 3; i++)
 		{
+			//	if below min then max
 			if(vector[i] == -1) 
 				vector[i] = World.chunkSize-1; 
+			//	if above max then min
 			else if(vector[i] == World.chunkSize) 
 				vector[i] = 0;
 		}
