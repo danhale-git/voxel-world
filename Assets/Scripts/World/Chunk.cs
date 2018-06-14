@@ -78,10 +78,10 @@ public class Chunk
 			}
 	}
 
-	//	Create all block face meshes then merge into one mesh
+	//	Create a mesh representing all blocks in the chunk
 	public void DrawBlocks()
 	{
-		//	Meshes of all blocks in the chunk
+		//	Attributes for the final chunk mesh
 		List<Vector3> vertices = new List<Vector3>();
 		List<Vector3> normals = new List<Vector3>();
 		List<int> triangles = new List<int>();
@@ -91,18 +91,17 @@ public class Chunk
 			for(int z = 0; z < size; z++)
 				for(int y = 0; y < size; y++)
 				{
-					//	Create meshes for block and add to list to be merged
 					Block block = blocks[x,y,z];
 
 					//	Load lists of mesh attributes in block
 					block.GetFaces();
 
-					//	Add block's mesh attributes to lists
+					//	Add block's mesh attributes to lists in chunk
 					vertices.AddRange(block.vertices);
 					normals.AddRange(block.normals);
 					triangles.AddRange(block.triangles);
 
-					//	Draw individual cubes
+					//	Draw individual blocks on top of whole chunk
 					//CreateMesh(block.vertices, block.normals, block.triangles);
 				}
 		
@@ -123,12 +122,12 @@ public class Chunk
 		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();		
 		renderer.sharedMaterial = world.defaultMaterial;
 
-		foreach(Vector3 vert in mesh.vertices)					//	DEBUG
+		foreach(Vector3 vert in mesh.vertices)									//	DEBUG
 		{
 			//Debug.Log(vert); 					// 	Logs values from
 		}										//	0 to chunk size
 
-		foreach(int tri in mesh.triangles)					//	DEBUG
+		foreach(int tri in mesh.triangles)
 		{
 			//Debug.Log(tri); 					// 	0 - 150
 												//	1 - 300
@@ -137,10 +136,10 @@ public class Chunk
 
 		Debug.Log("vertices "+mesh.vertices.Length);	//	600
 		Debug.Log("normals "+mesh.normals.Length);		//	600
-		Debug.Log("triangles "+mesh.triangles.Length);	//	900	//	DEBUG
+		Debug.Log("triangles "+mesh.triangles.Length);	//	900					//	DEBUG
 	}
 
-	//	create a mesh attributes
+	//	create a mesh with given attributes
 	void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles)
 	{
 		Mesh mesh = new Mesh();
@@ -155,6 +154,6 @@ public class Chunk
 		filter.mesh = mesh;
 
 		MeshRenderer renderer = obj.AddComponent<MeshRenderer>();		
-		renderer.sharedMaterial = world.defaultMaterial;
+		renderer.sharedMaterial = world.defaultMaterial;						//	DEBUG
 	}
 }
