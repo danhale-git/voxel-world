@@ -127,7 +127,7 @@ public class Chunk
 
 		foreach(int tri in mesh.triangles)					//	DEBUG
 		{
-			Debug.Log(tri); 					// 	0 - 150
+			//Debug.Log(tri); 					// 	0 - 150
 												//	1 - 300
 												//	2 - 150
 		}										//	3 - 300
