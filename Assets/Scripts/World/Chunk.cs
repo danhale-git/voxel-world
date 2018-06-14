@@ -82,7 +82,9 @@ public class Chunk
 	public void DrawBlocks()
 	{
 		//	Meshes of all blocks in the chunk
-		List<MeshFilter> blockMeshes = new List<MeshFilter>();
+		List<Vector3> vertices = new List<Vector3>();
+		List<Vector3> normals = new List<Vector3>();
+		List<int> triangles = new List<int>();
 
 		//	Iterate over all block locations in chunk		
 		for(int x = 0; x < size; x++)
@@ -90,40 +92,26 @@ public class Chunk
 				for(int y = 0; y < size; y++)
 				{
 					//	Create meshes for block and add to list to be merged
-					blockMeshes.AddRange(blocks[x,y,z].GetFaces());
+					Block block = blocks[x,y,z];
+					block.GetFaces();
+
+					vertices.AddRange(block.vertices);
+					normals.AddRange(block.normals);
+					triangles.AddRange(block.triangles);
 				}
 		
-		//	Merge quad meshes
-		MergeQuads(blockMeshes.ToArray());
+		Mesh mesh = new Mesh();
+		mesh.SetVertices(vertices);
+		mesh.SetNormals(normals);
+		mesh.SetTriangles(triangles, 0);
 
-		//	Creat collider using new mesh
-		MeshCollider collider = gameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
-		collider.sharedMesh = gameObject.transform.GetComponent<MeshFilter>().mesh;
-	}
+		mesh.RecalculateBounds();
+		mesh.RecalculateNormals();
 
-	//	Merge individual cube faces into mesh
-	public void MergeQuads(MeshFilter[] blockMeshes)
-	{
-		//	Combine quad meshes
-        CombineInstance[] combine = new CombineInstance[blockMeshes.Length];
-        for(int i = 0; i < blockMeshes.Length; i++)
-		{
-            combine[i].mesh = blockMeshes[i].sharedMesh;
-            combine[i].transform = blockMeshes[i].transform.localToWorldMatrix;
-        }
+		MeshFilter filter = gameObject.AddComponent<MeshFilter>();
+		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
 
-		//	Combine meshes to new mesh attached to chunk
-        MeshFilter mf = (MeshFilter) gameObject.AddComponent(typeof(MeshFilter));
-        mf.mesh = new Mesh();
-        mf.mesh.CombineMeshes(combine);
-
-        //	Add mesh renderer to chunk
-		MeshRenderer renderer = gameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
-		renderer.material = world.defaultMaterial;
-
-		//	Delete quad GameObjects
-		foreach (Transform quad in gameObject.transform) {
-     		GameObject.Destroy(quad.gameObject);
- 		}
+		filter.sharedMesh = mesh;
+		renderer.sharedMaterial = world.defaultMaterial;
 	}
 }

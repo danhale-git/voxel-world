@@ -10,6 +10,10 @@ public class Block
 	public BlockType type;
 	public Vector3 position;
 	public Chunk owner;
+
+	public List<Vector3> vertices = new List<Vector3>();
+	public List<Vector3> normals = new List<Vector3>();
+	public List<int> triangles = new List<int>();
 	
 	//	seeThrough used for quad culling
 	public bool seeThrough;
@@ -33,48 +37,23 @@ public class Block
 	}
 
 	//	Generate meshes for exposed block faces
-	public List<MeshFilter> GetFaces()
+	public void GetFaces()
 	{
-		List<MeshFilter> meshFilters = new List<MeshFilter>();
-		
-		if(type == BlockType.AIR) { return meshFilters; }
+		if(type == BlockType.AIR) { return; }
 		
 		//	Iterate over all six faces
 		for(int i = 0; i < 6; i++)
 		{
+			BlockUtils.CubeFace face = (BlockUtils.CubeFace)i;
+
 			//	Create mesh if exposed
-			if(FaceExposed( (BlockUtils.CubeFace)i ))
+			if(FaceExposed( face ))
 			{
-				meshFilters.Add(DrawQuad( (BlockUtils.CubeFace)i ));
+				vertices.AddRange(BlockUtils.GetVertices(face, position));
+				normals.AddRange(BlockUtils.GetNormals(face));
+				triangles.AddRange(BlockUtils.GetTriangles(face));
 			}
 		}
-
-		return meshFilters;
-	}
-
-	//	Create quad representing one side of a cube
-	MeshFilter DrawQuad(BlockUtils.CubeFace face)
-	{
-		Mesh mesh = new Mesh();
-
-		//	Get fixed cube attributes from static utility class
-		mesh.vertices = BlockUtils.GetVertices(face);
-		mesh.normals = BlockUtils.GetNormals(face);
-		mesh.triangles = BlockUtils.GetTriangles(face);
-		
-		//	Good practice to recalculate bounds
-		mesh.RecalculateBounds();
-
-		// Create gameobject for adding mesh
-		GameObject quad = new GameObject("Quad");
-		quad.transform.position = position;
-	    quad.transform.parent = owner.gameObject.transform;
-		
-		//	Add and return mes
-     	MeshFilter meshFilter = (MeshFilter) quad.AddComponent(typeof(MeshFilter));
-		meshFilter.mesh = mesh;
-		
-		return meshFilter;
 	}
 
 	//	Block face is on map edge or player can see through adjacent block
