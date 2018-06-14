@@ -37,9 +37,11 @@ public class Block
 	}
 
 	//	Generate meshes for exposed block faces
-	public void GetFaces()
+	public int GetFaces(int offset)
 	{
-		if(type == BlockType.AIR) { return; }
+		if(type == BlockType.AIR) { return 0; }
+
+		int count = 0;
 		
 		//	Iterate over all six faces
 		for(int i = 0; i < 6; i++)
@@ -49,13 +51,16 @@ public class Block
 			//	Add mesh attributes to lists if face exposed
 			if(FaceExposed( face ))
 			{
+				count++;
 				//	offset vertex positoins with block position in chunk
 				vertices.AddRange(BlockUtils.GetVertices(face, position));
 
 				normals.AddRange(BlockUtils.GetNormals(face));
-				triangles.AddRange(BlockUtils.GetTriangles(face));
+				triangles.AddRange(BlockUtils.GetTriangles(face, offset));
 			}
 		}
+
+		return count;
 	}
 
 	//	Block face is on map edge or player can see through adjacent block

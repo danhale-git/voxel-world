@@ -86,6 +86,9 @@ public class Chunk
 		List<Vector3> normals = new List<Vector3>();
 		List<int> triangles = new List<int>();
 
+		//	keep block reference to increment indices
+		int numberOfVertices = 0;
+
 		//	Iterate over all block locations in chunk		
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
@@ -94,15 +97,14 @@ public class Chunk
 					Block block = blocks[x,y,z];
 
 					//	Load lists of mesh attributes in block
-					block.GetFaces();
+
+					int faces = block.GetFaces(numberOfVertices);
+					numberOfVertices += (faces * 4);
 
 					//	Add block's mesh attributes to lists in chunk
 					vertices.AddRange(block.vertices);
 					normals.AddRange(block.normals);
 					triangles.AddRange(block.triangles);
-
-					//	Draw individual blocks on top of whole chunk
-					//CreateMesh(block.vertices, block.normals, block.triangles);
 				}
 		
 		Mesh mesh = new Mesh();
