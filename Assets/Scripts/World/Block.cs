@@ -46,10 +46,12 @@ public class Block
 		{
 			BlockUtils.CubeFace face = (BlockUtils.CubeFace)i;
 
-			//	Create mesh if exposed
+			//	Add mesh for face attributes to lists if face exposed
 			if(FaceExposed( face ))
 			{
+				//	offset vertex positoins with block position in chunk
 				vertices.AddRange(BlockUtils.GetVertices(face, position));
+
 				normals.AddRange(BlockUtils.GetNormals(face));
 				triangles.AddRange(BlockUtils.GetTriangles(face));
 			}

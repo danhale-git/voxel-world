@@ -93,6 +93,8 @@ public class Chunk
 				{
 					//	Create meshes for block and add to list to be merged
 					Block block = blocks[x,y,z];
+
+					//	load lists
 					block.GetFaces();
 
 					vertices.AddRange(block.vertices);
@@ -104,9 +106,20 @@ public class Chunk
 		mesh.SetVertices(vertices);
 		mesh.SetNormals(normals);
 		mesh.SetTriangles(triangles, 0);
+		//mesh.SetIndices(triangles.ToArray(), MeshTopology.Triangles, 0); // still broken
+
+		foreach(Vector3 vert in vertices)				//	DEBUG
+		{
+			//Debug.Log(vert); 					// 	Logs values from
+		}										//	0 to chunk size
+
+		Debug.Log("vertices "+vertices.Count);	//	600
+		Debug.Log("normals "+normals.Count);	//	600
+		Debug.Log("triangles "+triangles.Count);//	900	//	DEBUG
 
 		mesh.RecalculateBounds();
 		mesh.RecalculateNormals();
+		mesh.RecalculateTangents();
 
 		MeshFilter filter = gameObject.AddComponent<MeshFilter>();
 		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
