@@ -52,10 +52,6 @@ public class Block
 		return meshFilters;
 	}
 
-	//	TODO: 	There must be a better way to do this than
-	//			creating a bunch of quad gameobjects only
-	//			to destroy them in Chunk.MergeQuads()
-
 	//	Create quad representing one side of a cube
 	MeshFilter DrawQuad(BlockUtils.CubeFace face)
 	{
@@ -102,7 +98,7 @@ public class Block
 			//	Neighbouring chunk does not exist (map edge)
 			if(!World.chunks.TryGetValue(nbrChunkPos, out neighbourOwner))
 			{
-				return false;
+				return true;
 			}			
 			//	Convert local index to neighbouring chunk
 			neighbour = BlockUtils.WrapBlockIndex(neighbour);
