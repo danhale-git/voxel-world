@@ -101,6 +101,9 @@ public class Chunk
 					vertices.AddRange(block.vertices);
 					normals.AddRange(block.normals);
 					triangles.AddRange(block.triangles);
+
+					//	Draw individual cubes
+					//CreateMesh(block.vertices, block.normals, block.triangles);
 				}
 		
 		Mesh mesh = new Mesh();
@@ -135,5 +138,23 @@ public class Chunk
 		Debug.Log("vertices "+mesh.vertices.Length);	//	600
 		Debug.Log("normals "+mesh.normals.Length);		//	600
 		Debug.Log("triangles "+mesh.triangles.Length);	//	900	//	DEBUG
+	}
+
+	//	create a mesh attributes
+	void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles)
+	{
+		Mesh mesh = new Mesh();
+
+		mesh.SetVertices(vertices);
+		mesh.SetNormals(normals);
+		mesh.SetTriangles(triangles, 0);
+
+		GameObject obj = new GameObject();
+
+		MeshFilter filter = obj.AddComponent<MeshFilter>();
+		filter.mesh = mesh;
+
+		MeshRenderer renderer = obj.AddComponent<MeshRenderer>();		
+		renderer.sharedMaterial = world.defaultMaterial;
 	}
 }
