@@ -115,18 +115,25 @@ public class Chunk
 		//mesh.RecalculateTangents();	//	Still broken
 
 		MeshFilter filter = gameObject.AddComponent<MeshFilter>();
-		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
-
 		filter.mesh = mesh;
+
+		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();		
 		renderer.sharedMaterial = world.defaultMaterial;
 
-		foreach(Vector3 vert in mesh.vertices)				//	DEBUG
+		foreach(Vector3 vert in mesh.vertices)					//	DEBUG
 		{
-			Debug.Log(vert); 					// 	Logs values from
+			//Debug.Log(vert); 					// 	Logs values from
 		}										//	0 to chunk size
 
+		foreach(int tri in mesh.triangles)					//	DEBUG
+		{
+			Debug.Log(tri); 					// 	0 - 150
+												//	1 - 300
+												//	2 - 150
+		}										//	3 - 300
+
 		Debug.Log("vertices "+mesh.vertices.Length);	//	600
-		Debug.Log("normals "+mesh.normals.Length);	//	600
-		Debug.Log("triangles "+mesh.triangles.Length);//	900	//	DEBUG
+		Debug.Log("normals "+mesh.normals.Length);		//	600
+		Debug.Log("triangles "+mesh.triangles.Length);	//	900	//	DEBUG
 	}
 }
