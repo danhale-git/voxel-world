@@ -46,7 +46,7 @@ public class Block
 		{
 			BlockUtils.CubeFace face = (BlockUtils.CubeFace)i;
 
-			//	Add mesh for face attributes to lists if face exposed
+			//	Add mesh attributes to lists if face exposed
 			if(FaceExposed( face ))
 			{
 				//	offset vertex positoins with block position in chunk

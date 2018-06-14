@@ -94,9 +94,10 @@ public class Chunk
 					//	Create meshes for block and add to list to be merged
 					Block block = blocks[x,y,z];
 
-					//	load lists
+					//	Load lists of mesh attributes in block
 					block.GetFaces();
 
+					//	Add block's mesh attributes to lists
 					vertices.AddRange(block.vertices);
 					normals.AddRange(block.normals);
 					triangles.AddRange(block.triangles);
@@ -106,25 +107,26 @@ public class Chunk
 		mesh.SetVertices(vertices);
 		mesh.SetNormals(normals);
 		mesh.SetTriangles(triangles, 0);
-		//mesh.SetIndices(triangles.ToArray(), MeshTopology.Triangles, 0); // still broken
+		
+		//mesh.SetIndices(triangles.ToArray(), MeshTopology.Triangles, 0); // Still broken
 
-		foreach(Vector3 vert in vertices)				//	DEBUG
-		{
-			//Debug.Log(vert); 					// 	Logs values from
-		}										//	0 to chunk size
-
-		Debug.Log("vertices "+vertices.Count);	//	600
-		Debug.Log("normals "+normals.Count);	//	600
-		Debug.Log("triangles "+triangles.Count);//	900	//	DEBUG
-
-		mesh.RecalculateBounds();
-		mesh.RecalculateNormals();
-		mesh.RecalculateTangents();
+		//mesh.RecalculateBounds();
+		//mesh.RecalculateNormals();
+		//mesh.RecalculateTangents();	//	Still broken
 
 		MeshFilter filter = gameObject.AddComponent<MeshFilter>();
 		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
 
-		filter.sharedMesh = mesh;
+		filter.mesh = mesh;
 		renderer.sharedMaterial = world.defaultMaterial;
+
+		foreach(Vector3 vert in mesh.vertices)				//	DEBUG
+		{
+			Debug.Log(vert); 					// 	Logs values from
+		}										//	0 to chunk size
+
+		Debug.Log("vertices "+mesh.vertices.Length);	//	600
+		Debug.Log("normals "+mesh.normals.Length);	//	600
+		Debug.Log("triangles "+mesh.triangles.Length);//	900	//	DEBUG
 	}
 }
