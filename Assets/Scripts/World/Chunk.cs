@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class Chunk
 {
@@ -83,6 +84,7 @@ public class Chunk
 		List<Vector3> vertices = new List<Vector3>();
 		List<Vector3> normals = new List<Vector3>();
 		List<int> triangles = new List<int>();
+		List<Color> colors = new List<Color>();
 
 		//	keep block reference to increment indices
 		int vertsGenerated = 0;
@@ -109,26 +111,37 @@ public class Chunk
 							//	offset vertex positoins with block position in chunk
 							Vector3[] faceVerts = BlockUtils.GetVertices(face, blockPosition);
 							vertices.AddRange(faceVerts);
+
 							normals.AddRange(BlockUtils.GetNormals(face));
+
 							//	offset triangle indices with number of vertices covered so far
 							triangles.AddRange(BlockUtils.GetTriangles(face, vertsGenerated));
+
+							colors.AddRange(Enumerable.Repeat( 	(Color) new Color32((byte)Random.Range(9, 11),
+																					(byte)Random.Range(95, 110),
+																					(byte)Random.Range(30, 40),
+																					255),
+																faceVerts.Length ));
 							vertsGenerated += faceVerts.Length;
+
+						
 						}
 					
 					}
 				}
 					
-		CreateMesh(vertices, normals, triangles, gameObject);
+		CreateMesh(vertices, normals, triangles, colors, gameObject);
 	}
 
 	//	create a mesh with given attributes
-	void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles, GameObject gObject)
+	void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles, List<Color> colors, GameObject gObject)
 	{
 		Mesh mesh = new Mesh();
 
 		mesh.SetVertices(vertices);
 		mesh.SetNormals(normals);
 		mesh.SetTriangles(triangles, 0);
+		mesh.SetColors(colors);
 
 		MeshFilter filter = gObject.AddComponent<MeshFilter>();
 		filter.mesh = mesh;
