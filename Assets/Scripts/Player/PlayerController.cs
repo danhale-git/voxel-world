@@ -38,8 +38,8 @@ public class PlayerController : MonoBehaviour {
 	//	Generate more chunks if player has moved to a new chunk
 	void GetCurrentChunk()
 	{
-		//	Only do this once per second
-		if(Time.fixedTime - updateTimer < 1)
+		//	Only do this twice per second
+		if(Time.fixedTime - updateTimer < 0.5f)
 		{
 			return;
 		}
@@ -47,7 +47,10 @@ public class PlayerController : MonoBehaviour {
 
 		//	Raycast to chunk below player
         RaycastHit hit;
-        if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.down), out hit, 1000f, chunkLayerMask))
+        if (Physics.Raycast(transform.position,
+							transform.TransformDirection(Vector3.down),
+							out hit, 1000f,
+							chunkLayerMask))
         {
 			Chunk chunk;			
 			//	Check if chunk exists
