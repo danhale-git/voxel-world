@@ -110,77 +110,61 @@ public class PlayerController : MonoBehaviour {
         transform.Rotate(0, horizontal, 0);
 		mycam.gameObject.transform.Rotate(vertical, 0, 0);
 
-		if(Input.GetButtonDown("Fire1"))
-		{
-			//	cast ray from cursor
-			RaycastHit hit;
-			Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+		if (Input.GetMouseButtonDown(0))
+        {
+            RaycastHit hit;
+            
+            
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition); 
+   			if ( Physics.Raycast (ray,out hit,10)) 
+   			{
+            
+   				Vector3 hitBlock = hit.point - hit.normal/2.0f; 
 
-			if (Physics.Raycast(ray, out hit))
-			{
-				//	get voxel position
-				//Vector3 positionInCube = hit.point - (hit.normal * 0.5f);
-				//Vector3 voxel = BlockUtils.RoundVector3(positionInCube);
-				
-				Vector3 hitBlock = hit.point - hit.normal/2.0f; 
+   				int x = (int) (Mathf.Round(hitBlock.x) - hit.collider.gameObject.transform.position.x);
+   				int y = (int) (Mathf.Round(hitBlock.y) - hit.collider.gameObject.transform.position.y);
+   				int z = (int) (Mathf.Round(hitBlock.z) - hit.collider.gameObject.transform.position.z);
 
-   				int xBlock = (int) (Mathf.Round(hitBlock.x) - hit.collider.gameObject.transform.position.x);
-   				int yBlock = (int) (Mathf.Round(hitBlock.y) - hit.collider.gameObject.transform.position.y);
-   				int zBlock = (int) (Mathf.Round(hitBlock.z) - hit.collider.gameObject.transform.position.z);
+				Chunk hitc;
 
-				Block block = World.chunks[hit.transform.position].blocks[xBlock, yBlock, zBlock];
+				if(World.chunks.TryGetValue(hit.collider.gameObject.transform.position, out hitc))
+   				{
+					Block block = hitc.blocks[x,y,z];
+					block.type = Block.BlockType.AIR;
+					block.seeThrough = true;
 
-				block.type = Block.BlockType.AIR;
-				block.seeThrough = true;
+	   				List<Vector3> updates = new List<Vector3>();
+	   				float thisChunkx = hitc.position.x;
+	   				float thisChunky = hitc.position.y;
+	   				float thisChunkz = hitc.position.z;
 
-				List<Vector3> updates = new List<Vector3>();
+	   				updates.Add(hit.collider.gameObject.transform.position);
 
-				float xChunk = hit.transform.position.x;
-				float yChunk = hit.transform.position.y;
-				float zChunk = hit.transform.position.z;
+	   				//update neighbours?
+	   				if(x == 0) 
+	   					updates.Add(new Vector3(thisChunkx-World.chunkSize,thisChunky,thisChunkz));
+					if(x == World.chunkSize - 1) 
+						updates.Add(new Vector3(thisChunkx+World.chunkSize,thisChunky,thisChunkz));
+					if(y == 0) 
+						updates.Add(new Vector3(thisChunkx,thisChunky-World.chunkSize,thisChunkz));
+					if(y == World.chunkSize - 1) 
+						updates.Add(new Vector3(thisChunkx,thisChunky+World.chunkSize,thisChunkz));
+					if(z == 0) 
+						updates.Add(new Vector3(thisChunkx,thisChunky,thisChunkz-World.chunkSize));
+					if(z == World.chunkSize - 1) 
+						updates.Add(new Vector3(thisChunkx,thisChunky,thisChunkz+World.chunkSize));
 
-				updates.Add(hit.transform.position);
-
-				//update neighbours?
-				if(xBlock == 0) 
-					updates.Add((new Vector3(xChunk-World.chunkSize,	yChunk,					zChunk)));
-				if(xBlock == World.chunkSize - 1) 
-					updates.Add((new Vector3(xChunk+World.chunkSize,	yChunk,					zChunk)));
-				if(yBlock == 0) 
-					updates.Add((new Vector3(xChunk,					yChunk-World.chunkSize,	zChunk)));
-				if(yBlock == World.chunkSize - 1) 
-					updates.Add((new Vector3(xChunk,					yChunk+World.chunkSize,	zChunk)));
-				if(zBlock == 0) 
-					updates.Add((new Vector3(xChunk,					yChunk,					zChunk-World.chunkSize)));
-				if(zBlock == World.chunkSize - 1) 
-					updates.Add((new Vector3(xChunk,					yChunk,					zChunk+World.chunkSize)));
-
-				Chunk chunk;
-				if(World.chunks.TryGetValue(hit.transform.position, out chunk))
-				{
-					chunk.Redraw();
+		   			foreach(Vector3 cname in updates)
+		   			{
+		   				Chunk c;
+						if(World.chunks.TryGetValue(cname, out c))
+						{
+							c.Redraw();
+				   		}
+				   	}
 				}
-
-				/*foreach(Vector3 chunkPos in updates)
-				{
-					Chunk chunk;
-					if(World.chunks.TryGetValue(chunkPos, out chunk))
-					{
-						chunk.Redraw();
-					}
-				}*/
-				
-				
-				
-				
-				
-				
-				/*Chunk chunk = World.chunks[hit.transform.position];
-				Vector3 local = voxel - chunk.position;
-				Block block = chunk.blocks[(int)local.x, (int)local.y, (int)local.z];*/
-				
-			}
-
-		}
+		   	}
+   		}
+		
 	}
 }
