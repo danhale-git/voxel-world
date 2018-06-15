@@ -41,8 +41,6 @@ public class Block
 	{
 		if(type == BlockType.AIR) { return 0; }
 
-		int count = 0;
-		
 		//	Iterate over all six faces
 		for(int i = 0; i < 6; i++)
 		{
@@ -51,16 +49,17 @@ public class Block
 			//	Add mesh attributes to lists if face exposed
 			if(FaceExposed( face ))
 			{
-				count++;
 				//	offset vertex positoins with block position in chunk
-				vertices.AddRange(BlockUtils.GetVertices(face, position));
-
+				Vector3[] faceVerts = BlockUtils.GetVertices(face, position);
+				vertices.AddRange(faceVerts);
 				normals.AddRange(BlockUtils.GetNormals(face));
 				triangles.AddRange(BlockUtils.GetTriangles(face, offset));
+
+				offset += faceVerts.Length;
 			}
 		}
 
-		return count;
+		return vertices.Count;
 	}
 
 	//	Block face is on map edge or player can see through adjacent block
@@ -84,7 +83,7 @@ public class Block
 			//	Neighbouring chunk does not exist (map edge)
 			if(!World.chunks.TryGetValue(nbrChunkPos, out neighbourOwner))
 			{
-				return true;
+				return false;
 			}			
 			//	Convert local index to neighbouring chunk
 			neighbour = BlockUtils.WrapBlockIndex(neighbour);

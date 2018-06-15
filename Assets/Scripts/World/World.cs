@@ -31,12 +31,10 @@ public class World : MonoBehaviour
 	//	Called in PlayerController
 	public void DrawSurroundingChunks(Vector3 centerChunk)
 	{
-		return;
-		
 		//	Generate chunks in view distance + 1
-		for(int x = -viewDistance; x < viewDistance + 1; x++)
-			for(int z = -viewDistance; z < viewDistance + 1; z++)
-				for(int y = -viewDistance; y < viewDistance + 1; y++)
+		for(int x = -viewDistance; x < viewDistance+1; x++)
+			for(int z = -viewDistance; z < viewDistance+1; z++)
+				for(int y = -viewDistance; y < viewDistance+1; y++)
 				{
 					Vector3 offset = new Vector3(x, y, z) * chunkSize;
 					Vector3 location = centerChunk + offset;

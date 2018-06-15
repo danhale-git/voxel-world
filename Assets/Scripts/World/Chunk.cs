@@ -98,8 +98,8 @@ public class Chunk
 
 					//	Load lists of mesh attributes in block
 
-					int faces = block.GetFaces(numberOfVertices);
-					numberOfVertices += (faces * 4);
+					int verticesCount = block.GetFaces(numberOfVertices);
+					numberOfVertices += verticesCount;
 
 					//	Add block's mesh attributes to lists in chunk
 					vertices.AddRange(block.vertices);
@@ -107,42 +107,11 @@ public class Chunk
 					triangles.AddRange(block.triangles);
 				}
 		
-		Mesh mesh = new Mesh();
-		mesh.SetVertices(vertices);
-		mesh.SetNormals(normals);
-		mesh.SetTriangles(triangles, 0);
-		
-		//mesh.SetIndices(triangles.ToArray(), MeshTopology.Triangles, 0); // Still broken
-
-		//mesh.RecalculateBounds();
-		//mesh.RecalculateNormals();
-		//mesh.RecalculateTangents();	//	Still broken
-
-		MeshFilter filter = gameObject.AddComponent<MeshFilter>();
-		filter.mesh = mesh;
-
-		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();		
-		renderer.sharedMaterial = world.defaultMaterial;
-
-		foreach(Vector3 vert in mesh.vertices)									//	DEBUG
-		{
-			//Debug.Log(vert); 					// 	Logs values from
-		}										//	0 to chunk size
-
-		foreach(int tri in mesh.triangles)
-		{
-			//Debug.Log(tri); 					// 	0 - 150
-												//	1 - 300
-												//	2 - 150
-		}										//	3 - 300
-
-		Debug.Log("vertices "+mesh.vertices.Length);	//	600
-		Debug.Log("normals "+mesh.normals.Length);		//	600
-		Debug.Log("triangles "+mesh.triangles.Length);	//	900					//	DEBUG
+		CreateMesh(vertices, normals, triangles, gameObject);
 	}
 
 	//	create a mesh with given attributes
-	void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles)
+	void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles, GameObject gObject)
 	{
 		Mesh mesh = new Mesh();
 
@@ -150,12 +119,13 @@ public class Chunk
 		mesh.SetNormals(normals);
 		mesh.SetTriangles(triangles, 0);
 
-		GameObject obj = new GameObject();
-
-		MeshFilter filter = obj.AddComponent<MeshFilter>();
+		MeshFilter filter = gObject.AddComponent<MeshFilter>();
 		filter.mesh = mesh;
 
-		MeshRenderer renderer = obj.AddComponent<MeshRenderer>();		
-		renderer.sharedMaterial = world.defaultMaterial;						//	DEBUG
+		MeshRenderer renderer = gObject.AddComponent<MeshRenderer>();		
+		renderer.sharedMaterial = world.defaultMaterial;
+
+		MeshCollider collider = gameObject.AddComponent<MeshCollider>();
+		collider.sharedMesh = filter.mesh;
 	}
 }
