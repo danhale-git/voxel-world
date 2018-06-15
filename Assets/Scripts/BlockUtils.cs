@@ -7,6 +7,12 @@ public static class BlockUtils
 	//	For specifying which face of a cube we are working on
 	public enum CubeFace {TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK}
 
+	public enum Types {		AIR = 0,
+							DIRT = 1};
+
+	public static bool[] seeThrough = new bool[] {	true,		//	0	//	AIR
+													false};		//	1	//	DIRT
+
 	// Coordinates for 1x1 cube vertices relative to center	
 	public static Vector3 v0 = new Vector3( -0.5f,  -0.5f,  0.5f );
 	public static Vector3 v1 = new Vector3(  0.5f,  -0.5f,  0.5f );

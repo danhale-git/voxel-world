@@ -6,8 +6,9 @@ public class Chunk
 {
 	//	Chunk local space and game components
 	public GameObject gameObject;
-	//	All blocks in this chunk
-	public Block[,,] blocks;
+
+	//	block data
+	public BlockUtils.Types[,,] blockTypes;
 
 	//	Chunk status
 	public enum Status {GENERATED, DRAWN}
@@ -31,7 +32,9 @@ public class Chunk
 		
 		//	Apply chunk size
 		size = World.chunkSize;
-		blocks = new Block[size,size,size];
+
+		//	initialise arrays
+		blockTypes = new BlockUtils.Types[size,size,size];
 
 		//	Set transform
 		gameObject.transform.parent = world.gameObject.transform;
@@ -55,25 +58,20 @@ public class Chunk
 				//	Generate column
 				for(int y = 0; y < size; y++)
 				{
-					//	Position of block in chunk
-					Vector3 blockPosition = new Vector3(x, y, z);
-					//	Position of block in world
-					Vector3 blockPositionInWorld = blockPosition + this.position;
-
-					Block.BlockType type;
+					BlockUtils.Types type;
 
 					//	Set block type
-					if (blockPositionInWorld.y > groundHeight)
+					if (y + this.position.y > groundHeight)
 					{
-						type = Block.BlockType.AIR;
+						type = BlockUtils.Types.AIR;
 					}
 					else
 					{
-						type = Block.BlockType.GROUND;
+						type = BlockUtils.Types.DIRT;
 					}
 
 					//	Store new block in 3D array
-					blocks[x,y,z] = new Block(type, blockPosition, this);
+					blockTypes[x,y,z] = type;
 				}
 			}
 	}
@@ -87,26 +85,39 @@ public class Chunk
 		List<int> triangles = new List<int>();
 
 		//	keep block reference to increment indices
-		int numberOfVertices = 0;
+		int vertsGenerated = 0;
 
 		//	Iterate over all block locations in chunk		
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
 				for(int y = 0; y < size; y++)
 				{
-					Block block = blocks[x,y,z];
+					if(blockTypes[x,y,z] == BlockUtils.Types.AIR) { continue; }
 
-					//	Load lists of mesh attributes in block
+					Vector3 blockPosition = new Vector3(x,y,z);
 
-					int verticesCount = block.GetFaces(numberOfVertices);
-					numberOfVertices += verticesCount;
+					//	Iterate over all six faces
+					for(int i = 0; i < 6; i++)
+					{
+						BlockUtils.CubeFace face = (BlockUtils.CubeFace)i;
 
-					//	Add block's mesh attributes to lists in chunk
-					vertices.AddRange(block.vertices);
-					normals.AddRange(block.normals);
-					triangles.AddRange(block.triangles);
+						//	Add mesh attributes to lists if face exposed
+						bool exposed = FaceExposed(face, blockPosition);
+
+						if(exposed)
+						{
+							//	offset vertex positoins with block position in chunk
+							Vector3[] faceVerts = BlockUtils.GetVertices(face, blockPosition);
+							vertices.AddRange(faceVerts);
+							normals.AddRange(BlockUtils.GetNormals(face));
+							//	offset triangle indices with number of vertices covered so far
+							triangles.AddRange(BlockUtils.GetTriangles(face, vertsGenerated));
+							vertsGenerated += faceVerts.Length;
+						}
+					
+					}
 				}
-		
+					
 		CreateMesh(vertices, normals, triangles, gameObject);
 	}
 
@@ -128,4 +139,48 @@ public class Chunk
 		MeshCollider collider = gameObject.AddComponent<MeshCollider>();
 		collider.sharedMesh = filter.mesh;
 	}
+
+	//	Block face is on map edge or player can see through adjacent block
+	bool FaceExposed(BlockUtils.CubeFace face, Vector3 voxel)
+	{	
+		//	Direction of neighbour
+		Vector3 faceDirection = BlockUtils.GetDirection(face);	
+		//	Neighbour position
+		Vector3 neighbour = voxel + faceDirection;
+		
+		Chunk neighbourOwner;
+
+		//	Neighbour is outside this chunk
+		if(neighbour.x < 0 || neighbour.x >= World.chunkSize || 
+		   neighbour.y < 0 || neighbour.y >= World.chunkSize ||
+		   neighbour.z < 0 || neighbour.z >= World.chunkSize)
+		{
+			//	Next chunk in direction of neighbour
+			Vector3 neighbourChunkPos = this.position + (faceDirection * World.chunkSize);
+			
+			//Debug.Log(neighbourChunkPos);
+			
+			//	Neighbouring chunk does not exist (map edge)
+			if(!World.chunks.TryGetValue(neighbourChunkPos, out neighbourOwner))
+			{
+				return false;
+			}			
+			//	Convert local index to neighbouring chunk
+			neighbour = BlockUtils.WrapBlockIndex(neighbour);
+		}
+		//	Neighbour is in this chunk		
+		else
+		{
+			neighbourOwner = this;
+		}
+		
+		//Debug.Log((int)neighbour.x+" "+(int)neighbour.y+" "+(int)neighbour.z);
+		
+		//	Check seeThrough in neighbour
+		BlockUtils.Types type = neighbourOwner.blockTypes[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z];
+
+		return BlockUtils.seeThrough[(int)type];
+	}
+
+
 }
