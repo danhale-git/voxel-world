@@ -69,6 +69,8 @@ public class Block
 		Vector3 faceDirection = BlockUtils.GetDirection(face);	
 		//	Neighbour position
 		Vector3 neighbour = faceDirection + position;
+
+		
 		
 		Chunk neighbourOwner;
 

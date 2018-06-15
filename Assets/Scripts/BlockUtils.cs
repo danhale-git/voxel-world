@@ -173,4 +173,12 @@ public static class BlockUtils
 
 		return new Vector3(vector[0], vector[1], vector[2]);
 	}
+
+	public static Vector3 RoundVector3(Vector3 toRound)
+	{
+		Vector3 rounded = new Vector3(	Mathf.Round(toRound.x),
+										Mathf.Round(toRound.y),
+										Mathf.Round(toRound.z));
+		return rounded;
+	}
 }

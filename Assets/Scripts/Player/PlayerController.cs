@@ -109,5 +109,78 @@ public class PlayerController : MonoBehaviour {
         float vertical = -(sensitivity * Input.GetAxis("Mouse Y"));
         transform.Rotate(0, horizontal, 0);
 		mycam.gameObject.transform.Rotate(vertical, 0, 0);
+
+		if(Input.GetButtonDown("Fire1"))
+		{
+			//	cast ray from cursor
+			RaycastHit hit;
+			Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+			if (Physics.Raycast(ray, out hit))
+			{
+				//	get voxel position
+				//Vector3 positionInCube = hit.point - (hit.normal * 0.5f);
+				//Vector3 voxel = BlockUtils.RoundVector3(positionInCube);
+				
+				Vector3 hitBlock = hit.point - hit.normal/2.0f; 
+
+   				int xBlock = (int) (Mathf.Round(hitBlock.x) - hit.collider.gameObject.transform.position.x);
+   				int yBlock = (int) (Mathf.Round(hitBlock.y) - hit.collider.gameObject.transform.position.y);
+   				int zBlock = (int) (Mathf.Round(hitBlock.z) - hit.collider.gameObject.transform.position.z);
+
+				Block block = World.chunks[hit.transform.position].blocks[xBlock, yBlock, zBlock];
+
+				block.type = Block.BlockType.AIR;
+				block.seeThrough = true;
+
+				List<Vector3> updates = new List<Vector3>();
+
+				float xChunk = hit.transform.position.x;
+				float yChunk = hit.transform.position.y;
+				float zChunk = hit.transform.position.z;
+
+				updates.Add(hit.transform.position);
+
+				//update neighbours?
+				if(xBlock == 0) 
+					updates.Add((new Vector3(xChunk-World.chunkSize,	yChunk,					zChunk)));
+				if(xBlock == World.chunkSize - 1) 
+					updates.Add((new Vector3(xChunk+World.chunkSize,	yChunk,					zChunk)));
+				if(yBlock == 0) 
+					updates.Add((new Vector3(xChunk,					yChunk-World.chunkSize,	zChunk)));
+				if(yBlock == World.chunkSize - 1) 
+					updates.Add((new Vector3(xChunk,					yChunk+World.chunkSize,	zChunk)));
+				if(zBlock == 0) 
+					updates.Add((new Vector3(xChunk,					yChunk,					zChunk-World.chunkSize)));
+				if(zBlock == World.chunkSize - 1) 
+					updates.Add((new Vector3(xChunk,					yChunk,					zChunk+World.chunkSize)));
+
+				Chunk chunk;
+				if(World.chunks.TryGetValue(hit.transform.position, out chunk))
+				{
+					chunk.Redraw();
+				}
+
+				/*foreach(Vector3 chunkPos in updates)
+				{
+					Chunk chunk;
+					if(World.chunks.TryGetValue(chunkPos, out chunk))
+					{
+						chunk.Redraw();
+					}
+				}*/
+				
+				
+				
+				
+				
+				
+				/*Chunk chunk = World.chunks[hit.transform.position];
+				Vector3 local = voxel - chunk.position;
+				Block block = chunk.blocks[(int)local.x, (int)local.y, (int)local.z];*/
+				
+			}
+
+		}
 	}
 }
