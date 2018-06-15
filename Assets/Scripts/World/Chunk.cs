@@ -78,52 +78,54 @@ public class Chunk
 			}
 	}
 
-	//	Create all block face meshes then merge into one mesh
+	//	Create a mesh representing all blocks in the chunk
 	public void DrawBlocks()
 	{
-		//	Meshes of all blocks in the chunk
-		List<MeshFilter> blockMeshes = new List<MeshFilter>();
+		//	Attributes for the final chunk mesh
+		List<Vector3> vertices = new List<Vector3>();
+		List<Vector3> normals = new List<Vector3>();
+		List<int> triangles = new List<int>();
+
+		//	keep block reference to increment indices
+		int numberOfVertices = 0;
 
 		//	Iterate over all block locations in chunk		
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
 				for(int y = 0; y < size; y++)
 				{
-					//	Create meshes for block and add to list to be merged
-					blockMeshes.AddRange(blocks[x,y,z].GetFaces());
+					Block block = blocks[x,y,z];
+
+					//	Load lists of mesh attributes in block
+
+					int verticesCount = block.GetFaces(numberOfVertices);
+					numberOfVertices += verticesCount;
+
+					//	Add block's mesh attributes to lists in chunk
+					vertices.AddRange(block.vertices);
+					normals.AddRange(block.normals);
+					triangles.AddRange(block.triangles);
 				}
 		
-		//	Merge quad meshes
-		MergeQuads(blockMeshes.ToArray());
-
-		//	Creat collider using new mesh
-		MeshCollider collider = gameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
-		collider.sharedMesh = gameObject.transform.GetComponent<MeshFilter>().mesh;
+		CreateMesh(vertices, normals, triangles, gameObject);
 	}
 
-	//	Merge individual cube faces into mesh
-	public void MergeQuads(MeshFilter[] blockMeshes)
+	//	create a mesh with given attributes
+	void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles, GameObject gObject)
 	{
-		//	Combine quad meshes
-        CombineInstance[] combine = new CombineInstance[blockMeshes.Length];
-        for(int i = 0; i < blockMeshes.Length; i++)
-		{
-            combine[i].mesh = blockMeshes[i].sharedMesh;
-            combine[i].transform = blockMeshes[i].transform.localToWorldMatrix;
-        }
+		Mesh mesh = new Mesh();
 
-		//	Combine meshes to new mesh attached to chunk
-        MeshFilter mf = (MeshFilter) gameObject.AddComponent(typeof(MeshFilter));
-        mf.mesh = new Mesh();
-        mf.mesh.CombineMeshes(combine);
+		mesh.SetVertices(vertices);
+		mesh.SetNormals(normals);
+		mesh.SetTriangles(triangles, 0);
 
-        //	Add mesh renderer to chunk
-		MeshRenderer renderer = gameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
-		renderer.material = world.defaultMaterial;
+		MeshFilter filter = gObject.AddComponent<MeshFilter>();
+		filter.mesh = mesh;
 
-		//	Delete quad GameObjects
-		foreach (Transform quad in gameObject.transform) {
-     		GameObject.Destroy(quad.gameObject);
- 		}
+		MeshRenderer renderer = gObject.AddComponent<MeshRenderer>();		
+		renderer.sharedMaterial = world.defaultMaterial;
+
+		MeshCollider collider = gameObject.AddComponent<MeshCollider>();
+		collider.sharedMesh = filter.mesh;
 	}
 }

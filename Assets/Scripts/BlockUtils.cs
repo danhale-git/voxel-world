@@ -18,71 +18,42 @@ public static class BlockUtils
 	public static Vector3 v7 = new Vector3( -0.5f,   0.5f, -0.5f );
 
 	//	Vertices for a cube
-	public static Vector3[] GetVertices(CubeFace face)
+	public static Vector3[] GetVertices(CubeFace face, Vector3 offset)
 	{
 		Vector3[] vertices = new Vector3[4];
 		switch(face)
 		{
 			case CubeFace.TOP:
-				vertices = new Vector3[] {v7, v6, v5, v4};
+				vertices = new Vector3[] {v7+offset, v6+offset, v5+offset, v4+offset};
 			break;
 
 			case CubeFace.BOTTOM:
-				vertices = new Vector3[] {v0, v1, v2, v3};
+				vertices = new Vector3[] {v0+offset, v1+offset, v2+offset, v3+offset};
 			break;
 
 			case CubeFace.RIGHT:
-				vertices = new Vector3[] {v5, v6, v2, v1};
+				vertices = new Vector3[] {v5+offset, v6+offset, v2+offset, v1+offset};
 			break;
 
 			case CubeFace.LEFT:
-				vertices = new Vector3[] {v7, v4, v0, v3};
+				vertices = new Vector3[] {v7+offset, v4+offset, v0+offset, v3+offset};
 			break;
 
 			case CubeFace.FRONT:
-				vertices = new Vector3[] {v4, v5, v1, v0};
+				vertices = new Vector3[] {v4+offset, v5+offset, v1+offset, v0+offset};
 			break;
 			
 			case CubeFace.BACK:
-				vertices = new Vector3[] {v6, v7, v3, v2};
+				vertices = new Vector3[] {v6+offset, v7+offset, v3+offset, v2+offset};
 			break;
 		}
 		return vertices;
 	}
 
 	//	Triangles for a cube
-	public static int[] GetTriangles(CubeFace face)
+	public static int[] GetTriangles(CubeFace face, int offset)
 	{
-		int[] triangles = new int[6];
-		
-		switch(face)
-		{
-			case CubeFace.TOP:
-				triangles = new int[] {3, 1, 0, 3, 2, 1};
-			break;
-
-			case CubeFace.BOTTOM:
-				triangles = new int[] { 3, 1, 0, 3, 2, 1};
-			break;
-
-			case CubeFace.RIGHT:
-				triangles = new int[] {3, 1, 0, 3, 2, 1};
-			break;
-
-			case CubeFace.LEFT:
-				triangles = new int[] {3, 1, 0, 3, 2, 1};
-			break;
-
-			case CubeFace.FRONT:
-				triangles = new int[] {3, 1, 0, 3, 2, 1};
-			break;
-			
-			case CubeFace.BACK:
-				triangles = new int[] {3, 1, 0, 3, 2, 1};
-			break;
-		}
-
-		return triangles;
+		return new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
 	}
 
 	//	Normals for a cube

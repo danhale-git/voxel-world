@@ -10,6 +10,10 @@ public class Block
 	public BlockType type;
 	public Vector3 position;
 	public Chunk owner;
+
+	public List<Vector3> vertices = new List<Vector3>();
+	public List<Vector3> normals = new List<Vector3>();
+	public List<int> triangles = new List<int>();
 	
 	//	seeThrough used for quad culling
 	public bool seeThrough;
@@ -33,52 +37,29 @@ public class Block
 	}
 
 	//	Generate meshes for exposed block faces
-	public List<MeshFilter> GetFaces()
+	public int GetFaces(int offset)
 	{
-		List<MeshFilter> meshFilters = new List<MeshFilter>();
-		
-		if(type == BlockType.AIR) { return meshFilters; }
-		
+		if(type == BlockType.AIR) { return 0; }
+
 		//	Iterate over all six faces
 		for(int i = 0; i < 6; i++)
 		{
-			//	Create mesh if exposed
-			if(FaceExposed( (BlockUtils.CubeFace)i ))
+			BlockUtils.CubeFace face = (BlockUtils.CubeFace)i;
+
+			//	Add mesh attributes to lists if face exposed
+			if(FaceExposed( face ))
 			{
-				meshFilters.Add(DrawQuad( (BlockUtils.CubeFace)i ));
+				//	offset vertex positoins with block position in chunk
+				Vector3[] faceVerts = BlockUtils.GetVertices(face, position);
+				vertices.AddRange(faceVerts);
+				normals.AddRange(BlockUtils.GetNormals(face));
+				triangles.AddRange(BlockUtils.GetTriangles(face, offset));
+
+				offset += faceVerts.Length;
 			}
 		}
 
-		return meshFilters;
-	}
-
-	//	TODO: 	There must be a better way to do this than
-	//			creating a bunch of quad gameobjects only
-	//			to destroy them in Chunk.MergeQuads()
-
-	//	Create quad representing one side of a cube
-	MeshFilter DrawQuad(BlockUtils.CubeFace face)
-	{
-		Mesh mesh = new Mesh();
-
-		//	Get fixed cube attributes from static utility class
-		mesh.vertices = BlockUtils.GetVertices(face);
-		mesh.normals = BlockUtils.GetNormals(face);
-		mesh.triangles = BlockUtils.GetTriangles(face);
-		
-		//	Good practice to recalculate bounds
-		mesh.RecalculateBounds();
-
-		// Create gameobject for adding mesh
-		GameObject quad = new GameObject("Quad");
-		quad.transform.position = position;
-	    quad.transform.parent = owner.gameObject.transform;
-		
-		//	Add and return mes
-     	MeshFilter meshFilter = (MeshFilter) quad.AddComponent(typeof(MeshFilter));
-		meshFilter.mesh = mesh;
-		
-		return meshFilter;
+		return vertices.Count;
 	}
 
 	//	Block face is on map edge or player can see through adjacent block
@@ -97,10 +78,10 @@ public class Block
 		   neighbour.z < 0 || neighbour.z >= World.chunkSize)
 		{
 			//	Next chunk in direction of neighbour
-			Vector3 nbrChunkPos = owner.position + (faceDirection * World.chunkSize);
+			Vector3 neighbourChunkPos = owner.position + (faceDirection * World.chunkSize);
 
 			//	Neighbouring chunk does not exist (map edge)
-			if(!World.chunks.TryGetValue(nbrChunkPos, out neighbourOwner))
+			if(!World.chunks.TryGetValue(neighbourChunkPos, out neighbourOwner))
 			{
 				return false;
 			}			
