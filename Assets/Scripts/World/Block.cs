@@ -78,10 +78,10 @@ public class Block
 		   neighbour.z < 0 || neighbour.z >= World.chunkSize)
 		{
 			//	Next chunk in direction of neighbour
-			Vector3 nbrChunkPos = owner.position + (faceDirection * World.chunkSize);
+			Vector3 neighbourChunkPos = owner.position + (faceDirection * World.chunkSize);
 
 			//	Neighbouring chunk does not exist (map edge)
-			if(!World.chunks.TryGetValue(nbrChunkPos, out neighbourOwner))
+			if(!World.chunks.TryGetValue(neighbourChunkPos, out neighbourOwner))
 			{
 				return false;
 			}			

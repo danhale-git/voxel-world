@@ -53,36 +53,7 @@ public static class BlockUtils
 	//	Triangles for a cube
 	public static int[] GetTriangles(CubeFace face, int offset)
 	{
-		int[] triangles = new int[6];
-		
-		switch(face)
-		{
-			case CubeFace.TOP:
-				triangles = new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
-			break;
-
-			case CubeFace.BOTTOM:
-				triangles = new int[] { 3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
-			break;
-
-			case CubeFace.RIGHT:
-				triangles = new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
-			break;
-
-			case CubeFace.LEFT:
-				triangles = new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
-			break;
-
-			case CubeFace.FRONT:
-				triangles = new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
-			break;
-			
-			case CubeFace.BACK:
-				triangles = new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
-			break;
-		}
-
-		return triangles;
+		return new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
 	}
 
 	//	Normals for a cube
