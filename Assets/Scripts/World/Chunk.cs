@@ -135,7 +135,7 @@ public class Chunk
 							triangles.AddRange(BlockUtils.GetTriangles(face, vertsGenerated));
 
 							//	Get color using Types index
-							colors.AddRange(Enumerable.Repeat( 	(Color)BlockUtils.colors[(int)type], faceVerts.Length ));
+							colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
 
 							vertsGenerated += faceVerts.Length;
 						}

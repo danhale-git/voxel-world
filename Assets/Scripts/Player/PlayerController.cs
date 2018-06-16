@@ -36,7 +36,10 @@ public class PlayerController : MonoBehaviour {
 		//	Break block
 		if(Input.GetButtonDown("Fire1"))
 		{
-			DebugBitMask(Camera.main.ScreenPointToRay(Input.mousePosition));
+			if(Input.GetKey(KeyCode.LeftShift))
+				DebugBitMask(Camera.main.ScreenPointToRay(Input.mousePosition));
+			else
+				RemoveBlock(Camera.main.ScreenPointToRay(Input.mousePosition));
 		}
 
 		//	Break block
