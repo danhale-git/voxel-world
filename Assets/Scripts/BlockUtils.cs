@@ -7,11 +7,20 @@ public static class BlockUtils
 	//	For specifying which face of a cube we are working on
 	public enum CubeFace {TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK}
 
+	//	Enum indices correspond to fixed block attribute arrays below
 	public enum Types {		AIR = 0,
 							DIRT = 1};
 
+	//	Block type is see-through
 	public static bool[] seeThrough = new bool[] {	true,		//	0	//	AIR
-													false};		//	1	//	DIRT
+													false		//	1	//	DIRT
+													};
+
+	//	Block type color
+	public static Color32[] colors = new Color32[]{	Color.white,					//	0	//	AIR
+													new Color32(11, 110, 35, 255	//	1	//	DIRT
+													)};											
+
 
 	// Coordinates for 1x1 cube vertices relative to center	
 	public static Vector3 v0 = new Vector3( -0.5f,  -0.5f,  0.5f );

@@ -99,7 +99,8 @@ public class Chunk
 			for(int z = 0; z < size; z++)
 				for(int y = 0; y < size; y++)
 				{
-					if(blockTypes[x,y,z] == BlockUtils.Types.AIR) { continue; }
+					BlockUtils.Types type = blockTypes[x,y,z];
+					if(type == BlockUtils.Types.AIR) { continue; }
 
 					Vector3 blockPosition = new Vector3(x,y,z);
 
@@ -113,24 +114,20 @@ public class Chunk
 
 						if(exposed)
 						{
-							//	offset vertex positoins with block position in chunk
+							//	Offset vertex positoins with block position in chunk
 							Vector3[] faceVerts = BlockUtils.GetVertices(face, blockPosition);
 							vertices.AddRange(faceVerts);
 
+							//	Add normals in same order as vertices
 							normals.AddRange(BlockUtils.GetNormals(face));
 
-							//	offset triangle indices with number of vertices covered so far
+							//	Offset triangle indices with number of vertices covered so far
 							triangles.AddRange(BlockUtils.GetTriangles(face, vertsGenerated));
 
-							//	TODO associate color with block in BlockUtils.blockColors[]
-							colors.AddRange(Enumerable.Repeat( 	(Color) new Color32((byte)Random.Range(9, 11),
-																					(byte)Random.Range(95, 110),
-																					(byte)Random.Range(30, 40),
-																					255),
-																faceVerts.Length ));
-							vertsGenerated += faceVerts.Length;
+							//	Get color using Types index
+							colors.AddRange(Enumerable.Repeat( 	(Color)BlockUtils.colors[(int)type], faceVerts.Length ));
 
-						
+							vertsGenerated += faceVerts.Length;
 						}
 					
 					}
