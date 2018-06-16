@@ -142,7 +142,7 @@ public class PlayerController : MonoBehaviour {
 		if (Physics.Raycast(ray, out hit))
 		{
 			//	get voxel position
-			Vector3 pointInCube = hit.point - (hit.normal * 0.25f);
+			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
 			World.ChangeBlock(voxel, BlockUtils.Types.AIR);
@@ -156,7 +156,7 @@ public class PlayerController : MonoBehaviour {
 		if (Physics.Raycast(ray, out hit))
 		{
 			//	get voxel position
-			Vector3 pointInCube = hit.point + (hit.normal * 0.25f);
+			Vector3 pointInCube = hit.point + (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
 			World.ChangeBlock(voxel, BlockUtils.Types.DIRT);
@@ -170,10 +170,9 @@ public class PlayerController : MonoBehaviour {
 		if (Physics.Raycast(ray, out hit))
 		{
 			//	get voxel position
-			Vector3 pointInCube = hit.point - (hit.normal * 0.25f);
+			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
-			Debug.Log(World.GetBitMask(voxel) +" : "+ voxel);
-			Debug.Log(hit.transform.gameObject.name +" : "+ World.BlockOwner(voxel));
+			Debug.Log(World.GetBitMask(voxel));
 		}
 	}
 

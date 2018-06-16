@@ -48,27 +48,27 @@ public class World : MonoBehaviour
 
 		//	add adjacent chunks to be redrawn if block is at the edge
 		if(local.x == 0) 
-			redraw.Add((new Vector3(chunk.position.x-chunkSize,	chunk.position.y,					chunk.position.z)));
+			redraw.Add((new Vector3(chunk.position.x-chunkSize,	chunk.position.y,			chunk.position.z)));
 		if(local.x == chunkSize - 1) 
-			redraw.Add((new Vector3(chunk.position.x+chunkSize,	chunk.position.y,					chunk.position.z)));
+			redraw.Add((new Vector3(chunk.position.x+chunkSize,	chunk.position.y,			chunk.position.z)));
 		if(local.y == 0) 
-			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y-chunkSize,	chunk.position.z)));
+			redraw.Add((new Vector3(chunk.position.x,			chunk.position.y-chunkSize,	chunk.position.z)));
 		if(local.y == chunkSize - 1) 
-			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y+chunkSize,	chunk.position.z)));
+			redraw.Add((new Vector3(chunk.position.x,			chunk.position.y+chunkSize,	chunk.position.z)));
 		if(local.z == 0) 
-			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y,			chunk.position.z-chunkSize)));
+			redraw.Add((new Vector3(chunk.position.x,			chunk.position.y,			chunk.position.z-chunkSize)));
 		if(local.z == chunkSize - 1) 
-			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y,			chunk.position.z+chunkSize)));
+			redraw.Add((new Vector3(chunk.position.x,			chunk.position.y,			chunk.position.z+chunkSize)));
 
 		if(local.x == 0 && local.z == 0) 
-			redraw.Add((new Vector3(chunk.position.x-chunkSize,	chunk.position.y,					chunk.position.z-chunkSize)));
+			redraw.Add((new Vector3(chunk.position.x-chunkSize,	chunk.position.y, chunk.position.z-chunkSize)));
 		if(local.x == chunkSize - 1 && local.z == chunkSize - 1) 
-			redraw.Add((new Vector3(chunk.position.x+chunkSize,	chunk.position.y,					chunk.position.z+chunkSize)));
+			redraw.Add((new Vector3(chunk.position.x+chunkSize,	chunk.position.y, chunk.position.z+chunkSize)));
 
 		if(local.x == 0 && local.z == chunkSize - 1) 
-			redraw.Add((new Vector3(chunk.position.x-chunkSize,	chunk.position.y,			chunk.position.z+chunkSize)));
+			redraw.Add((new Vector3(chunk.position.x-chunkSize,	chunk.position.y, chunk.position.z+chunkSize)));
 		if(local.x == chunkSize - 1 && local.z == 0) 
-			redraw.Add((new Vector3(chunk.position.x+chunkSize,	chunk.position.y,			chunk.position.z-chunkSize)));
+			redraw.Add((new Vector3(chunk.position.x+chunkSize,	chunk.position.y, chunk.position.z-chunkSize)));
 
 		//	redraw chunks
 		foreach(Vector3 chunkPosition in redraw)

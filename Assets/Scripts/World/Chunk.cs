@@ -135,6 +135,13 @@ public class Chunk
 
 					//	Iterate over all six faces
 
+					if(!exposedFaces[(int)BlockUtils.CubeFace.TOP] && !exposedFaces[(int)BlockUtils.CubeFace.BOTTOM])
+					{
+						bitMask = 0;
+					}
+
+					//if(bitMask != 0) { seeThrough[x,y,z] = true; }
+
 					switch(bitMask)
 					{
 
@@ -143,6 +150,7 @@ public class Chunk
 						case 53:
 						case 21:
 						case 85:
+						case 117://
 							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.CornerOutFace.SLOPE);
 							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.CornerOutFace.BOTTOM);
 							break;
@@ -150,19 +158,26 @@ public class Chunk
 						case 57:
 						case 41:
 						case 169:
+						case 185://
 							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.CornerOutFace.SLOPE);
 							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.CornerOutFace.BOTTOM);
 							break;
 
-						case 66:
-							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.SLOPE);
-							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.BOTTOM);
+						case 202:
+						case 138:
+						case 170:
+						case 234://
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.CornerOutFace.SLOPE);
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.CornerOutFace.BOTTOM);
 							break;
 
-						case 86:
+						case 66:
+						case 70:
+						case 86://
+						case 214://
+						case 82:
 							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.SLOPE);
 							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.BOTTOM);
-							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.LEFT);
 							break;
 
 						//	CORNER IN
@@ -203,15 +218,17 @@ public class Chunk
 							DrawWedge(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.WedgeFace.SLOPE);
 							break;
 
-						case 48:
+						//case 48:
 						case 168:
 						case 40:
 						case 8:
+						case 136:
 							DrawWedge(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.WedgeFace.SLOPE);
 							break;
 
 						case 194:
 						case 2:
+						case 130:
 							DrawWedge(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.WedgeFace.SLOPE);
 							break;
 
@@ -222,9 +239,8 @@ public class Chunk
 							break;
 
 						default:
-							//DrawCube(exposedFaces, blockPosition, bType);
+							DrawCube(exposedFaces, blockPosition, bType);
 							break;
-
 					}
 					
 				}
@@ -346,12 +362,12 @@ public class Chunk
 	}
 
 	//	Block face is on map edge or player can see through adjacent block
-	bool FaceExposed(BlockUtils.CubeFace face, Vector3 voxel)
+	bool FaceExposed(BlockUtils.CubeFace face, Vector3 blockPosition)
 	{	
 		//	Direction of neighbour
 		Vector3 faceDirection = BlockUtils.GetDirection(face);	
 		//	Neighbour position
-		Vector3 neighbour = voxel + faceDirection;
+		Vector3 neighbour = blockPosition + faceDirection;
 		
 		Chunk neighbourOwner;
 

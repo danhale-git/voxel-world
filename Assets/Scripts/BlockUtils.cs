@@ -21,9 +21,9 @@ public static class BlockUtils
 
 	//	Block type is see-through
 	public static bool[] seeThrough = new bool[] {	true,		//	0	//	AIR
-													false,		//	1	//	DIRT
-													false		//	2	//	STONE
-													};
+														false,		//	1	//	DIRT
+														false		//	2	//	STONE
+														};
 
 	//	Block type color
 	public static Color32[] colors = new Color32[]{	Color.white,					//	0	//	AIR
