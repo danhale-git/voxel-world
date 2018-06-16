@@ -34,7 +34,7 @@ public class PlayerController : MonoBehaviour {
 		GetCurrentChunk();
 
 		//	Break block
-		if(Input.GetButtonDown("Fire1"))
+		if(Input.GetButtonDown("Fire1") && !Input.GetKeyDown(KeyCode.LeftControl))
 		{
 			if(Input.GetKey(KeyCode.LeftShift))
 				DebugBitMask(Camera.main.ScreenPointToRay(Input.mousePosition));

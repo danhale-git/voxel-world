@@ -137,50 +137,85 @@ public class Chunk
 
 					switch(bitMask)
 					{
-						case 16:
-							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.FRONT);
-							break;
 
-						case 32:
-							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.RIGHT);
-							break;
-
-						case 68:
-							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.LEFT);
-							break;
+						//	CORNER OUT
 
 						case 53:
 						case 21:
 						case 85:
-							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.FRONT);
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.CornerOutFace.SLOPE);
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.CornerOutFace.BOTTOM);
 							break;
 
 						case 57:
-							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.RIGHT);
+						case 41:
+						case 169:
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.CornerOutFace.SLOPE);
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.CornerOutFace.BOTTOM);
+							break;
+
+						case 66:
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.SLOPE);
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.BOTTOM);
 							break;
 
 						case 86:
-							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT);
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.SLOPE);
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.BOTTOM);
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.LEFT);
 							break;
 
-						case 84:
+						//	CORNER IN
+
+						case 16:
+							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.CornerInFace.SLOPE);
+							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.CornerInFace.TOP);
+							break;
+
+						case 32:
+							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.CornerInFace.SLOPE);
+							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.CornerInFace.TOP);
+							break;
+
+						case 128:
+							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.CornerInFace.SLOPE);
+							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.CornerInFace.TOP);
+							break;
+
+						case 64:
+							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerInFace.SLOPE);
+							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerInFace.TOP);
+							break;
+
+						//	WEDGE
+
 						case 20:
-							DrawWedge(blockPosition, bType, BlockUtils.Rotate.FRONT);
+						case 84:
+						case 68:
+						case 4:
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.WedgeFace.SLOPE);
 							break;
 
 						case 49:
 						case 17:
 						case 33:
-							DrawWedge(blockPosition, bType, BlockUtils.Rotate.RIGHT);
+						case 1:
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.WedgeFace.SLOPE);
 							break;
 
+						case 48:
 						case 168:
-							DrawWedge(blockPosition, bType, BlockUtils.Rotate.BACK);
+						case 40:
+						case 8:
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.WedgeFace.SLOPE);
 							break;
 
 						case 194:
-							DrawWedge(blockPosition, bType, BlockUtils.Rotate.LEFT);
+						case 2:
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.WedgeFace.SLOPE);
 							break;
+
+						//	CUBE
 
 						default:
 							DrawCube(exposedFaces, blockPosition, bType);
@@ -221,19 +256,17 @@ public class Chunk
 	}
 
 	//	Wedge
-	void DrawWedge(Vector3 wedgePosition, BlockUtils.Types type, BlockUtils.Rotate rotation)
+	void DrawWedge(Vector3 position, BlockUtils.Types type, BlockUtils.Rotate rotation, BlockUtils.WedgeFace face)
 	{
-		BlockUtils.WedgeFace face = BlockUtils.WedgeFace.SLOPE;
-
 		//	Verts can be rotated as object is not symmetrical
-		Vector3[] faceVerts = BlockUtils.WedgeVertices(face, wedgePosition, rotation);
+		Vector3[] faceVerts = BlockUtils.WedgeVertices(face, position, rotation);
 		vertices.AddRange(faceVerts);
 
 		//	Add normals in same order as vertices
-		normals.AddRange(BlockUtils.WedgeNormals(face));
+		normals.AddRange(BlockUtils.RotateNormals(BlockUtils.WedgeNormals(face), rotation));
 
 		//	Offset triangle indices with number of vertices covered so far
-		triangles.AddRange(BlockUtils.WedgeTriangles(face, vertsGenerated).Reverse());
+		triangles.AddRange(BlockUtils.WedgeTriangles(face, vertsGenerated));
 
 		//	Get color using Types index
 		colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
@@ -242,50 +275,40 @@ public class Chunk
 	}
 
 	//	Corner out
-	void DrawCornerOut(Vector3 wedgePosition, BlockUtils.Types type, BlockUtils.Rotate rotation)
+	void DrawCornerOut(Vector3 position, BlockUtils.Types type, BlockUtils.Rotate rotation, BlockUtils.CornerOutFace face)
 	{
-		for(int i = 0; i < 3; i++)
-		{
-			BlockUtils.CornerOutFace face = (BlockUtils.CornerOutFace)i;
+		//	Verts can be rotated as object is not symmetrical
+		Vector3[] faceVerts = BlockUtils.CornerOutVertices(face, position, rotation);
+		vertices.AddRange(faceVerts);
 
-			//	Verts can be rotated as object is not symmetrical
-			Vector3[] faceVerts = BlockUtils.CornerOutVertices(face, wedgePosition, rotation);
-			vertices.AddRange(faceVerts);
+		//	Add normals in same order as vertices
+		normals.AddRange(BlockUtils.RotateNormals(BlockUtils.CornerOutNormals(face), rotation));
 
-			//	Add normals in same order as vertices
-			normals.AddRange(BlockUtils.CornerOutNormals(face));
+		//	Offset triangle indices with number of vertices covered so far
+		triangles.AddRange(BlockUtils.CornerOutTriangles(face, vertsGenerated));
 
-			//	Offset triangle indices with number of vertices covered so far
-			triangles.AddRange(BlockUtils.CornerOutTriangles(face, vertsGenerated));
+		//	Get color using Types index
+		colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
 
-			//	Get color using Types index
-			colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
-
-			vertsGenerated += faceVerts.Length;
-		}
+		vertsGenerated += faceVerts.Length;	
 	}
 
-	void DrawCornerIn(Vector3 wedgePosition, BlockUtils.Types type, BlockUtils.Rotate rotation)
+	void DrawCornerIn(Vector3 position, BlockUtils.Types type, BlockUtils.Rotate rotation, BlockUtils.CornerInFace face)
 	{
-		for(int i = 0; i < 2; i++)
-		{
-			BlockUtils.CornerInFace face = (BlockUtils.CornerInFace)i;
+		//	Verts can be rotated as object is not symmetrical
+		Vector3[] faceVerts = BlockUtils.CornerInVertices(face, position, rotation);
+		vertices.AddRange(faceVerts);
 
-			//	Verts can be rotated as object is not symmetrical
-			Vector3[] faceVerts = BlockUtils.CornerInVertices(face, wedgePosition, rotation);
-			vertices.AddRange(faceVerts);
+		//	Add normals in same order as vertices
+		normals.AddRange(BlockUtils.RotateNormals(BlockUtils.CornerInNormals(face), rotation));
 
-			//	Add normals in same order as vertices
-			normals.AddRange(BlockUtils.CornerInNormals(face));
+		//	Offset triangle indices with number of vertices covered so far
+		triangles.AddRange(BlockUtils.CornerInTriangles(face, vertsGenerated));
 
-			//	Offset triangle indices with number of vertices covered so far
-			triangles.AddRange(BlockUtils.CornerInTriangles(face, vertsGenerated).Reverse());
+		//	Get color using Types index
+		colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
 
-			//	Get color using Types index
-			colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
-
-			vertsGenerated += faceVerts.Length;
-		}
+		vertsGenerated += faceVerts.Length;
 	}
 
 	public void Redraw()

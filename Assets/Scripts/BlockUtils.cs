@@ -158,7 +158,7 @@ public static class BlockUtils
 
 	public static Vector3[] WedgeVertices(WedgeFace face, Vector3 offset, Rotate rotation)
 	{
-		Vector3[] vertices = new Vector3[4];
+		Vector3[] vertices;
 	
 		switch(face)
 		{
@@ -166,21 +166,9 @@ public static class BlockUtils
 				vertices = new Vector3[] {v7+offset, v6+offset, v1+offset, v0+offset};
 			break;
 
-			case WedgeFace.BOTTOM:
-				vertices = new Vector3[] {v0+offset, v1+offset, v2+offset, v3+offset};
-			break;
-
-			case WedgeFace.RIGHT:
-				vertices = new Vector3[] {v6+offset, v2+offset, v1+offset};
-			break;
-
-			case WedgeFace.LEFT:
-				vertices = new Vector3[] {v7+offset, v0+offset, v3+offset};
-			break;
-			
-			case WedgeFace.BACK:
-				vertices = new Vector3[] {v6+offset, v7+offset, v3+offset, v2+offset};
-			break;
+			default:
+				vertices = null;
+				break;
 		}
 				
 		return RotateVertices(vertices, offset, rotation);
@@ -193,27 +181,15 @@ public static class BlockUtils
 		switch(face)
 		{
 			case WedgeFace.SLOPE:
-				triangles = new int[] {0+offset, 1+offset, 3+offset, 1+offset, 2+offset, 3+offset};
-			break;
-
-			case WedgeFace.BOTTOM:
 				triangles = new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
 			break;
 
-			case WedgeFace.RIGHT:
-				triangles = new int[] {3+offset, 1+offset, 0+offset,};
-			break;
-
-			case WedgeFace.LEFT:
-				triangles = new int[] {3+offset, 1+offset, 0+offset,};
-			break;
-			
-			case WedgeFace.BACK:
-				triangles = new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
-			break;
+			default:
+				triangles = null;
+				break;
 		}
 				
-		return new int[] {0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset};
+		return triangles;
 	}
 
 	public static Vector3[] WedgeNormals(WedgeFace face)
@@ -227,32 +203,6 @@ public static class BlockUtils
 											Vector3.up + Vector3.forward, 
 											Vector3.up + Vector3.forward,
 											Vector3.up + Vector3.forward};
-			break;
-
-			case WedgeFace.BOTTOM:
-				normals = new Vector3[] {	Vector3.down,
-											Vector3.down, 
-											Vector3.down,
-											Vector3.down};
-			break;
-			
-			case WedgeFace.RIGHT:
-				normals = new Vector3[] {	Vector3.right,
-											Vector3.right, 
-											Vector3.right};
-			break;
-
-			case WedgeFace.LEFT:
-				normals = new Vector3[] {	Vector3.left,
-											Vector3.left, 
-											Vector3.left};
-			break;
-
-			case WedgeFace.BACK:
-				normals = new Vector3[] {	Vector3.back,
-											Vector3.back, 
-											Vector3.back,
-											Vector3.back};
 			break;
 		}
 				
@@ -307,7 +257,7 @@ public static class BlockUtils
 			break;
 
 			case CornerOutFace.LEFT:
-				triangles = new int[] {0+offset, 1+offset, 2+offset};
+				triangles = new int[] {2+offset, 1+offset, 0+offset};
 			break;
 			
 			default:
@@ -389,11 +339,11 @@ public static class BlockUtils
 		switch(face)
 		{
 			case CornerInFace.SLOPE:
-				triangles = new int[] {0+offset, 1+offset, 2+offset};
+				triangles = new int[] {2+offset, 1+offset, 0+offset};
 			break;
 
 			case CornerInFace.TOP:
-				triangles = new int[] {0+offset, 1+offset, 2+offset};
+				triangles = new int[] {2+offset, 1+offset, 0+offset};
 			break;
 			
 			default:
@@ -527,5 +477,16 @@ public static class BlockUtils
 		}
 		
 		return rotatedVertices;
+	}
+
+	public static Vector3[] RotateNormals(Vector3[] normals, Rotate yRotation)
+	{
+		Vector3[] rotatedNormals = new Vector3[normals.Length];
+		Quaternion rotation = Quaternion.Euler(0, (int)yRotation, 0);
+		for(int i = 0; i < normals.Length; i++)
+		{
+			rotatedNormals[i] = rotation * normals[i];
+		}
+		return rotatedNormals;
 	}
 }
