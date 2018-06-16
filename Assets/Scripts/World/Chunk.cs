@@ -103,29 +103,43 @@ public class Chunk
 					if(type == BlockUtils.Types.AIR) { continue; }
 
 					Vector3 blockPosition = new Vector3(x,y,z);
+					
+					bool[] exposedFaces = new bool[6];
+					bool blockExposed = false;
+
+					//	Check exposed faces
+					for(int e = 0; e < 6; e++)
+					{
+						BlockUtils.CubeFace face = (BlockUtils.CubeFace)e;
+
+						exposedFaces[e] = FaceExposed(face, blockPosition);
+						
+						if(exposedFaces[e] && !blockExposed)
+						{
+							blockExposed = true;
+						}
+					}
+
+					if(!blockExposed) { continue; }
 
 					//	Get bitmask
 					Vector3 voxel = this.position + blockPosition;
 					byte bitMask = World.GetBitMask(voxel);
 
-					if(bitMask == (byte)49)								//	DEBUG
+					if(bitMask == (byte)49)
 					{
 						blockTypes[x,y,z] = BlockUtils.Types.STONE;	
 						type = BlockUtils.Types.STONE;
-					}													//	DEBUG
+					}
 
 					//	Iterate over all six faces
 					for(int i = 0; i < 6; i++)
 					{
-						BlockUtils.CubeFace face = (BlockUtils.CubeFace)i;
-
-						//	Add mesh attributes to lists if face exposed
-						bool exposed = FaceExposed(face, blockPosition);
-
-						if(exposed)
+						if(exposedFaces[i])
 						{
+							BlockUtils.CubeFace face = (BlockUtils.CubeFace)i;
 							//	Offset vertex positoins with block position in chunk
-							Vector3[] faceVerts = BlockUtils.GetVertices(face, blockPosition);
+							Vector3[] faceVerts = BlockUtils.GetVertices(face, blockPosition, bitMask);
 							vertices.AddRange(faceVerts);
 
 							//	Add normals in same order as vertices
