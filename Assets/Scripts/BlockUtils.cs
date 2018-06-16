@@ -4,7 +4,8 @@ using UnityEngine;
 
 public static class BlockUtils
 {
-	public enum Shape {BLOCK, WEDGE}
+	public enum Rotate { FRONT = 0, RIGHT = 90, BACK = 180, LEFT = 270 }
+	public enum Shape {CUBE, WEDGE}
 
 	//	For specifying which face of a shape is being worked on
 	public enum CubeFace {TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK}
@@ -39,8 +40,12 @@ public static class BlockUtils
 	public static Vector3 v6 = new Vector3(  0.5f,   0.5f, -0.5f );
 	public static Vector3 v7 = new Vector3( -0.5f,   0.5f, -0.5f );
 
+	//  //
+    #region Cube
+            //  //
+
 	//	Vertices for a cube
-	public static Vector3[] GetVertices(CubeFace face, Vector3 offset)
+	public static Vector3[] CubeVertices(CubeFace face, Vector3 offset)
 	{
 		Vector3[] vertices = new Vector3[4];
 	
@@ -75,13 +80,13 @@ public static class BlockUtils
 	}
 
 	//	Triangles for a cube
-	public static int[] GetTriangles(CubeFace face, int offset)
+	public static int[] CubeTriangles(CubeFace face, int offset)
 	{
 		return new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
 	}
 
 	//	Normals for a cube
-	public static Vector3[] GetNormals(CubeFace face)
+	public static Vector3[] CubeNormals(CubeFace face)
 	{
 		Vector3[] normals;
 		
@@ -138,6 +143,119 @@ public static class BlockUtils
 
 		return normals;
 	}
+
+	#endregion
+
+	//  //
+    #region 
+            //  //
+
+	public static Vector3[] WedgeVertices(WedgeFace face, Vector3 offset)
+	{
+		Vector3[] vertices = new Vector3[4];
+	
+		switch(face)
+		{
+			case WedgeFace.SLOPE:
+				vertices = new Vector3[] {v7+offset, v6+offset, v1+offset, v0+offset};
+			break;
+
+			case WedgeFace.BOTTOM:
+				vertices = new Vector3[] {v0+offset, v1+offset, v2+offset, v3+offset};
+			break;
+
+			case WedgeFace.RIGHT:
+				vertices = new Vector3[] {v6+offset, v2+offset, v1+offset};
+			break;
+
+			case WedgeFace.LEFT:
+				vertices = new Vector3[] {v7+offset, v0+offset, v3+offset};
+			break;
+			
+			case WedgeFace.BACK:
+				vertices = new Vector3[] {v6+offset, v7+offset, v3+offset, v2+offset};
+			break;
+		}
+				
+		return vertices;
+	}
+
+	//	Triangles for a cube
+	public static int[] WedgeTriangles(WedgeFace face, int offset)
+	{
+		int[] triangles;
+		switch(face)
+		{
+			case WedgeFace.SLOPE:
+				triangles = new int[] {0+offset, 1+offset, 3+offset, 1+offset, 2+offset, 3+offset};
+			break;
+
+			case WedgeFace.BOTTOM:
+				triangles = new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
+			break;
+
+			case WedgeFace.RIGHT:
+				triangles = new int[] {3+offset, 1+offset, 0+offset,};
+			break;
+
+			case WedgeFace.LEFT:
+				triangles = new int[] {3+offset, 1+offset, 0+offset,};
+			break;
+			
+			case WedgeFace.BACK:
+				triangles = new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
+			break;
+		}
+				
+		return new int[] {0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset};
+	}
+
+	public static Vector3[] WedgeNormals(WedgeFace face)
+	{
+		Vector3[] normals = new Vector3[4];
+	
+		switch(face)
+		{
+			case WedgeFace.SLOPE:
+				normals = new Vector3[] {	Vector3.up + Vector3.forward,
+											Vector3.up + Vector3.forward, 
+											Vector3.up + Vector3.forward,
+											Vector3.up + Vector3.forward};
+			break;
+
+			case WedgeFace.BOTTOM:
+				normals = new Vector3[] {	Vector3.down,
+											Vector3.down, 
+											Vector3.down,
+											Vector3.down};
+			break;
+			
+			case WedgeFace.RIGHT:
+				normals = new Vector3[] {	Vector3.right,
+											Vector3.right, 
+											Vector3.right,
+											Vector3.right};
+			break;
+
+			case WedgeFace.LEFT:
+				normals = new Vector3[] {	Vector3.left,
+											Vector3.left, 
+											Vector3.left,
+											Vector3.left};
+			break;
+
+			case WedgeFace.BACK:
+				normals = new Vector3[] {	Vector3.back,
+											Vector3.back, 
+											Vector3.back,
+											Vector3.back};
+			break;
+		}
+				
+		return normals;
+	}
+
+	#endregion
 
 	//	Direction of face normal
 	public static Vector3 GetDirection(CubeFace face)
@@ -211,11 +329,19 @@ public static class BlockUtils
 		return new Vector3(vector[0], vector[1], vector[2]);
 	}
 
+	//	Round Vector values to nearest ints
 	public static Vector3 RoundVector3(Vector3 toRound)
 	{
 		Vector3 rounded = new Vector3(	Mathf.Round(toRound.x),
 										Mathf.Round(toRound.y),
 										Mathf.Round(toRound.z));
 		return rounded;
+	}
+	
+	//	Rotate given vertex around centre by yRotation on Y axis
+	public static Vector3 RotateVertex(Vector3 vertex, Vector3 centre, Rotate yRotation)
+	{		
+		Quaternion rotation = Quaternion.Euler(0, (int)yRotation, 0);
+		return rotation * (vertex - centre) + centre;
 	}
 }

@@ -138,6 +138,7 @@ public class Chunk
 					switch(bitMask)
 					{
 						case 49:
+							DrawWedge(exposedFaces, blockPosition, bType, BlockUtils.Rotate.RIGHT);
 							break;
 
 						default:
@@ -150,6 +151,7 @@ public class Chunk
 		CreateMesh(vertices, normals, triangles, colors, gameObject);
 	}
 
+	//	Cube
 	void DrawCube(bool[] exposedFaces, Vector3 cubePosition, BlockUtils.Types type)
 	{
 		for(int i = 0; i < exposedFaces.Length; i++)
@@ -157,15 +159,16 @@ public class Chunk
 			if(exposedFaces[i])
 			{
 				BlockUtils.CubeFace face = (BlockUtils.CubeFace)i;
+
 				//	Offset vertex positoins with block position in chunk
-				Vector3[] faceVerts = BlockUtils.GetVertices(face, cubePosition);
+				Vector3[] faceVerts = BlockUtils.CubeVertices(face, cubePosition);
 				vertices.AddRange(faceVerts);
 
 				//	Add normals in same order as vertices
-				normals.AddRange(BlockUtils.GetNormals(face));
+				normals.AddRange(BlockUtils.CubeNormals(face));
 
 				//	Offset triangle indices with number of vertices covered so far
-				triangles.AddRange(BlockUtils.GetTriangles(face, vertsGenerated));
+				triangles.AddRange(BlockUtils.CubeTriangles(face, vertsGenerated));
 
 				//	Get color using Types index
 				colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
@@ -173,6 +176,33 @@ public class Chunk
 				vertsGenerated += faceVerts.Length;
 			}
 		}
+	}
+
+	//	Triangle
+	void DrawWedge(bool[] exposedFaces, Vector3 wedgePosition, BlockUtils.Types type, BlockUtils.Rotate yRotation)
+	{
+		BlockUtils.WedgeFace face = BlockUtils.WedgeFace.SLOPE;
+
+		//	Verts can be rotated as object is not symmetrical
+		Vector3[] faceVerts = BlockUtils.WedgeVertices(face, wedgePosition);
+		Vector3[] rotatedVerts = new Vector3[faceVerts.Length];
+		for(int i = 0; i < faceVerts.Length; i++)
+		{
+			rotatedVerts[i] = BlockUtils.RotateVertex(faceVerts[i], wedgePosition, yRotation);
+		}
+
+		vertices.AddRange(rotatedVerts);
+
+		//	Add normals in same order as vertices
+		normals.AddRange(BlockUtils.WedgeNormals(face));
+
+		//	Offset triangle indices with number of vertices covered so far
+		triangles.AddRange(BlockUtils.WedgeTriangles(face, vertsGenerated).Reverse());
+
+		//	Get color using Types index
+		colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
+
+		vertsGenerated += faceVerts.Length;
 	}
 
 	public void Redraw()
