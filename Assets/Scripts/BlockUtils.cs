@@ -9,17 +9,21 @@ public static class BlockUtils
 
 	//	Enum indices correspond to fixed block attribute arrays below
 	public enum Types {		AIR = 0,
-							DIRT = 1};
+							DIRT = 1,
+							STONE = 2
+							};
 
 	//	Block type is see-through
 	public static bool[] seeThrough = new bool[] {	true,		//	0	//	AIR
-													false		//	1	//	DIRT
+													false,		//	1	//	DIRT
+													false		//	2	//	STONE
 													};
 
 	//	Block type color
 	public static Color32[] colors = new Color32[]{	Color.white,					//	0	//	AIR
-													new Color32(11, 110, 35, 255	//	1	//	DIRT
-													)};											
+													new Color32(11, 110, 35, 255),	//	1	//	DIRT
+													new Color32(200, 200, 200, 255)	//	2	//	STONE
+													};											
 
 
 	// Coordinates for 1x1 cube vertices relative to center	
@@ -167,6 +171,19 @@ public static class BlockUtils
 		}
 
 		return direction;
+	}
+
+	public static Vector3[] HorizontalNeighbours(Vector3 voxel)
+	{
+		return new Vector3[] { 	Vector3.right + voxel,
+								Vector3.left + voxel,
+								Vector3.forward + voxel,
+								Vector3.back + voxel,
+								Vector3.right + Vector3.forward + voxel,
+								Vector3.right + Vector3.back + voxel,
+								Vector3.left + Vector3.forward + voxel,
+								Vector3.left + Vector3.back + voxel
+								};
 	}
 
 	//	Wrap local block positions outside max chunk size

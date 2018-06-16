@@ -5,9 +5,9 @@ using UnityEngine;
 public class World : MonoBehaviour
 {
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 5;
+	public static int viewDistance = 4;
 	//	Size of all chunks
-	public static int chunkSize = 8;
+	public static int chunkSize = 3;
 	//	Maximum height of non-air blocks
 	public static int maxGroundHeight = 20;
 	//	Height of world in chunks
@@ -26,17 +26,18 @@ public class World : MonoBehaviour
 		DrawSurroundingChunks(Vector3.zero);
 	}
 
-	public static bool ChangeBlock(Vector3 v, BlockUtils.Types type)
+	//	Change type of block at voxel
+	public static bool ChangeBlock(Vector3 voxel, BlockUtils.Types type)
 	{
 		//	Find owner chunk
 		Chunk chunk;
-		if(!chunks.TryGetValue(FindBlockOwner(v), out chunk))
+		if(!chunks.TryGetValue(BlockOwner(voxel), out chunk))
 		{
 			return false;
 		}
 
 		//	Change block type
-		Vector3 local = v - chunk.position;
+		Vector3 local = voxel - chunk.position;
 		chunk.blockTypes[(int)local.x, (int)local.y, (int)local.z] = type;
 
 		List<Vector3> redraw = new List<Vector3>() { chunk.position };
@@ -63,12 +64,41 @@ public class World : MonoBehaviour
 		return true;
 	}
 
-	public static Vector3 FindBlockOwner(Vector3 voxel)
+	//	Find position of chunk that owns block
+	public static Vector3 BlockOwner(Vector3 voxel)
 	{
 		int x = Mathf.FloorToInt(voxel.x / chunkSize);
 		int y = Mathf.FloorToInt(voxel.y / chunkSize);
 		int z = Mathf.FloorToInt(voxel.z / chunkSize);
 		return new Vector3(x*chunkSize,y*chunkSize,z*chunkSize);
+	}
+
+	//	Get type of block at voxel
+	public static BlockUtils.Types GetType(Vector3 voxel)
+	{
+		Chunk chunk;
+		if(!chunks.TryGetValue(BlockOwner(voxel), out chunk))
+		{
+			return 0;
+		}
+		Vector3 local = voxel - chunk.position;
+		return chunk.blockTypes[(int)local.x, (int)local.y, (int)local.z];
+	}
+
+	public static byte GetBitMask(Vector3 voxel)
+	{
+		Vector3[] neighbours = BlockUtils.HorizontalNeighbours(voxel);
+			int value = 1;
+			int total = 0;
+			for(int i = 0; i < neighbours.Length; i++)
+			{
+				if(BlockUtils.seeThrough[(int)GetType(neighbours[i])])
+				{
+					total += value;
+				}
+				value *= 2;
+			}
+		return (byte)total;
 	}
 
 	//	Temporary for testing and optimisation

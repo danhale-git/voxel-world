@@ -36,7 +36,7 @@ public class PlayerController : MonoBehaviour {
 		//	Break block
 		if(Input.GetButtonDown("Fire1"))
 		{
-			RemoveBlock(Camera.main.ScreenPointToRay(Input.mousePosition));
+			DebugBitMask(Camera.main.ScreenPointToRay(Input.mousePosition));
 		}
 
 		//	Break block
@@ -131,8 +131,8 @@ public class PlayerController : MonoBehaviour {
 		if (Physics.Raycast(ray, out hit))
 		{
 			//	get voxel position
-			Vector3 positionInCube = hit.point - (hit.normal * 0.5f);
-			Vector3 voxel = BlockUtils.RoundVector3(positionInCube);
+			Vector3 pointInCube = hit.point - (hit.normal * 0.5f);
+			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
 			World.ChangeBlock(voxel, BlockUtils.Types.AIR);
 
@@ -146,10 +146,24 @@ public class PlayerController : MonoBehaviour {
 		if (Physics.Raycast(ray, out hit))
 		{
 			//	get voxel position
-			Vector3 positionInCube = hit.point + (hit.normal * 0.5f);
-			Vector3 voxel = BlockUtils.RoundVector3(positionInCube);
+			Vector3 pointInCube = hit.point + (hit.normal * 0.5f);
+			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
 			World.ChangeBlock(voxel, BlockUtils.Types.DIRT);
+		}
+	}
+
+	void DebugBitMask(Ray ray)
+	{
+		RaycastHit hit;
+
+		if (Physics.Raycast(ray, out hit))
+		{
+			//	get voxel position
+			Vector3 pointInCube = hit.point - (hit.normal * 0.5f);
+			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+
+			Debug.Log(World.GetBitMask(voxel));
 		}
 	}
 }
