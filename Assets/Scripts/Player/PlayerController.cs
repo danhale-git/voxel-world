@@ -162,8 +162,6 @@ public class PlayerController : MonoBehaviour {
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.5f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
-
-			Debug.Log(World.GetBitMask(voxel));
 		}
 	}
 }

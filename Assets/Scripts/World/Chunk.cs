@@ -107,13 +107,12 @@ public class Chunk
 					//	Get bitmask
 					Vector3 voxel = this.position + blockPosition;
 					byte bitMask = World.GetBitMask(voxel);
-					//Debug.Log(bitMask);
-					if(bitMask == (byte)49)
+
+					if(bitMask == (byte)49)								//	DEBUG
 					{
-						Debug.Log("found slope");
-						blockTypes[x,y,z] = BlockUtils.Types.STONE;
+						blockTypes[x,y,z] = BlockUtils.Types.STONE;	
 						type = BlockUtils.Types.STONE;
-					}
+					}													//	DEBUG
 
 					//	Iterate over all six faces
 					for(int i = 0; i < 6; i++)
@@ -137,7 +136,6 @@ public class Chunk
 
 							//	Get color using Types index
 							colors.AddRange(Enumerable.Repeat( 	(Color)BlockUtils.colors[(int)type], faceVerts.Length ));
-							Debug.Log(BlockUtils.colors[(int)type]);
 
 							vertsGenerated += faceVerts.Length;
 						}
