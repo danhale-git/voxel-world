@@ -26,6 +26,12 @@ public class PlayerController : MonoBehaviour {
 		updateTimer = Time.fixedTime;
 		chunkLayerMask = LayerMask.GetMask("Chunk");
 	}
+
+	//	The ray we are using for selection
+	Ray Ray()
+	{
+		return Camera.main.ScreenPointToRay(Input.mousePosition);
+	}
 	
 	void Update ()
 	{
@@ -37,15 +43,17 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetButtonDown("Fire1") && !Input.GetKeyDown(KeyCode.LeftControl))
 		{
 			if(Input.GetKey(KeyCode.LeftShift))
-				DebugBitMask(Camera.main.ScreenPointToRay(Input.mousePosition));
+				DebugBitMask(Ray());
+			else if(Input.GetKey(KeyCode.LeftAlt))
+				Redraw(Ray());
 			else
-				RemoveBlock(Camera.main.ScreenPointToRay(Input.mousePosition));
+				RemoveBlock(Ray());
 		}
 
 		//	Break block
 		if(Input.GetButtonDown("Fire2"))
 		{
-			AddBlock(Camera.main.ScreenPointToRay(Input.mousePosition));
+			AddBlock(Ray());
 		}
 		
 	}
@@ -134,11 +142,10 @@ public class PlayerController : MonoBehaviour {
 		if (Physics.Raycast(ray, out hit))
 		{
 			//	get voxel position
-			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
+			Vector3 pointInCube = hit.point - (hit.normal * 0.25f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
 			World.ChangeBlock(voxel, BlockUtils.Types.AIR);
-
 		}
 	}
 
@@ -149,7 +156,7 @@ public class PlayerController : MonoBehaviour {
 		if (Physics.Raycast(ray, out hit))
 		{
 			//	get voxel position
-			Vector3 pointInCube = hit.point + (hit.normal * 0.1f);
+			Vector3 pointInCube = hit.point + (hit.normal * 0.25f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
 			World.ChangeBlock(voxel, BlockUtils.Types.DIRT);
@@ -163,9 +170,22 @@ public class PlayerController : MonoBehaviour {
 		if (Physics.Raycast(ray, out hit))
 		{
 			//	get voxel position
-			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
+			Vector3 pointInCube = hit.point - (hit.normal * 0.25f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
-			Debug.Log(World.GetBitMask(voxel));
+			Debug.Log(World.GetBitMask(voxel) +" : "+ voxel);
+			Debug.Log(hit.transform.gameObject.name +" : "+ World.BlockOwner(voxel));
+		}
+	}
+
+	void Redraw(Ray ray)
+	{
+		RaycastHit hit;
+		Chunk chunk;
+		if (Physics.Raycast(ray, out hit))
+		{
+			World.chunks.TryGetValue(hit.transform.position, out chunk);
+
+			chunk.Redraw();
 		}
 	}
 }

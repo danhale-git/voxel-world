@@ -217,14 +217,18 @@ public class Chunk
 
 						//	CUBE
 
-						default:
+						case 0:
 							DrawCube(exposedFaces, blockPosition, bType);
+							break;
+
+						default:
+							//DrawCube(exposedFaces, blockPosition, bType);
 							break;
 
 					}
 					
 				}
-					
+
 		CreateMesh(vertices, normals, triangles, colors, gameObject);
 	}
 

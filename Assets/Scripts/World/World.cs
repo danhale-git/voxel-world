@@ -5,7 +5,7 @@ using UnityEngine;
 public class World : MonoBehaviour
 {
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 4;
+	public static int viewDistance = 8;
 	//	Size of all chunks
 	public static int chunkSize = 3;
 	//	Maximum height of non-air blocks
@@ -18,12 +18,16 @@ public class World : MonoBehaviour
 	public static int worldSize = 2;
 	public Material defaultMaterial;
 
+	public static bool gameStarted = false;
+
 	void Start()
 	{
 		//	Create initial chunks
 		GenerateChunk(Vector3.zero);
 		DrawChunk(Vector3.zero);
 		DrawSurroundingChunks(Vector3.zero);
+
+		gameStarted = true;
 	}
 
 	//	Change type of block at voxel
@@ -52,9 +56,19 @@ public class World : MonoBehaviour
 		if(local.y == chunkSize - 1) 
 			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y+chunkSize,	chunk.position.z)));
 		if(local.z == 0) 
-			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y,					chunk.position.z-chunkSize)));
+			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y,			chunk.position.z-chunkSize)));
 		if(local.z == chunkSize - 1) 
-			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y,					chunk.position.z+chunkSize)));
+			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y,			chunk.position.z+chunkSize)));
+
+		if(local.x == 0 && local.z == 0) 
+			redraw.Add((new Vector3(chunk.position.x-chunkSize,	chunk.position.y,					chunk.position.z-chunkSize)));
+		if(local.x == chunkSize - 1 && local.z == chunkSize - 1) 
+			redraw.Add((new Vector3(chunk.position.x+chunkSize,	chunk.position.y,					chunk.position.z+chunkSize)));
+
+		if(local.x == 0 && local.z == chunkSize - 1) 
+			redraw.Add((new Vector3(chunk.position.x-chunkSize,	chunk.position.y,			chunk.position.z+chunkSize)));
+		if(local.x == chunkSize - 1 && local.z == 0) 
+			redraw.Add((new Vector3(chunk.position.x+chunkSize,	chunk.position.y,			chunk.position.z-chunkSize)));
 
 		//	redraw chunks
 		foreach(Vector3 chunkPosition in redraw)
@@ -85,6 +99,7 @@ public class World : MonoBehaviour
 		return chunk.blockTypes[(int)local.x, (int)local.y, (int)local.z];
 	}
 
+	//	Get byte representing arrangement of blocks around voxel
 	public static byte GetBitMask(Vector3 voxel)
 	{
 		Vector3[] neighbours = BlockUtils.HorizontalNeighbours(voxel);
@@ -106,6 +121,8 @@ public class World : MonoBehaviour
 	//	Called in PlayerController
 	public void DrawSurroundingChunks(Vector3 centerChunk)
 	{
+		if(gameStarted) return;	//	DEBUG
+
 		//	Generate chunks in view distance + 1
 		for(int x = -viewDistance-1; x < viewDistance+1; x++)
 			for(int z = -viewDistance-1; z < viewDistance+1; z++)
