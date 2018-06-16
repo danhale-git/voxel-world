@@ -52,6 +52,7 @@ public class Chunk
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
 			{
+				// TODO generate height map first and find non-exposed air and ground chunks to omit from generation
 				//	Get height of ground in this column
 				int groundHeight = NoiseUtils.GroundHeight( x + (int)position.x,
 															z + (int)position.z,
@@ -117,6 +118,7 @@ public class Chunk
 							//	offset triangle indices with number of vertices covered so far
 							triangles.AddRange(BlockUtils.GetTriangles(face, vertsGenerated));
 
+							//	TODO associate color with block in BlockUtils.blockColors[]
 							colors.AddRange(Enumerable.Repeat( 	(Color) new Color32((byte)Random.Range(9, 11),
 																					(byte)Random.Range(95, 110),
 																					(byte)Random.Range(30, 40),
