@@ -15,6 +15,13 @@ public class Chunk
 	public enum Status {GENERATED, DRAWN}
 	public Status status;
 
+	List<Vector3> vertices = new List<Vector3>();
+	List<Vector3> normals = new List<Vector3>();
+	List<int> triangles = new List<int>();
+	List<Color> colors = new List<Color>();
+
+	int vertsGenerated = 0;
+
 	MeshFilter filter;
 	MeshRenderer renderer;
 	MeshCollider collider;
@@ -86,21 +93,21 @@ public class Chunk
 	public void DrawBlocks()
 	{
 		//	Attributes for the final chunk mesh
-		List<Vector3> vertices = new List<Vector3>();
-		List<Vector3> normals = new List<Vector3>();
-		List<int> triangles = new List<int>();
-		List<Color> colors = new List<Color>();
+		vertices = new List<Vector3>();
+		normals = new List<Vector3>();
+		triangles = new List<int>();
+		colors = new List<Color>();
 
 		//	keep block reference to increment indices
-		int vertsGenerated = 0;
+		vertsGenerated = 0;
 
 		//	Iterate over all block locations in chunk		
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
 				for(int y = 0; y < size; y++)
 				{
-					BlockUtils.Types type = blockTypes[x,y,z];
-					if(type == BlockUtils.Types.AIR) { continue; }
+					BlockUtils.Types bType = blockTypes[x,y,z];
+					if(bType == BlockUtils.Types.AIR) { continue; }
 
 					Vector3 blockPosition = new Vector3(x,y,z);
 					
@@ -126,37 +133,46 @@ public class Chunk
 					Vector3 voxel = this.position + blockPosition;
 					byte bitMask = World.GetBitMask(voxel);
 
-					if(bitMask == (byte)49)
-					{
-						blockTypes[x,y,z] = BlockUtils.Types.STONE;	
-						type = BlockUtils.Types.STONE;
-					}
-
 					//	Iterate over all six faces
-					for(int i = 0; i < 6; i++)
+
+					switch(bitMask)
 					{
-						if(exposedFaces[i])
-						{
-							BlockUtils.CubeFace face = (BlockUtils.CubeFace)i;
-							//	Offset vertex positoins with block position in chunk
-							Vector3[] faceVerts = BlockUtils.GetVertices(face, blockPosition, bitMask);
-							vertices.AddRange(faceVerts);
+						case 49:
+							break;
 
-							//	Add normals in same order as vertices
-							normals.AddRange(BlockUtils.GetNormals(face));
-
-							//	Offset triangle indices with number of vertices covered so far
-							triangles.AddRange(BlockUtils.GetTriangles(face, vertsGenerated));
-
-							//	Get color using Types index
-							colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
-
-							vertsGenerated += faceVerts.Length;
-						}
+						default:
+							DrawCube(exposedFaces, blockPosition, bType);
+							break;
 					}
+					
 				}
 					
 		CreateMesh(vertices, normals, triangles, colors, gameObject);
+	}
+
+	void DrawCube(bool[] exposedFaces, Vector3 cubePosition, BlockUtils.Types type)
+	{
+		for(int i = 0; i < exposedFaces.Length; i++)
+		{
+			if(exposedFaces[i])
+			{
+				BlockUtils.CubeFace face = (BlockUtils.CubeFace)i;
+				//	Offset vertex positoins with block position in chunk
+				Vector3[] faceVerts = BlockUtils.GetVertices(face, cubePosition);
+				vertices.AddRange(faceVerts);
+
+				//	Add normals in same order as vertices
+				normals.AddRange(BlockUtils.GetNormals(face));
+
+				//	Offset triangle indices with number of vertices covered so far
+				triangles.AddRange(BlockUtils.GetTriangles(face, vertsGenerated));
+
+				//	Get color using Types index
+				colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
+
+				vertsGenerated += faceVerts.Length;
+			}
+		}
 	}
 
 	public void Redraw()

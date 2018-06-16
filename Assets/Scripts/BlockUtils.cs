@@ -4,8 +4,11 @@ using UnityEngine;
 
 public static class BlockUtils
 {
-	//	For specifying which face of a cube we are working on
+	public enum Shape {BLOCK, WEDGE}
+
+	//	For specifying which face of a shape is being worked on
 	public enum CubeFace {TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK}
+	public enum WedgeFace {SLOPE, BOTTOM, LEFT, RIGHT, BACK}
 
 	//	Enum indices correspond to fixed block attribute arrays below
 	public enum Types {		AIR = 0,
@@ -37,40 +40,37 @@ public static class BlockUtils
 	public static Vector3 v7 = new Vector3( -0.5f,   0.5f, -0.5f );
 
 	//	Vertices for a cube
-	public static Vector3[] GetVertices(CubeFace face, Vector3 offset, byte bitMask)
+	public static Vector3[] GetVertices(CubeFace face, Vector3 offset)
 	{
 		Vector3[] vertices = new Vector3[4];
-		switch(bitMask)
+	
+		switch(face)
 		{
-			default: // CUBE
-				switch(face)
-				{
-					case CubeFace.TOP:
-						vertices = new Vector3[] {v7+offset, v6+offset, v5+offset, v4+offset};
-					break;
+			case CubeFace.TOP:
+				vertices = new Vector3[] {v7+offset, v6+offset, v5+offset, v4+offset};
+			break;
 
-					case CubeFace.BOTTOM:
-						vertices = new Vector3[] {v0+offset, v1+offset, v2+offset, v3+offset};
-					break;
+			case CubeFace.BOTTOM:
+				vertices = new Vector3[] {v0+offset, v1+offset, v2+offset, v3+offset};
+			break;
 
-					case CubeFace.RIGHT:
-						vertices = new Vector3[] {v5+offset, v6+offset, v2+offset, v1+offset};
-					break;
+			case CubeFace.RIGHT:
+				vertices = new Vector3[] {v5+offset, v6+offset, v2+offset, v1+offset};
+			break;
 
-					case CubeFace.LEFT:
-						vertices = new Vector3[] {v7+offset, v4+offset, v0+offset, v3+offset};
-					break;
+			case CubeFace.LEFT:
+				vertices = new Vector3[] {v7+offset, v4+offset, v0+offset, v3+offset};
+			break;
 
-					case CubeFace.FRONT:
-						vertices = new Vector3[] {v4+offset, v5+offset, v1+offset, v0+offset};
-					break;
-					
-					case CubeFace.BACK:
-						vertices = new Vector3[] {v6+offset, v7+offset, v3+offset, v2+offset};
-					break;
-				}
+			case CubeFace.FRONT:
+				vertices = new Vector3[] {v4+offset, v5+offset, v1+offset, v0+offset};
+			break;
+			
+			case CubeFace.BACK:
+				vertices = new Vector3[] {v6+offset, v7+offset, v3+offset, v2+offset};
 			break;
 		}
+				
 		return vertices;
 	}
 
