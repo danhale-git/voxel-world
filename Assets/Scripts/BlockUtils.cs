@@ -10,6 +10,8 @@ public static class BlockUtils
 	//	For specifying which face of a shape is being worked on
 	public enum CubeFace {TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK}
 	public enum WedgeFace {SLOPE, BOTTOM, LEFT, RIGHT, BACK}
+	public enum CornerOutFace {SLOPE, BOTTOM, LEFT}
+	public enum CornerInFace {SLOPE, TOP}
 
 	//	Enum indices correspond to fixed block attribute arrays below
 	public enum Types {		AIR = 0,
@@ -47,7 +49,7 @@ public static class BlockUtils
 	//	Vertices for a cube
 	public static Vector3[] CubeVertices(CubeFace face, Vector3 offset)
 	{
-		Vector3[] vertices = new Vector3[4];
+		Vector3[] vertices;
 	
 		switch(face)
 		{
@@ -74,6 +76,10 @@ public static class BlockUtils
 			case CubeFace.BACK:
 				vertices = new Vector3[] {v6+offset, v7+offset, v3+offset, v2+offset};
 			break;
+
+			default:
+				vertices = null;
+				break;
 		}
 				
 		return vertices;
@@ -147,10 +153,10 @@ public static class BlockUtils
 	#endregion
 
 	//  //
-    #region 
+    #region Wedge
             //  //
 
-	public static Vector3[] WedgeVertices(WedgeFace face, Vector3 offset)
+	public static Vector3[] WedgeVertices(WedgeFace face, Vector3 offset, Rotate rotation)
 	{
 		Vector3[] vertices = new Vector3[4];
 	
@@ -177,7 +183,7 @@ public static class BlockUtils
 			break;
 		}
 				
-		return vertices;
+		return RotateVertices(vertices, offset, rotation);
 	}
 
 	//	Triangles for a cube
@@ -233,14 +239,12 @@ public static class BlockUtils
 			case WedgeFace.RIGHT:
 				normals = new Vector3[] {	Vector3.right,
 											Vector3.right, 
-											Vector3.right,
 											Vector3.right};
 			break;
 
 			case WedgeFace.LEFT:
 				normals = new Vector3[] {	Vector3.left,
 											Vector3.left, 
-											Vector3.left,
 											Vector3.left};
 			break;
 
@@ -252,6 +256,179 @@ public static class BlockUtils
 			break;
 		}
 				
+		return normals;
+	}
+
+	#endregion
+
+	//  //
+    #region CornerOut
+            //  //
+	
+	//	Vertices for a cube
+	public static Vector3[] CornerOutVertices(CornerOutFace face, Vector3 offset, Rotate rotation)
+	{
+		Vector3[] vertices;
+	
+		switch(face)
+		{
+			case CornerOutFace.SLOPE:
+				vertices = new Vector3[] {v7+offset, v2+offset, v0+offset};
+			break;
+
+			case CornerOutFace.BOTTOM:
+				vertices = new Vector3[] {v0+offset, v1+offset, v2+offset};
+			break;
+
+			case CornerOutFace.LEFT:
+				vertices = new Vector3[] {v7+offset, v0+offset, v4+offset};
+			break;
+
+			default:
+				vertices = null;
+				break;
+		}
+				
+		return RotateVertices(vertices, offset, rotation);
+	}
+
+	//	Triangles for a cube
+	public static int[] CornerOutTriangles(CornerOutFace face, int offset)
+	{
+		int[] triangles;
+		switch(face)
+		{
+			case CornerOutFace.SLOPE:
+				triangles = new int[] {2+offset, 1+offset, 0+offset};
+			break;
+
+			case CornerOutFace.BOTTOM:
+				triangles = new int[] {0+offset, 1+offset, 2+offset};
+			break;
+
+			case CornerOutFace.LEFT:
+				triangles = new int[] {0+offset, 1+offset, 2+offset};
+			break;
+			
+			default:
+				triangles = null;
+				break;
+		}
+		return triangles;
+	}
+
+	//	Normals for a cube
+	public static Vector3[] CornerOutNormals(CornerOutFace face)
+	{
+		Vector3[] normals;
+		
+		//	TODO:
+		//	Enumerable.Repeat(Vector3.down,4).ToList();
+		switch(face)
+		{
+			case CornerOutFace.SLOPE:
+				normals = new Vector3[] {	Vector3.up + Vector3.forward + Vector3.right,
+											Vector3.up + Vector3.forward + Vector3.right, 
+											Vector3.up + Vector3.forward + Vector3.right};
+			break;
+
+			case CornerOutFace.BOTTOM:
+				normals = new Vector3[] {	Vector3.up,
+											Vector3.up, 
+											Vector3.up};
+			break;
+
+			case CornerOutFace.LEFT:
+				normals = new Vector3[] {	Vector3.right,
+											Vector3.right, 
+											Vector3.right};
+			break;
+
+			default:
+				normals = null;
+			break;
+		}
+
+		return normals;
+	}
+
+	#endregion
+
+
+	//  //
+    #region CornerIn
+            //  //
+
+	//	Vertices for a cube
+	public static Vector3[] CornerInVertices(CornerInFace face, Vector3 offset, Rotate rotation)
+	{
+		Vector3[] vertices;
+	
+		switch(face)
+		{
+			case CornerInFace.SLOPE:
+				vertices = new Vector3[] {v4+offset, v6+offset, v1+offset};
+			break;
+
+			case CornerInFace.TOP:
+				vertices = new Vector3[] {v7+offset, v6+offset, v4+offset};
+			break;
+
+			default:
+				vertices = null;
+				break;
+		}
+				
+		return RotateVertices(vertices, offset, rotation);
+	}
+
+	//	Triangles for a cube
+	public static int[] CornerInTriangles(CornerInFace face, int offset)
+	{
+		int[] triangles;
+		switch(face)
+		{
+			case CornerInFace.SLOPE:
+				triangles = new int[] {0+offset, 1+offset, 2+offset};
+			break;
+
+			case CornerInFace.TOP:
+				triangles = new int[] {0+offset, 1+offset, 2+offset};
+			break;
+			
+			default:
+				triangles = null;
+				break;
+		}
+		return triangles;
+	}
+
+	//	Normals for a cube
+	public static Vector3[] CornerInNormals(CornerInFace face)
+	{
+		Vector3[] normals;
+		
+		//	TODO:
+		//	Enumerable.Repeat(Vector3.down,4).ToList();
+		switch(face)
+		{
+			case CornerInFace.SLOPE:
+				normals = new Vector3[] {	Vector3.up + Vector3.forward + Vector3.right,
+											Vector3.up + Vector3.forward + Vector3.right, 
+											Vector3.up + Vector3.forward + Vector3.right};
+			break;
+
+			case CornerInFace.TOP:
+				normals = new Vector3[] {	Vector3.up,
+											Vector3.up, 
+											Vector3.up};
+			break;
+
+			default:
+				normals = null;
+			break;
+		}
+
 		return normals;
 	}
 
@@ -339,9 +516,16 @@ public static class BlockUtils
 	}
 	
 	//	Rotate given vertex around centre by yRotation on Y axis
-	public static Vector3 RotateVertex(Vector3 vertex, Vector3 centre, Rotate yRotation)
+	public static Vector3[] RotateVertices(Vector3[] vertices, Vector3 centre, Rotate yRotation)
 	{		
+		Vector3[] rotatedVertices = new Vector3[vertices.Length];
 		Quaternion rotation = Quaternion.Euler(0, (int)yRotation, 0);
-		return rotation * (vertex - centre) + centre;
+
+		for(int i = 0; i < vertices.Length; i++)
+		{
+			rotatedVertices[i] = rotation * (vertices[i] - centre) + centre;
+		}
+		
+		return rotatedVertices;
 	}
 }

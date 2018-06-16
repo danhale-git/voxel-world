@@ -137,13 +137,55 @@ public class Chunk
 
 					switch(bitMask)
 					{
+						case 16:
+							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.FRONT);
+							break;
+
+						case 32:
+							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.RIGHT);
+							break;
+
+						case 68:
+							DrawCornerIn(blockPosition, bType, BlockUtils.Rotate.LEFT);
+							break;
+
+						case 53:
+						case 21:
+						case 85:
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.FRONT);
+							break;
+
+						case 57:
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.RIGHT);
+							break;
+
+						case 86:
+							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT);
+							break;
+
+						case 84:
+						case 20:
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.FRONT);
+							break;
+
 						case 49:
-							DrawWedge(exposedFaces, blockPosition, bType, BlockUtils.Rotate.RIGHT);
+						case 17:
+						case 33:
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.RIGHT);
+							break;
+
+						case 168:
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.BACK);
+							break;
+
+						case 194:
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.LEFT);
 							break;
 
 						default:
 							DrawCube(exposedFaces, blockPosition, bType);
 							break;
+
 					}
 					
 				}
@@ -178,20 +220,14 @@ public class Chunk
 		}
 	}
 
-	//	Triangle
-	void DrawWedge(bool[] exposedFaces, Vector3 wedgePosition, BlockUtils.Types type, BlockUtils.Rotate yRotation)
+	//	Wedge
+	void DrawWedge(Vector3 wedgePosition, BlockUtils.Types type, BlockUtils.Rotate rotation)
 	{
 		BlockUtils.WedgeFace face = BlockUtils.WedgeFace.SLOPE;
 
 		//	Verts can be rotated as object is not symmetrical
-		Vector3[] faceVerts = BlockUtils.WedgeVertices(face, wedgePosition);
-		Vector3[] rotatedVerts = new Vector3[faceVerts.Length];
-		for(int i = 0; i < faceVerts.Length; i++)
-		{
-			rotatedVerts[i] = BlockUtils.RotateVertex(faceVerts[i], wedgePosition, yRotation);
-		}
-
-		vertices.AddRange(rotatedVerts);
+		Vector3[] faceVerts = BlockUtils.WedgeVertices(face, wedgePosition, rotation);
+		vertices.AddRange(faceVerts);
 
 		//	Add normals in same order as vertices
 		normals.AddRange(BlockUtils.WedgeNormals(face));
@@ -203,6 +239,53 @@ public class Chunk
 		colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
 
 		vertsGenerated += faceVerts.Length;
+	}
+
+	//	Corner out
+	void DrawCornerOut(Vector3 wedgePosition, BlockUtils.Types type, BlockUtils.Rotate rotation)
+	{
+		for(int i = 0; i < 3; i++)
+		{
+			BlockUtils.CornerOutFace face = (BlockUtils.CornerOutFace)i;
+
+			//	Verts can be rotated as object is not symmetrical
+			Vector3[] faceVerts = BlockUtils.CornerOutVertices(face, wedgePosition, rotation);
+			vertices.AddRange(faceVerts);
+
+			//	Add normals in same order as vertices
+			normals.AddRange(BlockUtils.CornerOutNormals(face));
+
+			//	Offset triangle indices with number of vertices covered so far
+			triangles.AddRange(BlockUtils.CornerOutTriangles(face, vertsGenerated));
+
+			//	Get color using Types index
+			colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
+
+			vertsGenerated += faceVerts.Length;
+		}
+	}
+
+	void DrawCornerIn(Vector3 wedgePosition, BlockUtils.Types type, BlockUtils.Rotate rotation)
+	{
+		for(int i = 0; i < 2; i++)
+		{
+			BlockUtils.CornerInFace face = (BlockUtils.CornerInFace)i;
+
+			//	Verts can be rotated as object is not symmetrical
+			Vector3[] faceVerts = BlockUtils.CornerInVertices(face, wedgePosition, rotation);
+			vertices.AddRange(faceVerts);
+
+			//	Add normals in same order as vertices
+			normals.AddRange(BlockUtils.CornerInNormals(face));
+
+			//	Offset triangle indices with number of vertices covered so far
+			triangles.AddRange(BlockUtils.CornerInTriangles(face, vertsGenerated).Reverse());
+
+			//	Get color using Types index
+			colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
+
+			vertsGenerated += faceVerts.Length;
+		}
 	}
 
 	public void Redraw()
@@ -222,6 +305,8 @@ public class Chunk
 		mesh.SetNormals(normals);
 		mesh.SetTriangles(triangles, 0);
 		mesh.SetColors(colors);
+
+		mesh.RecalculateNormals();
 
 		filter = gObject.AddComponent<MeshFilter>();
 		filter.mesh = mesh;
