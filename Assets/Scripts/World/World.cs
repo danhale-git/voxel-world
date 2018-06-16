@@ -26,6 +26,51 @@ public class World : MonoBehaviour
 		DrawSurroundingChunks(Vector3.zero);
 	}
 
+	public static bool ChangeBlock(Vector3 v, BlockUtils.Types type)
+	{
+		//	Find owner chunk
+		Chunk chunk;
+		if(!chunks.TryGetValue(FindBlockOwner(v), out chunk))
+		{
+			return false;
+		}
+
+		//	Change block type
+		Vector3 local = v - chunk.position;
+		chunk.blockTypes[(int)local.x, (int)local.y, (int)local.z] = type;
+
+		List<Vector3> redraw = new List<Vector3>() { chunk.position };
+
+		//	add adjacent chunks to be redrawn if block is at the edge
+		if(local.x == 0) 
+			redraw.Add((new Vector3(chunk.position.x-chunkSize,	chunk.position.y,					chunk.position.z)));
+		if(local.x == chunkSize - 1) 
+			redraw.Add((new Vector3(chunk.position.x+chunkSize,	chunk.position.y,					chunk.position.z)));
+		if(local.y == 0) 
+			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y-chunkSize,	chunk.position.z)));
+		if(local.y == chunkSize - 1) 
+			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y+chunkSize,	chunk.position.z)));
+		if(local.z == 0) 
+			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y,					chunk.position.z-chunkSize)));
+		if(local.z == chunkSize - 1) 
+			redraw.Add((new Vector3(chunk.position.x,					chunk.position.y,					chunk.position.z+chunkSize)));
+
+		//	redraw chunks
+		foreach(Vector3 chunkPosition in redraw)
+		{
+			World.chunks[chunkPosition].Redraw();
+		}
+		return true;
+	}
+
+	public static Vector3 FindBlockOwner(Vector3 voxel)
+	{
+		int x = Mathf.FloorToInt(voxel.x / chunkSize);
+		int y = Mathf.FloorToInt(voxel.y / chunkSize);
+		int z = Mathf.FloorToInt(voxel.z / chunkSize);
+		return new Vector3(x*chunkSize,y*chunkSize,z*chunkSize);
+	}
+
 	//	Temporary for testing and optimisation
 	//	Generate and draw chunks in a cube radius of veiwDistance around player
 	//	Called in PlayerController

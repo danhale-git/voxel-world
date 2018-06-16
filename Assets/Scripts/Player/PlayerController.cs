@@ -134,42 +134,8 @@ public class PlayerController : MonoBehaviour {
 			Vector3 positionInCube = hit.point - (hit.normal * 0.5f);
 			Vector3 voxel = BlockUtils.RoundVector3(positionInCube);
 
-			//	local position in chunk
-			Vector3 local = voxel - hit.collider.gameObject.transform.position;
+			World.ChangeBlock(voxel, BlockUtils.Types.AIR);
 
-			Chunk chunk;
-			if(World.chunks.TryGetValue(hit.collider.gameObject.transform.position, out chunk))
-			{
-				//	update block type
-				chunk.blockTypes[(int)local.x, (int)local.y, (int)local.z] = BlockUtils.Types.AIR;
-			}
-			else
-			{
-				//	no chunk found
-				return;
-			}
-
-			List<Vector3> toUpdate = new List<Vector3>() { chunk.position };
-
-			//	add adjacent chunks to be updated if block is at the edge
-			if(local.x == 0) 
-				toUpdate.Add((new Vector3(chunk.position.x-World.chunkSize,	chunk.position.y,					chunk.position.z)));
-			if(local.x == World.chunkSize - 1) 
-				toUpdate.Add((new Vector3(chunk.position.x+World.chunkSize,	chunk.position.y,					chunk.position.z)));
-			if(local.y == 0) 
-				toUpdate.Add((new Vector3(chunk.position.x,					chunk.position.y-World.chunkSize,	chunk.position.z)));
-			if(local.y == World.chunkSize - 1) 
-				toUpdate.Add((new Vector3(chunk.position.x,					chunk.position.y+World.chunkSize,	chunk.position.z)));
-			if(local.y == 0) 
-				toUpdate.Add((new Vector3(chunk.position.x,					chunk.position.y,					chunk.position.z-World.chunkSize)));
-			if(local.y == World.chunkSize - 1) 
-				toUpdate.Add((new Vector3(chunk.position.x,					chunk.position.y,					chunk.position.z+World.chunkSize)));
-
-			//	update chunks
-			foreach(Vector3 chunkPosition in toUpdate)
-			{
-				World.chunks[chunkPosition].Redraw();
-			}
 		}
 	}
 
@@ -183,42 +149,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 positionInCube = hit.point + (hit.normal * 0.5f);
 			Vector3 voxel = BlockUtils.RoundVector3(positionInCube);
 
-			//	local position in chunk
-			Vector3 local = voxel - hit.collider.gameObject.transform.position;
-
-			Chunk chunk;
-			if(World.chunks.TryGetValue(hit.collider.gameObject.transform.position, out chunk))
-			{
-				//	update block type
-				chunk.blockTypes[(int)local.x, (int)local.y, (int)local.z] = BlockUtils.Types.DIRT;
-			}
-			else
-			{
-				//	no chunk found
-				return;
-			}
-
-			List<Vector3> toUpdate = new List<Vector3>() { chunk.position };
-
-			//	add adjacent chunks to be updated if block is at the edge
-			if(local.x == 0) 
-				toUpdate.Add((new Vector3(chunk.position.x-World.chunkSize,	chunk.position.y,					chunk.position.z)));
-			if(local.x == World.chunkSize - 1) 
-				toUpdate.Add((new Vector3(chunk.position.x+World.chunkSize,	chunk.position.y,					chunk.position.z)));
-			if(local.y == 0) 
-				toUpdate.Add((new Vector3(chunk.position.x,					chunk.position.y-World.chunkSize,	chunk.position.z)));
-			if(local.y == World.chunkSize - 1) 
-				toUpdate.Add((new Vector3(chunk.position.x,					chunk.position.y+World.chunkSize,	chunk.position.z)));
-			if(local.z == 0) 
-				toUpdate.Add((new Vector3(chunk.position.x,					chunk.position.y,					chunk.position.z-World.chunkSize)));
-			if(local.z == World.chunkSize - 1) 
-				toUpdate.Add((new Vector3(chunk.position.x,					chunk.position.y,					chunk.position.z+World.chunkSize)));
-
-			//	update chunks
-			foreach(Vector3 chunkPosition in toUpdate)
-			{
-				World.chunks[chunkPosition].Redraw();
-			}
+			World.ChangeBlock(voxel, BlockUtils.Types.DIRT);
 		}
 	}
 }
