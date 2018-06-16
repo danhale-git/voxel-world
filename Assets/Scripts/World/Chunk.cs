@@ -13,6 +13,10 @@ public class Chunk
 	public enum Status {GENERATED, DRAWN}
 	public Status status;
 
+	MeshFilter filter;
+	MeshRenderer renderer;
+	MeshCollider collider;
+
 	//	World controller Monobehaviour
 	World world;
 
@@ -110,6 +114,14 @@ public class Chunk
 		CreateMesh(vertices, normals, triangles, gameObject);
 	}
 
+	public void Redraw()
+	{
+		Object.DestroyImmediate(filter);
+		Object.DestroyImmediate(renderer);
+		Object.DestroyImmediate(collider);
+		DrawBlocks();
+	}
+
 	//	create a mesh with given attributes
 	void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles, GameObject gObject)
 	{
@@ -119,13 +131,13 @@ public class Chunk
 		mesh.SetNormals(normals);
 		mesh.SetTriangles(triangles, 0);
 
-		MeshFilter filter = gObject.AddComponent<MeshFilter>();
+		filter = gObject.AddComponent<MeshFilter>();
 		filter.mesh = mesh;
 
-		MeshRenderer renderer = gObject.AddComponent<MeshRenderer>();		
+		renderer = gObject.AddComponent<MeshRenderer>();		
 		renderer.sharedMaterial = world.defaultMaterial;
 
-		MeshCollider collider = gameObject.AddComponent<MeshCollider>();
+		collider = gameObject.AddComponent<MeshCollider>();
 		collider.sharedMesh = filter.mesh;
 	}
 }

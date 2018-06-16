@@ -11,9 +11,9 @@ public class Block
 	public Vector3 position;
 	public Chunk owner;
 
-	public List<Vector3> vertices = new List<Vector3>();
-	public List<Vector3> normals = new List<Vector3>();
-	public List<int> triangles = new List<int>();
+	public List<Vector3> vertices;
+	public List<Vector3> normals;
+	public List<int> triangles;
 	
 	//	seeThrough used for quad culling
 	public bool seeThrough;
@@ -39,6 +39,11 @@ public class Block
 	//	Generate meshes for exposed block faces
 	public int GetFaces(int offset)
 	{
+		//	initialise lists every time the chunk is drawn
+		vertices = new List<Vector3>();
+		normals = new List<Vector3>();
+		triangles = new List<int>();
+
 		if(type == BlockType.AIR) { return 0; }
 
 		//	Iterate over all six faces
@@ -69,6 +74,8 @@ public class Block
 		Vector3 faceDirection = BlockUtils.GetDirection(face);	
 		//	Neighbour position
 		Vector3 neighbour = faceDirection + position;
+
+
 		
 		Chunk neighbourOwner;
 
