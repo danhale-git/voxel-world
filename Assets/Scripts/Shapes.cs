@@ -1,9 +1,10 @@
-﻿using System.Collections;
+﻿	using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public static class Shapes
 {
+	
 	public enum Rotate { FRONT = 0, RIGHT = 90, BACK = 180, LEFT = 270 }
 	public enum Shape {CUBE, WEDGE, CORNERIN, CORNEROUT}
 
@@ -15,9 +16,9 @@ public static class Shapes
 
 	// Coordinates for 1x1 cube vertices relative to center	
 	public static Vector3 v0 = new Vector3( -0.5f,  -0.5f,  0.5f );
-	public static Vector3 v1 = new Vector3(  0.5f,  -0.5f,  0.5f );
 	public static Vector3 v2 = new Vector3(  0.5f,  -0.5f, -0.5f );
 	public static Vector3 v3 = new Vector3( -0.5f,  -0.5f, -0.5f ); 
+	public static Vector3 v1 = new Vector3(  0.5f,  -0.5f,  0.5f );
 	public static Vector3 v4 = new Vector3( -0.5f,   0.5f,  0.5f );
 	public static Vector3 v5 = new Vector3(  0.5f,   0.5f,  0.5f );
 	public static Vector3 v6 = new Vector3(  0.5f,   0.5f, -0.5f );
