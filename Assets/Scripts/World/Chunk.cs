@@ -8,11 +8,6 @@ public class Chunk
 	//	Chunk local space and game components
 	public GameObject gameObject;
 
-	//	block data
-	public BlockUtils.Types[,,] blockTypes;
-	public bool[,,] slopedBlocks;
-	public byte[,,] blockBytes;
-
 	//	Chunk status
 	public enum Status {GENERATED, DRAWN}
 	public Status status;
@@ -35,6 +30,24 @@ public class Chunk
 	int size;
 	public Vector3 position;
 
+	public int[,] heightmap; 
+
+	//	block data
+	public BlockUtils.Types[,,] blockTypes;
+	public byte[,,] blockBytes;
+	public Shapes.Shape[,,] blockShapes;
+	public Shapes.Rotate[,,] blockYRotation;
+
+	void InitialiseArrays()
+	{
+		heightmap = new int[size,size];
+
+		blockTypes = new BlockUtils.Types[size,size,size];
+		blockBytes = new byte[size,size,size];
+		blockShapes = new Shapes.Shape[size,size,size];
+		blockYRotation = new Shapes.Rotate[size,size,size];
+	}
+
 	public Chunk(Vector3 _position, World _world)
 	{
 		//	Create GameObject
@@ -48,9 +61,7 @@ public class Chunk
 		size = World.chunkSize;
 
 		//	initialise arrays
-		blockTypes = new BlockUtils.Types[size,size,size];
-		slopedBlocks = new bool[size,size,size];
-		blockBytes = new byte[size,size,size];
+		InitialiseArrays();
 
 		//	Set transform
 		gameObject.transform.parent = world.gameObject.transform;
@@ -63,15 +74,24 @@ public class Chunk
 	//	Choose types of all blocks in the chunk based on Perlin noise
 	void GenerateBlocks()
 	{
-		//	Iterate over all blocks in chunk
+		//	Heightmap
+
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
 			{
 				// TODO generate height map first and find non-exposed air and ground chunks to omit from generation
 				//	Get height of ground in this column
-				int groundHeight = NoiseUtils.GroundHeight( x + (int)position.x,
+				heightmap[x,z] = NoiseUtils.GroundHeight( x + (int)position.x,
 															z + (int)position.z,
 															World.maxGroundHeight);
+			}
+
+		//	Iterate over all blocks in chunk
+		for(int x = 0; x < size; x++)
+			for(int z = 0; z < size; z++)
+			{
+				//	Get height of ground in this column
+				int groundHeight = heightmap[x,z];
 				//	Generate column
 				for(int y = 0; y < size; y++)
 				{
@@ -91,11 +111,35 @@ public class Chunk
 					blockTypes[x,y,z] = type;
 				}
 			}
+
+		/*for(int x = 0; x < size; x++)
+			for(int z = 0; z < size; z++)
+				for(int y = 0; y < size; y++)
+				{
+					Vector3 blockPosition = new Vector3(x,y,z);
+
+					Vector3 voxel = this.position + blockPosition;
+					blockBytes[x,y,z] = World.GetBitMask(voxel);
+
+					SetSlopes(blockPosition);
+				}*/
 	}
 
 	//	Create a mesh representing all blocks in the chunk
 	public void DrawBlocks()
 	{
+		for(int x = 0; x < size; x++)
+			for(int z = 0; z < size; z++)
+				for(int y = 0; y < size; y++)
+				{
+					Vector3 blockPosition = new Vector3(x,y,z);
+
+					blockBytes[x,y,z] = World.GetBitMask(blockPosition + this.position);
+					SetSlopes(blockPosition);
+				}
+
+		ChunkMesh.Draw(this);
+		return;
 		//	Attributes for the final chunk mesh
 		vertices = new List<Vector3>();
 		normals = new List<Vector3>();
@@ -214,8 +258,8 @@ public class Chunk
 						case 84:
 						case 68:
 						case 4:
-							vertsGenerated = Shapes.Wedge.Draw(	vertices, normals, triangles, blockPosition, Quaternion.identity,
-												new Shapes.WedgeFace[1] {Shapes.WedgeFace.SLOPE}, vertsGenerated);
+							//vertsGenerated = Shapes.Wedge.Draw(	vertices, normals, triangles, blockPosition, Quaternion.identity,
+							//					new Shapes.WedgeFace[1] {Shapes.WedgeFace.SLOPE}, vertsGenerated);
 							//DrawWedge(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.WedgeFace.SLOPE);
 							break;
 
@@ -223,8 +267,8 @@ public class Chunk
 						case 17:
 						case 33:
 						case 1:
-							vertsGenerated = Shapes.Wedge.Draw(	vertices, normals, triangles, blockPosition, Quaternion.Euler(0,90,0),
-												new Shapes.WedgeFace[1] {Shapes.WedgeFace.SLOPE}, vertsGenerated);
+							//vertsGenerated = Shapes.Wedge.Draw(	vertices, normals, triangles, blockPosition, Quaternion.Euler(0,90,0),
+							//					new Shapes.WedgeFace[1] {Shapes.WedgeFace.SLOPE}, vertsGenerated);
 							break;
 
 						//case 48:
@@ -232,16 +276,16 @@ public class Chunk
 						case 40:
 						case 8:
 						case 136:
-							vertsGenerated = Shapes.Wedge.Draw(	vertices, normals, triangles, blockPosition, Quaternion.Euler(0,180,0),
-												new Shapes.WedgeFace[1] {Shapes.WedgeFace.SLOPE}, vertsGenerated);
+							//vertsGenerated = Shapes.Wedge.Draw(	vertices, normals, triangles, blockPosition, Quaternion.Euler(0,180,0),
+							//					new Shapes.WedgeFace[1] {Shapes.WedgeFace.SLOPE}, vertsGenerated);
 							break;
 
 						case 194:
 						case 2:
 						case 130:
 						case 66:
-							vertsGenerated = Shapes.Wedge.Draw(	vertices, normals, triangles, blockPosition, Quaternion.Euler(0,270,0),
-												new Shapes.WedgeFace[1] {Shapes.WedgeFace.SLOPE}, vertsGenerated);
+							//vertsGenerated = Shapes.Wedge.Draw(	vertices, normals, triangles, blockPosition, Quaternion.Euler(0,270,0),
+							//					new Shapes.WedgeFace[1] {Shapes.WedgeFace.SLOPE}, vertsGenerated);
 							break;
 
 						case 87:
@@ -284,7 +328,130 @@ public class Chunk
 					
 				}
 
-		CreateMesh(vertices, normals, triangles, colors, gameObject);
+		CreateMesh(vertices, normals, triangles, colors);
+	}
+
+
+	public void SetSlopes(Vector3 voxel)
+	{
+		int x = (int)voxel.x;
+		int y = (int)voxel.y;
+		int z = (int)voxel.z;
+
+		switch(blockBytes[x,y,z])
+		{
+			//	CORNER OUT
+
+			case 53:
+			case 21:
+			case 85:
+			case 117:
+				blockShapes[x,y,z] = Shapes.Shape.CORNEROUT;
+				blockYRotation[x,y,z] = Shapes.Rotate.FRONT;
+				break;
+
+			case 57:
+			case 41:
+			case 169:
+			case 185:
+				blockShapes[x,y,z] = Shapes.Shape.CORNEROUT;
+				blockYRotation[x,y,z] = Shapes.Rotate.RIGHT;
+				break;
+
+			case 202:
+			case 138:
+			case 170:
+			case 234:
+				blockShapes[x,y,z] = Shapes.Shape.CORNEROUT;
+				blockYRotation[x,y,z] = Shapes.Rotate.BACK;
+				break;
+
+			case 70:
+			case 86:
+			case 214:
+			case 82:
+			case 198:
+				blockShapes[x,y,z] = Shapes.Shape.CORNEROUT;
+				blockYRotation[x,y,z] = Shapes.Rotate.LEFT;
+				break;
+
+			//	CORNER IN
+
+			case 16:
+				blockShapes[x,y,z] = Shapes.Shape.CORNERIN;
+				blockYRotation[x,y,z] = Shapes.Rotate.FRONT;
+				break;
+
+			case 32:
+				blockShapes[x,y,z] = Shapes.Shape.CORNERIN;
+				blockYRotation[x,y,z] = Shapes.Rotate.RIGHT;
+				break;
+
+			case 128:
+				blockShapes[x,y,z] = Shapes.Shape.CORNERIN;
+				blockYRotation[x,y,z] = Shapes.Rotate.BACK;
+				break;
+
+			case 64:
+				blockShapes[x,y,z] = Shapes.Shape.CORNERIN;
+				blockYRotation[x,y,z] = Shapes.Rotate.LEFT;
+				break;
+
+			//	WEDGE
+
+			case 20:
+			case 84:
+			case 68:
+			case 4:
+				//blockShapes[x,y,z] = Shapes.Shape.CUBE;
+				//blockYRotation[x,y,z] = Shapes.Rotate.FRONT;
+				blockShapes[x,y,z] = Shapes.Shape.WEDGE;
+				blockYRotation[x,y,z] = Shapes.Rotate.FRONT;
+				break;
+
+			case 49:
+			case 17:
+			case 33:
+			case 1:
+				blockShapes[x,y,z] = Shapes.Shape.CUBE;
+				blockYRotation[x,y,z] = Shapes.Rotate.FRONT;
+				//blockShapes[x,y,z] = Shapes.Shape.WEDGE;
+				//blockYRotation[x,y,z] = Shapes.Rotate.RIGHT;
+				break;
+
+			//case 48:
+			case 168:
+			case 40:
+			case 8:
+			case 136:
+				blockShapes[x,y,z] = Shapes.Shape.CUBE;
+				blockYRotation[x,y,z] = Shapes.Rotate.FRONT;
+				//blockShapes[x,y,z] = Shapes.Shape.WEDGE;
+				//blockYRotation[x,y,z] = Shapes.Rotate.BACK;
+				break;
+
+			case 194:
+			case 2:
+			case 130:
+			case 66:
+				blockShapes[x,y,z] = Shapes.Shape.CUBE;
+				blockYRotation[x,y,z] = Shapes.Rotate.FRONT;
+				//blockShapes[x,y,z] = Shapes.Shape.WEDGE;
+				//blockYRotation[x,y,z] = Shapes.Rotate.LEFT;
+				break;
+
+			//	CUBE
+
+			case 0:
+				blockShapes[x,y,z] = Shapes.Shape.CUBE;
+				blockYRotation[x,y,z] = Shapes.Rotate.FRONT;
+				break;
+
+			default:
+				blockShapes[x,y,z] = Shapes.Shape.CUBE;
+				blockYRotation[x,y,z] = Shapes.Rotate.FRONT;
+				break;
+		}
 	}
 
 	//	Cube
@@ -379,7 +546,7 @@ public class Chunk
 	}
 
 	//	create a mesh with given attributes
-	void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles, List<Color> colors, GameObject gObject)
+	public void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles, List<Color> colors)
 	{
 		Mesh mesh = new Mesh();
 
@@ -390,10 +557,10 @@ public class Chunk
 
 		mesh.RecalculateNormals();
 
-		filter = gObject.AddComponent<MeshFilter>();
+		filter = gameObject.AddComponent<MeshFilter>();
 		filter.mesh = mesh;
 
-		renderer = gObject.AddComponent<MeshRenderer>();		
+		renderer = gameObject.AddComponent<MeshRenderer>();		
 		renderer.sharedMaterial = world.defaultMaterial;
 
 		collider = gameObject.AddComponent<MeshCollider>();
@@ -401,7 +568,7 @@ public class Chunk
 	}
 
 	//	Block face is on map edge or player can see through adjacent block
-	bool FaceExposed(BlockUtils.CubeFace face, Vector3 blockPosition)
+	public bool FaceExposed(BlockUtils.CubeFace face, Vector3 blockPosition)
 	{	
 		//	Direction of neighbour
 		Vector3 faceDirection = BlockUtils.GetDirection(face);	

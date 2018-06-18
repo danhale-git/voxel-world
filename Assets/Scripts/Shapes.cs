@@ -15,10 +15,10 @@ public static class Shapes
 		
 	}*/
 	public enum Rotate { FRONT = 0, RIGHT = 90, BACK = 180, LEFT = 270 }
-	public enum Shape {CUBE, WEDGE}
+	public enum Shape {CUBE, WEDGE, CORNERIN, CORNEROUT}
 
 	//	For specifying which face of a shape is being worked on
-	public enum CubeFace {TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK}
+	public enum CubeFace {TOP, BOTTOM, RIGHT, LEFT, FRONT, BACK}
 	public enum WedgeFace {SLOPE, BOTTOM, LEFT, RIGHT, BACK}
 	public enum CornerOutFace {SLOPE, BOTTOM, LEFT}
 	public enum CornerInFace {SLOPE, TOP}
@@ -33,28 +33,116 @@ public static class Shapes
 	public static Vector3 v6 = new Vector3(  0.5f,   0.5f, -0.5f );
 	public static Vector3 v7 = new Vector3( -0.5f,   0.5f, -0.5f );
 	
-	public static class Wedge
+	public static class Cube
 	{
-		public static int Draw(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles,
-								Vector3 position, 			Quaternion rotation, 	WedgeFace[] faces, int vertCount)
+		//	Vertices for a cube
+		public static Vector3[] Vertices(CubeFace face, Vector3 offset)
 		{
-			for(int i = 0; i < faces.Length; i++)
+			Vector3[] vertices;
+		
+			switch(face)
 			{
-				Vector3[] verts = RotateVertices(	Vertices(faces[i], position),
-													position,
-													rotation );
-				vertices.AddRange(verts);
+				case CubeFace.TOP:
+					vertices = new Vector3[] {v7+offset, v6+offset, v5+offset, v4+offset};
+				break;
 
-				normals.AddRange(	RotateNormals(	Normals(faces[i]),
-													rotation )	);
+				case CubeFace.BOTTOM:
+					vertices = new Vector3[] {v0+offset, v1+offset, v2+offset, v3+offset};
+				break;
 
-				triangles.AddRange(	Triangles(faces[i], vertCount));
+				case CubeFace.RIGHT:
+					vertices = new Vector3[] {v5+offset, v6+offset, v2+offset, v1+offset};
+				break;
 
-				vertCount += verts.Length;
+				case CubeFace.LEFT:
+					vertices = new Vector3[] {v7+offset, v4+offset, v0+offset, v3+offset};
+				break;
+
+				case CubeFace.FRONT:
+					vertices = new Vector3[] {v4+offset, v5+offset, v1+offset, v0+offset};
+				break;
+				
+				case CubeFace.BACK:
+					vertices = new Vector3[] {v6+offset, v7+offset, v3+offset, v2+offset};
+				break;
+
+				default:
+					vertices = null;
+					break;
+			}
+					
+			return vertices;
+		}
+
+		//	Triangles for a cube
+		public static int[] Triangles(CubeFace face, int offset)
+		{
+			return new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
+		}
+
+		//	Normals for a cube
+		public static Vector3[] Normals(CubeFace face)
+		{
+			Vector3[] normals;
+			
+			//	TODO:
+			//	Enumerable.Repeat(Vector3.down,4).ToList();
+			switch(face)
+			{
+				case CubeFace.TOP:
+					normals = new Vector3[] {	Vector3.up,
+												Vector3.up, 
+												Vector3.up,
+												Vector3.up};
+				break;
+
+				case CubeFace.BOTTOM:
+					normals = new Vector3[] {	Vector3.down,
+												Vector3.down, 
+												Vector3.down,
+												Vector3.down};
+				break;
+				
+				case CubeFace.RIGHT:
+					normals = new Vector3[] {	Vector3.right,
+												Vector3.right, 
+												Vector3.right,
+												Vector3.right};
+				break;
+
+				case CubeFace.LEFT:
+					normals = new Vector3[] {	Vector3.left,
+												Vector3.left, 
+												Vector3.left,
+												Vector3.left};
+				break;
+
+				case CubeFace.FRONT:
+					normals = new Vector3[] {	Vector3.forward,
+												Vector3.forward, 
+												Vector3.forward,
+												Vector3.forward};
+				break;
+
+				case CubeFace.BACK:
+					normals = new Vector3[] {	Vector3.back,
+												Vector3.back, 
+												Vector3.back,
+												Vector3.back};
+				break;
+
+				default:
+					normals = null;
+				break;
 			}
 
-			return vertCount;
+			return normals;
 		}
+	}
+
+	public static class Wedge
+	{
+		
 		public static Vector3[] Vertices(WedgeFace face, Vector3 offset)
 		{ 
 
@@ -142,27 +230,5 @@ public static class Shapes
 		}
 	}
 
-	//	Rotate given vertex around centre by yRotation on Y axis
-	static Vector3[] RotateVertices(Vector3[] vertices, Vector3 centre, Quaternion rotation)
-	{		
-		Vector3[] rotatedVertices = new Vector3[vertices.Length];
-		for(int i = 0; i < vertices.Length; i++)
-		{
-			//	rotate vertex position around centre
-			rotatedVertices[i] = rotation * (vertices[i] - centre) + centre;
-		}
-		
-		return rotatedVertices;
-	}
-
-	static Vector3[] RotateNormals(Vector3[] normals, Quaternion rotation)
-	{
-		Vector3[] rotatedNormals = new Vector3[normals.Length];
-		for(int i = 0; i < normals.Length; i++)
-		{
-			//	rotate normal direction
-			rotatedNormals[i] = rotation * normals[i];
-		}
-		return rotatedNormals;
-	}
+	
 }

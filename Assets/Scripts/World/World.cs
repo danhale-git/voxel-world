@@ -5,7 +5,7 @@ using UnityEngine;
 public class World : MonoBehaviour
 {
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 4;
+	public static int viewDistance = 3;
 	//	Size of all chunks
 	public static int chunkSize = 5;
 	//	Maximum height of non-air blocks
