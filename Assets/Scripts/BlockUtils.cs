@@ -166,6 +166,14 @@ public static class BlockUtils
 				vertices = new Vector3[] {v7+offset, v6+offset, v1+offset, v0+offset};
 			break;
 
+			case WedgeFace.RIGHT:
+				vertices = new Vector3[] {v6+offset, v2+offset, v1+offset};
+			break;
+
+			case WedgeFace.LEFT:
+				vertices = new Vector3[] {v7+offset, v0+offset, v3+offset};
+			break;
+
 			default:
 				vertices = null;
 				break;
@@ -184,6 +192,14 @@ public static class BlockUtils
 				triangles = new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
 			break;
 
+			case WedgeFace.RIGHT:
+				triangles = new int[] {2+offset, 1+offset, 0+offset};
+			break;
+
+			case WedgeFace.LEFT:
+				triangles = new int[] {2+offset, 1+offset, 0+offset};
+			break;
+
 			default:
 				triangles = null;
 				break;
@@ -194,7 +210,7 @@ public static class BlockUtils
 
 	public static Vector3[] WedgeNormals(WedgeFace face)
 	{
-		Vector3[] normals = new Vector3[4];
+		Vector3[] normals;
 	
 		switch(face)
 		{
@@ -204,6 +220,22 @@ public static class BlockUtils
 											Vector3.up + Vector3.forward,
 											Vector3.up + Vector3.forward};
 			break;
+
+			case WedgeFace.RIGHT:
+				normals = new Vector3[] {	Vector3.right + Vector3.forward,
+											Vector3.right + Vector3.forward, 
+											Vector3.right + Vector3.forward};
+			break;
+
+			case WedgeFace.LEFT:
+				normals = new Vector3[] {	Vector3.left + Vector3.forward,
+											Vector3.left + Vector3.forward, 
+											Vector3.left + Vector3.forward};
+			break;
+
+			default:
+				normals = null;
+				break;
 		}
 				
 		return normals;

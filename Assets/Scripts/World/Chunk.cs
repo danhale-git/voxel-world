@@ -10,6 +10,8 @@ public class Chunk
 
 	//	block data
 	public BlockUtils.Types[,,] blockTypes;
+	public bool[,,] slopedBlocks;
+	public byte[,,] blockBytes;
 
 	//	Chunk status
 	public enum Status {GENERATED, DRAWN}
@@ -47,11 +49,13 @@ public class Chunk
 
 		//	initialise arrays
 		blockTypes = new BlockUtils.Types[size,size,size];
+		slopedBlocks = new bool[size,size,size];
+		blockBytes = new byte[size,size,size];
 
 		//	Set transform
 		gameObject.transform.parent = world.gameObject.transform;
 		gameObject.transform.position = position;
-		
+
 		//	Always generate blocks when a new chunk is created
 		GenerateBlocks();		
 	}
@@ -127,24 +131,22 @@ public class Chunk
 						}
 					}
 
-					if(!blockExposed) { continue; }
 
 					//	Get bitmask
 					Vector3 voxel = this.position + blockPosition;
-					byte bitMask = World.GetBitMask(voxel);
+					blockBytes[x,y,z] = World.GetBitMask(voxel);
 
-					//	Iterate over all six faces
+					if(!blockExposed && blockBytes[x,y,z] == 0) { continue; }
 
-					if(!exposedFaces[(int)BlockUtils.CubeFace.TOP] && !exposedFaces[(int)BlockUtils.CubeFace.BOTTOM])
+					/*if(!exposedFaces[(int)BlockUtils.CubeFace.TOP] && !exposedFaces[(int)BlockUtils.CubeFace.BOTTOM])
 					{
-						bitMask = 0;
-					}
+						blockBytes[x,y,z] = 0;
+					}*/
 
-					//if(bitMask != 0) { seeThrough[x,y,z] = true; }
+					//blockBytes[x,y,z] = 0;
 
-					switch(bitMask)
+					switch(blockBytes[x,y,z])
 					{
-
 						//	CORNER OUT
 
 						case 53:
@@ -152,7 +154,8 @@ public class Chunk
 						case 85:
 						case 117://
 							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.CornerOutFace.SLOPE);
-							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.CornerOutFace.BOTTOM);
+							if(World.GetBitMask(voxel + Vector3.down) == 0)
+								DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.CornerOutFace.BOTTOM);
 							break;
 
 						case 57:
@@ -160,7 +163,8 @@ public class Chunk
 						case 169:
 						case 185://
 							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.CornerOutFace.SLOPE);
-							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.CornerOutFace.BOTTOM);
+							if(World.GetBitMask(voxel + Vector3.down) == 0)
+								DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.CornerOutFace.BOTTOM);
 							break;
 
 						case 202:
@@ -168,16 +172,18 @@ public class Chunk
 						case 170:
 						case 234://
 							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.CornerOutFace.SLOPE);
-							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.CornerOutFace.BOTTOM);
+							if(World.GetBitMask(voxel + Vector3.down) == 0)
+								DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.CornerOutFace.BOTTOM);
 							break;
 
-						case 66:
 						case 70:
 						case 86://
 						case 214://
 						case 82:
+						case 198:
 							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.SLOPE);
-							DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.BOTTOM);
+							if(World.GetBitMask(voxel + Vector3.down) == 0)
+								DrawCornerOut(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.CornerOutFace.BOTTOM);
 							break;
 
 						//	CORNER IN
@@ -208,14 +214,17 @@ public class Chunk
 						case 84:
 						case 68:
 						case 4:
-							DrawWedge(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.WedgeFace.SLOPE);
+							vertsGenerated = Shapes.Wedge.Draw(	vertices, normals, triangles, blockPosition, Quaternion.identity,
+												new Shapes.WedgeFace[1] {Shapes.WedgeFace.SLOPE}, vertsGenerated);
+							//DrawWedge(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.WedgeFace.SLOPE);
 							break;
 
 						case 49:
 						case 17:
 						case 33:
 						case 1:
-							DrawWedge(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.WedgeFace.SLOPE);
+							vertsGenerated = Shapes.Wedge.Draw(	vertices, normals, triangles, blockPosition, Quaternion.Euler(0,90,0),
+												new Shapes.WedgeFace[1] {Shapes.WedgeFace.SLOPE}, vertsGenerated);
 							break;
 
 						//case 48:
@@ -223,23 +232,53 @@ public class Chunk
 						case 40:
 						case 8:
 						case 136:
-							DrawWedge(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.WedgeFace.SLOPE);
+							vertsGenerated = Shapes.Wedge.Draw(	vertices, normals, triangles, blockPosition, Quaternion.Euler(0,180,0),
+												new Shapes.WedgeFace[1] {Shapes.WedgeFace.SLOPE}, vertsGenerated);
 							break;
 
 						case 194:
 						case 2:
 						case 130:
+						case 66:
+							vertsGenerated = Shapes.Wedge.Draw(	vertices, normals, triangles, blockPosition, Quaternion.Euler(0,270,0),
+												new Shapes.WedgeFace[1] {Shapes.WedgeFace.SLOPE}, vertsGenerated);
+							break;
+
+						case 87:
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.WedgeFace.SLOPE);
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.WedgeFace.RIGHT);
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.FRONT, BlockUtils.WedgeFace.LEFT);
+							break;
+
+						case 61:
+						case 254:
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.WedgeFace.SLOPE);
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.WedgeFace.RIGHT);
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.RIGHT, BlockUtils.WedgeFace.LEFT);
+							break;
+
+						case 171:
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.WedgeFace.SLOPE);
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.WedgeFace.RIGHT);
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.BACK, BlockUtils.WedgeFace.LEFT);
+							break;
+
+						case 206:
+						case 253:
 							DrawWedge(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.WedgeFace.SLOPE);
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.WedgeFace.RIGHT);
+							DrawWedge(blockPosition, bType, BlockUtils.Rotate.LEFT, BlockUtils.WedgeFace.LEFT);
 							break;
 
 						//	CUBE
 
 						case 0:
 							DrawCube(exposedFaces, blockPosition, bType);
+							//DrawCube(new bool[6] { true,true,true,true,true,true }, blockPosition, bType);
 							break;
 
 						default:
-							DrawCube(exposedFaces, blockPosition, bType);
+							DrawCube(new bool[6] { true,true,true,true,true,true }, blockPosition, bType);
 							break;
 					}
 					
@@ -268,7 +307,7 @@ public class Chunk
 				triangles.AddRange(BlockUtils.CubeTriangles(face, vertsGenerated));
 
 				//	Get color using Types index
-				colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
+				//colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
 
 				vertsGenerated += faceVerts.Length;
 			}
@@ -289,7 +328,7 @@ public class Chunk
 		triangles.AddRange(BlockUtils.WedgeTriangles(face, vertsGenerated));
 
 		//	Get color using Types index
-		colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
+		//colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
 
 		vertsGenerated += faceVerts.Length;
 	}
@@ -308,7 +347,7 @@ public class Chunk
 		triangles.AddRange(BlockUtils.CornerOutTriangles(face, vertsGenerated));
 
 		//	Get color using Types index
-		colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
+		//colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
 
 		vertsGenerated += faceVerts.Length;	
 	}
@@ -326,7 +365,7 @@ public class Chunk
 		triangles.AddRange(BlockUtils.CornerInTriangles(face, vertsGenerated));
 
 		//	Get color using Types index
-		colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
+		//colors.AddRange(Enumerable.Repeat( (Color)BlockUtils.colors[(int)type], faceVerts.Length ));
 
 		vertsGenerated += faceVerts.Length;
 	}
@@ -400,7 +439,7 @@ public class Chunk
 		//	Check seeThrough in neighbour
 		BlockUtils.Types type = neighbourOwner.blockTypes[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z];
 
-		return BlockUtils.seeThrough[(int)type];
+		return (BlockUtils.seeThrough[(int)type]);// || slopedBlocks[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z]);
 	}
 
 

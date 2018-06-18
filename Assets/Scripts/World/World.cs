@@ -5,9 +5,9 @@ using UnityEngine;
 public class World : MonoBehaviour
 {
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 8;
+	public static int viewDistance = 4;
 	//	Size of all chunks
-	public static int chunkSize = 3;
+	public static int chunkSize = 5;
 	//	Maximum height of non-air blocks
 	public static int maxGroundHeight = 20;
 	//	Height of world in chunks
@@ -121,7 +121,7 @@ public class World : MonoBehaviour
 	//	Called in PlayerController
 	public void DrawSurroundingChunks(Vector3 centerChunk)
 	{
-		if(gameStarted) return;	//	DEBUG
+		//if(gameStarted) return;	//	DEBUG
 
 		//	Generate chunks in view distance + 1
 		for(int x = -viewDistance-1; x < viewDistance+1; x++)
