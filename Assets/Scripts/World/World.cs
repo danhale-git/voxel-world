@@ -5,9 +5,9 @@ using UnityEngine;
 public class World : MonoBehaviour
 {
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 3;
+	public static int viewDistance = 4;
 	//	Size of all chunks
-	public static int chunkSize = 5;
+	public static int chunkSize = 3;
 	//	Maximum height of non-air blocks
 	public static int maxGroundHeight = 20;
 	//	Height of world in chunks
@@ -31,7 +31,7 @@ public class World : MonoBehaviour
 	}
 
 	//	Change type of block at voxel
-	public static bool ChangeBlock(Vector3 voxel, BlockUtils.Types type)
+	public static bool ChangeBlock(Vector3 voxel, Blocks.Types type)
 	{
 		//	Find owner chunk
 		Chunk chunk;
@@ -87,8 +87,16 @@ public class World : MonoBehaviour
 		return new Vector3(x*chunkSize,y*chunkSize,z*chunkSize);
 	}
 
+	public static Chunk BlockOwnerChunk(Vector3 voxel)
+	{
+		Chunk chunk;
+		if(chunks.TryGetValue(BlockOwner(voxel), out chunk))
+			return chunk;
+		return null;
+	}
+
 	//	Get type of block at voxel
-	public static BlockUtils.Types GetType(Vector3 voxel)
+	public static Blocks.Types GetType(Vector3 voxel)
 	{
 		Chunk chunk;
 		if(!chunks.TryGetValue(BlockOwner(voxel), out chunk))
@@ -107,7 +115,7 @@ public class World : MonoBehaviour
 			int total = 0;
 			for(int i = 0; i < neighbours.Length; i++)
 			{
-				if(BlockUtils.seeThrough[(int)GetType(neighbours[i])])
+				if(Blocks.seeThrough[(int)GetType(neighbours[i])])
 				{
 					total += value;
 				}
@@ -131,6 +139,16 @@ public class World : MonoBehaviour
 					Vector3 offset = new Vector3(x, y, z) * chunkSize;
 					Vector3 location = centerChunk + offset;
 					GenerateChunk(location);
+				}
+
+		//	Graw chunks in view distance
+		for(int x = -viewDistance; x < viewDistance; x++)
+			for(int z = -viewDistance; z < viewDistance; z++)
+				for(int y = -viewDistance; y < viewDistance; y++)
+				{
+					Vector3 offset = new Vector3(x, y, z) * chunkSize;
+					Vector3 location = centerChunk + offset;
+					chunks[location].SmoothBlocks();
 				}
 
 		//	Graw chunks in view distance

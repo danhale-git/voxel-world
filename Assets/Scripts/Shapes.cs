@@ -4,16 +4,6 @@ using UnityEngine;
 
 public static class Shapes
 {
-	/*public static class TEMPLATE
-	{
-		public static Vector3[] Vertices(TEMPface face, Vector3 offset) { }
-
-		public static Vector3[] TrisIndices() { }
-
-		public static int[] Normals() { }
-
-		
-	}*/
 	public enum Rotate { FRONT = 0, RIGHT = 90, BACK = 180, LEFT = 270 }
 	public enum Shape {CUBE, WEDGE, CORNERIN, CORNEROUT}
 
@@ -230,5 +220,284 @@ public static class Shapes
 		}
 	}
 
-	
+	public static class CornerOut
+	{
+		//	Vertices for a cube
+		public static Vector3[] Vertices(CornerOutFace face, Vector3 offset)
+		{
+			Vector3[] vertices;
+		
+			switch(face)
+			{
+				case CornerOutFace.SLOPE:
+					vertices = new Vector3[] {v7+offset, v2+offset, v0+offset};
+				break;
+
+				case CornerOutFace.BOTTOM:
+					vertices = new Vector3[] {v0+offset, v1+offset, v2+offset};
+				break;
+
+				case CornerOutFace.LEFT:
+					vertices = new Vector3[] {v7+offset, v0+offset, v4+offset};
+				break;
+
+				default:
+					vertices = null;
+					break;
+			}
+					
+			return vertices;
+		}
+
+		//	Triangles for a cube
+		public static int[] Triangles(CornerOutFace face, int offset)
+		{
+			int[] triangles;
+			switch(face)
+			{
+				case CornerOutFace.SLOPE:
+					triangles = new int[] {2+offset, 1+offset, 0+offset};
+				break;
+
+				case CornerOutFace.BOTTOM:
+					triangles = new int[] {0+offset, 1+offset, 2+offset};
+				break;
+
+				case CornerOutFace.LEFT:
+					triangles = new int[] {2+offset, 1+offset, 0+offset};
+				break;
+				
+				default:
+					triangles = null;
+					break;
+			}
+			return triangles;
+		}
+
+		//	Normals for a cube
+		public static Vector3[] Normals(CornerOutFace face)
+		{
+			Vector3[] normals;
+			
+			//	TODO:
+			//	Enumerable.Repeat(Vector3.down,4).ToList();
+			switch(face)
+			{
+				case CornerOutFace.SLOPE:
+					normals = new Vector3[] {	Vector3.up + Vector3.forward + Vector3.right,
+												Vector3.up + Vector3.forward + Vector3.right, 
+												Vector3.up + Vector3.forward + Vector3.right};
+				break;
+
+				case CornerOutFace.BOTTOM:
+					normals = new Vector3[] {	Vector3.up,
+												Vector3.up, 
+												Vector3.up};
+				break;
+
+				case CornerOutFace.LEFT:
+					normals = new Vector3[] {	Vector3.right,
+												Vector3.right, 
+												Vector3.right};
+				break;
+
+				default:
+					normals = null;
+				break;
+			}
+
+			return normals;
+		}
+	}
+
+	public static class CornerIn
+	{
+		//	Vertices for a cube
+		public static Vector3[] Vertices(CornerInFace face, Vector3 offset)
+		{
+			Vector3[] vertices;
+		
+			switch(face)
+			{
+				case CornerInFace.SLOPE:
+					vertices = new Vector3[] {v4+offset, v6+offset, v1+offset};
+				break;
+
+				case CornerInFace.TOP:
+					vertices = new Vector3[] {v7+offset, v6+offset, v4+offset};
+				break;
+
+				default:
+					vertices = null;
+					break;
+			}
+					
+			return vertices;
+		}
+
+		//	Triangles for a cube
+		public static int[] Triangles(CornerInFace face, int offset)
+		{
+			int[] triangles;
+			switch(face)
+			{
+				case CornerInFace.SLOPE:
+					triangles = new int[] {2+offset, 1+offset, 0+offset};
+				break;
+
+				case CornerInFace.TOP:
+					triangles = new int[] {2+offset, 1+offset, 0+offset};
+				break;
+				
+				default:
+					triangles = null;
+					break;
+			}
+			return triangles;
+		}
+
+		//	Normals for a cube
+		public static Vector3[] Normals(CornerInFace face)
+		{
+			Vector3[] normals;
+			
+			//	TODO:
+			//	Enumerable.Repeat(Vector3.down,4).ToList();
+			switch(face)
+			{
+				case CornerInFace.SLOPE:
+					normals = new Vector3[] {	Vector3.up + Vector3.forward + Vector3.right,
+												Vector3.up + Vector3.forward + Vector3.right, 
+												Vector3.up + Vector3.forward + Vector3.right};
+				break;
+
+				case CornerInFace.TOP:
+					normals = new Vector3[] {	Vector3.up,
+												Vector3.up, 
+												Vector3.up};
+				break;
+
+				default:
+					normals = null;
+				break;
+			}
+
+			return normals;
+		}
+	}
+
+
+	public static void SetSlopes(Chunk chunk, Vector3 voxel)
+	{
+		int x = (int)voxel.x;
+		int y = (int)voxel.y;
+		int z = (int)voxel.z;
+
+		switch(chunk.blockBytes[x,y,z])
+		{
+			//	CORNER OUT
+
+			case 53:
+			case 21:
+			case 85:
+			case 117:
+				chunk.blockShapes[x,y,z] = Shape.CORNEROUT;
+				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
+				break;
+
+			case 57:
+			case 41:
+			case 169:
+			case 185:
+				chunk.blockShapes[x,y,z] = Shape.CORNEROUT;
+				chunk.blockYRotation[x,y,z] = Rotate.RIGHT;
+				break;
+
+			case 202:
+			case 138:
+			case 170:
+			case 234:
+				chunk.blockShapes[x,y,z] = Shape.CORNEROUT;
+				chunk.blockYRotation[x,y,z] = Rotate.BACK;
+				break;
+
+			case 70:
+			case 86:
+			case 214:
+			case 82:
+			case 198:
+				chunk.blockShapes[x,y,z] = Shape.CORNEROUT;
+				chunk.blockYRotation[x,y,z] = Rotate.LEFT;
+				break;
+
+			//	CORNER IN
+
+			case 16:
+				chunk.blockShapes[x,y,z] = Shape.CORNERIN;
+				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
+				break;
+
+			case 32:
+				chunk.blockShapes[x,y,z] = Shape.CORNERIN;
+				chunk.blockYRotation[x,y,z] = Rotate.RIGHT;
+				break;
+
+			case 128:
+				chunk.blockShapes[x,y,z] = Shape.CORNERIN;
+				chunk.blockYRotation[x,y,z] = Rotate.BACK;
+				break;
+
+			case 64:
+				chunk.blockShapes[x,y,z] = Shape.CORNERIN;
+				chunk.blockYRotation[x,y,z] = Rotate.LEFT;
+				break;
+
+			//	WEDGE
+
+			case 20:
+			case 84:
+			case 68:
+			case 4:
+				chunk.blockShapes[x,y,z] = Shape.WEDGE;
+				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
+				break;
+
+			case 49:
+			case 17:
+			case 33:
+			case 1:
+				chunk.blockShapes[x,y,z] = Shape.WEDGE;
+				chunk.blockYRotation[x,y,z] = Rotate.RIGHT;
+				break;
+
+			//case 48:
+			case 168:
+			case 40:
+			case 8:
+			case 136:
+				chunk.blockShapes[x,y,z] = Shape.WEDGE;
+				chunk.blockYRotation[x,y,z] = Rotate.BACK;
+				break;
+
+			case 194:
+			case 2:
+			case 130:
+			case 66:
+				chunk.blockShapes[x,y,z] = Shape.WEDGE;
+				chunk.blockYRotation[x,y,z] = Rotate.LEFT;
+				break;
+
+			//	CUBE
+
+			case 0:
+				chunk.blockShapes[x,y,z] = Shape.CUBE;
+				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
+				break;
+
+			default:
+				chunk.blockShapes[x,y,z] = Shape.CUBE;
+				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
+				break;
+		}
+	}	
 }

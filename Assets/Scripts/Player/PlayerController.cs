@@ -145,7 +145,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			World.ChangeBlock(voxel, BlockUtils.Types.AIR);
+			World.ChangeBlock(voxel, Blocks.Types.AIR);
 		}
 	}
 
@@ -159,7 +159,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point + (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			World.ChangeBlock(voxel, BlockUtils.Types.DIRT);
+			World.ChangeBlock(voxel, Blocks.Types.DIRT);
 		}
 	}
 

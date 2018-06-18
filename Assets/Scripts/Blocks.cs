@@ -20,5 +20,6 @@ public static class Blocks
 	public static Color32[] colors = new Color32[]{	Color.white,					//	0	//	AIR
 													new Color32(11, 110, 35, 255),	//	1	//	DIRT
 													new Color32(200, 200, 200, 255)	//	2	//	STONE
-													};									
+													};	
+								
 }

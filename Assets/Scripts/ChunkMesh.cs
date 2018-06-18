@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public static class ChunkMesh
 {
@@ -18,12 +19,12 @@ public static class ChunkMesh
 				for(int y = 0; y < World.chunkSize; y++)
 				{
 					//	Check block type, skip drawing if air
-					BlockUtils.Types blockType = chunk.blockTypes[x,y,z];
-					if(blockType == BlockUtils.Types.AIR) { continue; }
+					Blocks.Types blockType = chunk.blockTypes[x,y,z];
+					if(blockType == Blocks.Types.AIR) { continue; }
 
 					Vector3 blockPosition = new Vector3(x,y,z);
 				
-					//	Check exposure
+					//	Check if adjacent blocks are exposed
 					bool[] exposedFaces = new bool[6];
 					bool blockExposed = false;
 					for(int e = 0; e < 6; e++)
@@ -36,17 +37,42 @@ public static class ChunkMesh
 					//	Block is not visible
 					if(!blockExposed && chunk.blockBytes[x,y,z] == 0) { continue; }
 
+					//	Draw shapes
+					int localVertCount = 0;
 					Quaternion shapeRotation = Quaternion.Euler(0, (int)chunk.blockYRotation[x,y,z], 0);
 					switch(chunk.blockShapes[x,y,z])
 					{
 						case Shapes.Shape.WEDGE:
-							vertexCount = DrawWedge(verts, norms, tris, cols, blockPosition, shapeRotation, exposedFaces, vertexCount);
+							localVertCount = DrawWedge(verts, norms, tris, cols, blockPosition, shapeRotation, exposedFaces, vertexCount);
+							break;
+
+						case Shapes.Shape.CORNEROUT:		 
+							byte belowBlock;	//	Handle case where there is a slope under this slope
+							if(y == 0)			//	Uses bitmask to check diagonally adjacent blocks
+							{	
+								Chunk belowChunk = World.BlockOwnerChunk(chunk.position + (blockPosition  + Vector3.down)); 
+								belowBlock = belowChunk.blockBytes[x, World.chunkSize - 1, z];
+							}
+							else
+							{
+								belowBlock = chunk.blockBytes[x, y-1, z];
+							}
+
+							localVertCount = DrawCornerOut(verts, norms, tris, cols, blockPosition, shapeRotation, exposedFaces, vertexCount, belowBlock);							
+							break;
+
+						case Shapes.Shape.CORNERIN:
+							localVertCount = DrawCornerIn(verts, norms, tris, cols, blockPosition, shapeRotation, exposedFaces, vertexCount, chunk.blockBytes[x,y,z]);
 							break;
 
 						default:
-							vertexCount = DrawCube(verts, norms, tris, cols, blockPosition, exposedFaces, vertexCount);
+							localVertCount = DrawCube(verts, norms, tris, cols, blockPosition, exposedFaces, vertexCount);
 							break;
 					}
+					//	Keep count of vertices to offset triangles
+					vertexCount += localVertCount;
+					cols.AddRange(	Enumerable.Repeat(	(Color)Blocks.colors[(int)chunk.blockTypes[x,y,z]],
+														localVertCount));
 				}
 		chunk.CreateMesh(verts, norms, tris, cols);
 	}
@@ -55,73 +81,169 @@ public static class ChunkMesh
 	static int DrawCube(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles, List<Color> colors,
 							Vector3 position, 			bool[] exposedFaces, 	int vertCount)
 	{
+		int localVertCount = 0;
 		for(int i = 0; i < exposedFaces.Length; i++)
 		{
 			if(exposedFaces[i])
 			{
 				Shapes.CubeFace face = (Shapes.CubeFace)i;
 
-				//	Offset vertex positoins with block position in chunk
+				//	Vertices are offset by their position in the chunk
 				Vector3[] faceVerts = Shapes.Cube.Vertices(face, position);
-				vertices.AddRange(faceVerts);
+
+				vertices.AddRange(	faceVerts);
 
 				//	Add normals in same order as vertices
-				normals.AddRange(Shapes.Cube.Normals(face));
+				normals.AddRange(	Shapes.Cube.Normals(face));
 
 				//	Offset triangle indices with number of vertices covered so far
-				triangles.AddRange(Shapes.Cube.Triangles(face, vertCount));
+				triangles.AddRange(	Shapes.Cube.Triangles(	face,
+															vertCount + localVertCount));
 
-				//	Get color using Types index
-				//colors.AddRange(Enumerable.Repeat( (Color)Shapes.colors[(int)type], faceVerts.Length ));
-
-				vertCount += faceVerts.Length;
+				//	Count vertices locally
+				localVertCount += faceVerts.Length;
 			}
 		}
-		return vertCount;
+		//	Count vertices globalls
+		return localVertCount;
 	}
 
 
-	//	WEDGE
+	//	Wedge
 	static int DrawWedge(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles, List<Color> colors,
-									Vector3 position, 			Quaternion rotation, 	bool[] exposedFaces, int vertCount)
+							Vector3 position, 			Quaternion rotation, 	bool[] exposedFaces, int vertCount)
 	{
 		List<Shapes.WedgeFace> faces = new List<Shapes.WedgeFace>();
 
 		//	Check exposed faces taking into account shape rotation
-		if(exposedFaces[(int)RotateFace(Shapes.CubeFace.TOP, rotation)] || exposedFaces[(int)RotateFace(Shapes.CubeFace.TOP, rotation)])
+		if(TopFront(exposedFaces, rotation))
 			faces.Add(Shapes.WedgeFace.SLOPE);
-		if(exposedFaces[(int)RotateFace(Shapes.CubeFace.LEFT, rotation)])
+		if(Left(exposedFaces, rotation))
 			faces.Add(Shapes.WedgeFace.LEFT);
-		if(exposedFaces[(int)RotateFace(Shapes.CubeFace.RIGHT, rotation)])
+		if(Right(exposedFaces, rotation))
 			faces.Add(Shapes.WedgeFace.RIGHT);
 
+		
+		int localVertCount = 0;
+		//	Iterate over necessary faces
 		for(int i = 0; i < faces.Count; i++)
 		{
-			Vector3[] verts = RotateVectors(	Shapes.Wedge.Vertices(faces[i], position),
+			Vector3[] verts = Shapes.Wedge.Vertices(faces[i], position);
+
+			vertices.AddRange(	RotateVectors(	verts,
 												position,
-												rotation );
-			vertices.AddRange(verts);
+												rotation));
 
 			normals.AddRange(	RotateNormals(	Shapes.Wedge.Normals(faces[i]),
-												rotation )	);
+												rotation));
 
-			triangles.AddRange(	Shapes.Wedge.Triangles(faces[i], vertCount));
+			triangles.AddRange(	Shapes.Wedge.Triangles(faces[i],
+								vertCount + localVertCount));
 
-			vertCount += verts.Length;
+			localVertCount += verts.Length;
 		}
-		return vertCount;
+		return localVertCount;
 	}
 
-
-
-
-
-
-	//	Adjust face enum by direction
-	static Shapes.CubeFace RotateFace(Shapes.CubeFace face, Quaternion rotation)
+	//	Corner out
+	static int DrawCornerOut(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles, List<Color> colors,
+								Vector3 position, 			Quaternion rotation, 	bool[] exposedFaces, int vertCount, byte belowBlock)
 	{
-		return DirectionToFace(RotateVector(FaceToDirection(face), Vector3.zero, rotation));
+		List<Shapes.CornerOutFace> faces = new List<Shapes.CornerOutFace>();
+
+		if(	TopFrontRight(exposedFaces, rotation))
+			faces.Add(Shapes.CornerOutFace.SLOPE);
+		if( belowBlock == 0)
+			faces.Add(Shapes.CornerOutFace.BOTTOM);
+
+		int localVertCount = 0;
+		for(int i = 0; i < faces.Count; i++)
+		{
+			Vector3[] faceVerts = Shapes.CornerOut.Vertices(faces[i], position);
+
+			vertices.AddRange(	RotateVectors(	faceVerts,
+												position,
+												rotation));
+
+			normals.AddRange(	RotateNormals(	Shapes.CornerOut.Normals(faces[i]),
+												rotation));
+
+			triangles.AddRange(	Shapes.CornerOut.Triangles(faces[i],
+								vertCount + localVertCount));
+
+			localVertCount += faceVerts.Length;
+		}
+		return localVertCount;			
 	}
+
+	//	Corner in
+	static int DrawCornerIn(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles, List<Color> colors,
+								Vector3 position, 			Quaternion rotation, 	bool[] exposedFaces, int vertCount, byte blockByte )
+	{
+		List<Shapes.CornerInFace> faces = new List<Shapes.CornerInFace>();
+
+		faces.Add(Shapes.CornerInFace.SLOPE);
+		if(	exposedFaces[(int)RotateFace(Shapes.CubeFace.TOP, rotation)])
+			faces.Add(Shapes.CornerInFace.TOP);
+
+		int localVertCount = 0;
+		for(int i = 0; i < faces.Count; i++)
+		{
+			Vector3[] faceVerts = Shapes.CornerIn.Vertices(faces[i], position);
+
+			vertices.AddRange(	RotateVectors(	faceVerts,
+												position,
+												rotation));
+
+			normals.AddRange(	RotateNormals(	Shapes.CornerIn.Normals(faces[i]),
+												rotation));
+
+			triangles.AddRange(	Shapes.CornerIn.Triangles(faces[i],
+								vertCount + localVertCount));
+
+			localVertCount += faceVerts.Length;	
+		}
+		return localVertCount;			
+	}
+
+
+
+
+
+
+    #region Misc
+
+	//	Check which faces of a shape are exposed, adjusting for the shape's rotation
+
+	static bool TopFront(bool[] exposedFaces, Quaternion rotation)
+	{
+		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.TOP, rotation)] ||
+				exposedFaces[(int)RotateFace(Shapes.CubeFace.FRONT, rotation)]);
+	}
+
+	static bool TopFrontRight(bool[] exposedFaces, Quaternion rotation)
+	{
+		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.TOP, rotation)] ||
+				exposedFaces[(int)RotateFace(Shapes.CubeFace.FRONT, rotation)] ||
+				exposedFaces[(int)RotateFace(Shapes.CubeFace.RIGHT, rotation)]);
+	}
+
+	static bool Right(bool[] exposedFaces, Quaternion rotation)
+	{
+		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.RIGHT, rotation)]);
+	}
+
+	static bool Left(bool[] exposedFaces, Quaternion rotation)
+	{
+		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.LEFT, rotation)]);
+	}
+
+	static bool Back(bool[] exposedFaces, Quaternion rotation)
+	{
+		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.BACK, rotation)]);
+	}
+	
+	
 
 	//	Return vector matching cube face normal
 	static Vector3 FaceToDirection(Shapes.CubeFace face)
@@ -221,13 +343,15 @@ public static class ChunkMesh
 			neighbourOwner = chunk;
 		}
 		
-		//Debug.Log((int)neighbour.x+" "+(int)neighbour.y+" "+(int)neighbour.z);
-		
 		//	Check seeThrough in neighbour
-		BlockUtils.Types type = neighbourOwner.blockTypes[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z];
+		Blocks.Types type = neighbourOwner.blockTypes[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z];
 
-		return (BlockUtils.seeThrough[(int)type]);// || slopedBlocks[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z]);
+		return (Blocks.seeThrough[(int)type]);
 	}
+
+	#endregion
+
+    #region Rotation
 
 	//	Rotate given vertex around centre by yRotation on Y axis
 	static Vector3[] RotateVectors(Vector3[] vectors, Vector3 centre, Quaternion rotation)
@@ -258,5 +382,13 @@ public static class ChunkMesh
 		}
 		return rotatedNormals;
 	}
+
+	//	Adjust face enum by direction
+	static Shapes.CubeFace RotateFace(Shapes.CubeFace face, Quaternion rotation)
+	{
+		return DirectionToFace(RotateVector(FaceToDirection(face), Vector3.zero, rotation));
+	}
+
+	#endregion
 	
 }
