@@ -9,7 +9,7 @@ public class PlayerController : MonoBehaviour {
 	public World world;
 
 	//	First person controls
-	int speed = 25;
+	public int speed = 25;
 	int sensitivity = 1;
 	Rigidbody rigidBody;
 	Camera mycam;
