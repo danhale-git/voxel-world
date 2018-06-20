@@ -1,6 +1,7 @@
-﻿	using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public static class Shapes
 {
@@ -23,108 +24,71 @@ public static class Shapes
 	public static Vector3 v5 = new Vector3(  0.5f,   0.5f,  0.5f );
 	public static Vector3 v6 = new Vector3(  0.5f,   0.5f, -0.5f );
 	public static Vector3 v7 = new Vector3( -0.5f,   0.5f, -0.5f );
-	
+
 	public static class Cube
 	{
-		//	Vertices for a cube
 		public static Vector3[] Vertices(CubeFace face, Vector3 offset)
 		{
 			Vector3[] vertices;
 		
 			switch(face)
 			{
-				case CubeFace.TOP:
-					vertices = new Vector3[] {v7+offset, v6+offset, v5+offset, v4+offset};
-				break;
+				case CubeFace.TOP: vertices = new Vector3[] {v7+offset, v6+offset, v5+offset, v4+offset};
+					break;
 
-				case CubeFace.BOTTOM:
-					vertices = new Vector3[] {v0+offset, v1+offset, v2+offset, v3+offset};
-				break;
+				case CubeFace.BOTTOM: vertices = new Vector3[] {v0+offset, v1+offset, v2+offset, v3+offset};
+					break;
 
-				case CubeFace.RIGHT:
-					vertices = new Vector3[] {v5+offset, v6+offset, v2+offset, v1+offset};
-				break;
+				case CubeFace.RIGHT: vertices = new Vector3[] {v5+offset, v6+offset, v2+offset, v1+offset};
+					break;
 
-				case CubeFace.LEFT:
-					vertices = new Vector3[] {v7+offset, v4+offset, v0+offset, v3+offset};
-				break;
+				case CubeFace.LEFT: vertices = new Vector3[] {v7+offset, v4+offset, v0+offset, v3+offset};
+					break;
 
-				case CubeFace.FRONT:
-					vertices = new Vector3[] {v4+offset, v5+offset, v1+offset, v0+offset};
-				break;
+				case CubeFace.FRONT: vertices = new Vector3[] {v4+offset, v5+offset, v1+offset, v0+offset};
+					break;
 				
-				case CubeFace.BACK:
-					vertices = new Vector3[] {v6+offset, v7+offset, v3+offset, v2+offset};
-				break;
+				case CubeFace.BACK: vertices = new Vector3[] {v6+offset, v7+offset, v3+offset, v2+offset};
+					break;
 
-				default:
-					vertices = null;
+				default: vertices = null;
 					break;
 			}
 					
 			return vertices;
 		}
 
-		//	Triangles for a cube
 		public static int[] Triangles(CubeFace face, int offset)
 		{
 			return new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
 		}
 
-		//	Normals for a cube
 		public static Vector3[] Normals(CubeFace face)
 		{
 			Vector3[] normals;
 			
-			//	TODO:
-			//	Enumerable.Repeat(Vector3.down,4).ToList();
 			switch(face)
 			{
-				case CubeFace.TOP:
-					normals = new Vector3[] {	Vector3.up,
-												Vector3.up, 
-												Vector3.up,
-												Vector3.up};
-				break;
+				case CubeFace.TOP: normals = Enumerable.Repeat(Vector3.up, 4).ToArray();
+					break;
 
-				case CubeFace.BOTTOM:
-					normals = new Vector3[] {	Vector3.down,
-												Vector3.down, 
-												Vector3.down,
-												Vector3.down};
-				break;
-				
-				case CubeFace.RIGHT:
-					normals = new Vector3[] {	Vector3.right,
-												Vector3.right, 
-												Vector3.right,
-												Vector3.right};
-				break;
+				case CubeFace.BOTTOM: normals = Enumerable.Repeat(Vector3.down, 4).ToArray();
+					break;
 
-				case CubeFace.LEFT:
-					normals = new Vector3[] {	Vector3.left,
-												Vector3.left, 
-												Vector3.left,
-												Vector3.left};
-				break;
+				case CubeFace.RIGHT: normals = Enumerable.Repeat(Vector3.right, 4).ToArray();
+					break;
 
-				case CubeFace.FRONT:
-					normals = new Vector3[] {	Vector3.forward,
-												Vector3.forward, 
-												Vector3.forward,
-												Vector3.forward};
-				break;
+				case CubeFace.LEFT: normals = Enumerable.Repeat(Vector3.left, 4).ToArray();
+					break;
 
-				case CubeFace.BACK:
-					normals = new Vector3[] {	Vector3.back,
-												Vector3.back, 
-												Vector3.back,
-												Vector3.back};
-				break;
+				case CubeFace.FRONT: normals = Enumerable.Repeat(Vector3.forward, 4).ToArray();
+					break;
 
-				default:
-					normals = null;
-				break;
+				case CubeFace.BACK: normals = Enumerable.Repeat(Vector3.back, 4).ToArray();
+					break;
+
+				default: normals = null;
+					break;
 			}
 
 			return normals;
@@ -141,20 +105,16 @@ public static class Shapes
 	
 			switch(face)
 			{
-				case WedgeFace.SLOPE:
-					vertices = new Vector3[] {v7+offset, v6+offset, v1+offset, v0+offset};
-				break;
+				case WedgeFace.SLOPE: vertices = new Vector3[] {v7+offset, v6+offset, v1+offset, v0+offset};
+					break;
 
-				case WedgeFace.RIGHT:
-					vertices = new Vector3[] {v6+offset, v2+offset, v1+offset};
-				break;
+				case WedgeFace.RIGHT: vertices = new Vector3[] {v6+offset, v2+offset, v1+offset};
+					break;
 
-				case WedgeFace.LEFT:
-					vertices = new Vector3[] {v7+offset, v0+offset, v3+offset};
-				break;
+				case WedgeFace.LEFT: vertices = new Vector3[] {v7+offset, v0+offset, v3+offset};
+					break;
 
-				default:
-					vertices = null;
+				default: vertices = null;
 					break;
 			}
 					
@@ -168,27 +128,16 @@ public static class Shapes
 	
 			switch(face)
 			{
-				case WedgeFace.SLOPE:
-					normals = new Vector3[] {	Vector3.up + Vector3.forward,
-												Vector3.up + Vector3.forward, 
-												Vector3.up + Vector3.forward,
-												Vector3.up + Vector3.forward};
-				break;
+				case WedgeFace.SLOPE: normals = Enumerable.Repeat(Vector3.up, 4).ToArray();
+					break;
 
-				case WedgeFace.RIGHT:
-					normals = new Vector3[] {	Vector3.right + Vector3.forward,
-												Vector3.right + Vector3.forward, 
-												Vector3.right + Vector3.forward};
-				break;
+				case WedgeFace.RIGHT: normals = Enumerable.Repeat(Vector3.right, 3).ToArray();
+					break;
 
-				case WedgeFace.LEFT:
-					normals = new Vector3[] {	Vector3.left + Vector3.forward,
-												Vector3.left + Vector3.forward, 
-												Vector3.left + Vector3.forward};
-				break;
+				case WedgeFace.LEFT: normals = Enumerable.Repeat(Vector3.left, 3).ToArray();
+					break;
 
-				default:
-					normals = null;
+				default: normals = null;
 					break;
 			}
 					
@@ -200,20 +149,16 @@ public static class Shapes
 			int[] triangles;
 			switch(face)
 			{
-				case WedgeFace.SLOPE:
-					triangles = new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
-				break;
+				case WedgeFace.SLOPE: triangles = new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
+					break;
 
-				case WedgeFace.RIGHT:
-					triangles = new int[] {2+offset, 1+offset, 0+offset};
-				break;
+				case WedgeFace.RIGHT: triangles = new int[] {2+offset, 1+offset, 0+offset};
+					break;
 
-				case WedgeFace.LEFT:
-					triangles = new int[] {2+offset, 1+offset, 0+offset};
-				break;
+				case WedgeFace.LEFT: triangles = new int[] {2+offset, 1+offset, 0+offset};
+					break;
 
-				default:
-					triangles = null;
+				default: triangles = null;
 					break;
 			}
 					
@@ -223,88 +168,65 @@ public static class Shapes
 
 	public static class CornerOut
 	{
-		//	Vertices for a cube
 		public static Vector3[] Vertices(CornerOutFace face, Vector3 offset)
 		{
 			Vector3[] vertices;
 		
 			switch(face)
 			{
-				case CornerOutFace.SLOPE:
-					vertices = new Vector3[] {v7+offset, v2+offset, v0+offset};
-				break;
+				case CornerOutFace.SLOPE: vertices = new Vector3[] {v7+offset, v2+offset, v0+offset};
+					break;
 
-				case CornerOutFace.BOTTOM:
-					vertices = new Vector3[] {v0+offset, v1+offset, v2+offset};
-				break;
+				case CornerOutFace.BOTTOM: vertices = new Vector3[] {v0+offset, v1+offset, v2+offset};
+					break;
 
-				case CornerOutFace.LEFT:
-					vertices = new Vector3[] {v7+offset, v0+offset, v4+offset};
-				break;
+				case CornerOutFace.LEFT: vertices = new Vector3[] {v7+offset, v0+offset, v4+offset};
+					break;
 
-				default:
-					vertices = null;
+				default: vertices = null;
 					break;
 			}
 					
 			return vertices;
 		}
 
-		//	Triangles for a cube
 		public static int[] Triangles(CornerOutFace face, int offset)
 		{
 			int[] triangles;
 			switch(face)
 			{
-				case CornerOutFace.SLOPE:
-					triangles = new int[] {2+offset, 1+offset, 0+offset};
-				break;
+				case CornerOutFace.SLOPE: triangles = new int[] {2+offset, 1+offset, 0+offset};
+					break;
 
-				case CornerOutFace.BOTTOM:
-					triangles = new int[] {0+offset, 1+offset, 2+offset};
-				break;
+				case CornerOutFace.BOTTOM: triangles = new int[] {0+offset, 1+offset, 2+offset};
+					break;
 
-				case CornerOutFace.LEFT:
-					triangles = new int[] {2+offset, 1+offset, 0+offset};
-				break;
+				case CornerOutFace.LEFT: triangles = new int[] {2+offset, 1+offset, 0+offset};
+					break;
 				
-				default:
-					triangles = null;
+				default: triangles = null;
 					break;
 			}
 			return triangles;
 		}
 
-		//	Normals for a cube
 		public static Vector3[] Normals(CornerOutFace face)
 		{
 			Vector3[] normals;
 			
-			//	TODO:
-			//	Enumerable.Repeat(Vector3.down,4).ToList();
 			switch(face)
 			{
-				case CornerOutFace.SLOPE:
-					normals = new Vector3[] {	Vector3.up + Vector3.forward + Vector3.right,
-												Vector3.up + Vector3.forward + Vector3.right, 
-												Vector3.up + Vector3.forward + Vector3.right};
-				break;
+				case CornerOutFace.SLOPE: normals = Enumerable.Repeat(Vector3.up + Vector3.forward + Vector3.right, 3).ToArray();
+					break;
 
-				case CornerOutFace.BOTTOM:
-					normals = new Vector3[] {	Vector3.up,
-												Vector3.up, 
-												Vector3.up};
-				break;
+				case CornerOutFace.BOTTOM: normals = Enumerable.Repeat(Vector3.up, 3).ToArray();
+					break;
 
-				case CornerOutFace.LEFT:
-					normals = new Vector3[] {	Vector3.right,
-												Vector3.right, 
-												Vector3.right};
-				break;
+				case CornerOutFace.LEFT: normals = Enumerable.Repeat(Vector3.right, 3).ToArray();
+					break;
 
-				default:
-					normals = null;
-				break;
+				default: normals = null;
+					break;
 			}
 
 			return normals;
@@ -313,74 +235,56 @@ public static class Shapes
 
 	public static class CornerIn
 	{
-		//	Vertices for a cube
 		public static Vector3[] Vertices(CornerInFace face, Vector3 offset)
 		{
 			Vector3[] vertices;
 		
 			switch(face)
 			{
-				case CornerInFace.SLOPE:
-					vertices = new Vector3[] {v4+offset, v6+offset, v1+offset};
-				break;
+				case CornerInFace.SLOPE: vertices = new Vector3[] {v4+offset, v6+offset, v1+offset};
+					break;
 
-				case CornerInFace.TOP:
-					vertices = new Vector3[] {v7+offset, v6+offset, v4+offset};
-				break;
+				case CornerInFace.TOP: vertices = new Vector3[] {v7+offset, v6+offset, v4+offset};
+					break;
 
-				default:
-					vertices = null;
+				default: vertices = null;
 					break;
 			}
 					
 			return vertices;
 		}
 
-		//	Triangles for a cube
 		public static int[] Triangles(CornerInFace face, int offset)
 		{
 			int[] triangles;
 			switch(face)
 			{
-				case CornerInFace.SLOPE:
-					triangles = new int[] {2+offset, 1+offset, 0+offset};
-				break;
+				case CornerInFace.SLOPE: triangles = new int[] {2+offset, 1+offset, 0+offset};
+					break;
 
-				case CornerInFace.TOP:
-					triangles = new int[] {2+offset, 1+offset, 0+offset};
-				break;
+				case CornerInFace.TOP: triangles = new int[] {2+offset, 1+offset, 0+offset};
+					break;
 				
-				default:
-					triangles = null;
+				default: triangles = null;
 					break;
 			}
 			return triangles;
 		}
 
-		//	Normals for a cube
 		public static Vector3[] Normals(CornerInFace face)
 		{
 			Vector3[] normals;
 			
-			//	TODO:
-			//	Enumerable.Repeat(Vector3.down,4).ToList();
 			switch(face)
 			{
-				case CornerInFace.SLOPE:
-					normals = new Vector3[] {	Vector3.up + Vector3.forward + Vector3.right,
-												Vector3.up + Vector3.forward + Vector3.right, 
-												Vector3.up + Vector3.forward + Vector3.right};
-				break;
+				case CornerInFace.SLOPE: normals = Enumerable.Repeat(Vector3.up + Vector3.forward + Vector3.right, 3).ToArray();
+					break;
 
-				case CornerInFace.TOP:
-					normals = new Vector3[] {	Vector3.up,
-												Vector3.up, 
-												Vector3.up};
-				break;
+				case CornerInFace.TOP: normals = Enumerable.Repeat(Vector3.up, 3).ToArray();
+					break;
 
-				default:
-					normals = null;
-				break;
+				default: normals = null;
+					break;
 			}
 
 			return normals;
