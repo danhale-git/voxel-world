@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour {
 
@@ -30,9 +31,20 @@ public class PlayerController : MonoBehaviour {
 	//	The ray we are using for selection
 	Ray Ray()
 	{
-		return Camera.main.ScreenPointToRay(Input.mousePosition);
+		//return Camera.main.ScreenPointToRay(Input.mousePosition);
+		return mycam.ViewportPointToRay(new Vector3(0.5F, 0.5F, 0));
+	}
+
+	void CursorOff()
+	{
+		if(Cursor.lockState == CursorLockMode.None) Cursor.lockState = CursorLockMode.Locked;
 	}
 	
+	void CursorOn()
+	{
+		if(Cursor.lockState == CursorLockMode.Locked) Cursor.lockState = CursorLockMode.None;
+	}
+
 	void Update ()
 	{
 		Movement();
@@ -54,6 +66,11 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetButtonDown("Fire2"))
 		{
 			AddBlock(Ray());
+		}
+
+		if(Input.GetKeyDown(KeyCode.Escape))
+		{
+			CursorOn();
 		}
 		
 	}
@@ -107,27 +124,35 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetKey(KeyCode.W))	//	forward
 		{
 			transform.Translate((Vector3.forward * speed) * Time.deltaTime);
+			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.S))	//	back
 		{
 			transform.Translate((Vector3.back * speed) * Time.deltaTime);
+			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.A))	//	left
 		{
 			transform.Translate((Vector3.left * speed) * Time.deltaTime);
+			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.D))	//	right
 		{
 			transform.Translate((Vector3.right * speed) * Time.deltaTime);
+			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.LeftControl))	//	down
 		{
 			transform.Translate((Vector3.down * speed) * Time.deltaTime);
+			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.Space))	//	up
 		{
 			transform.Translate((Vector3.up * speed) * Time.deltaTime);
+			CursorOff();
 		}
+
+		if(Cursor.lockState != CursorLockMode.Locked) return;
 		
 		float horizontal = sensitivity * Input.GetAxis("Mouse X");
         float vertical = -(sensitivity * Input.GetAxis("Mouse Y"));
