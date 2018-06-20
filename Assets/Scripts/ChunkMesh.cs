@@ -12,8 +12,10 @@ public static class ChunkMesh
 		List<int> tris = new List<int>();
 		List<Color> cols = new List<Color>();
 
+		//	Vertex count for offsetting triangle indices
 		int vertexCount = 0;
 
+		//	Generate mesh data
 		for(int x = 0; x < World.chunkSize; x++)
 			for(int z = 0; z < World.chunkSize; z++)
 				for(int y = 0; y < World.chunkSize; y++)
@@ -34,39 +36,44 @@ public static class ChunkMesh
 						if(exposedFaces[e] && !blockExposed) { blockExposed = true; }
 					}
 
-					//	Block is not visible
+					//	Block is not visible so nothing to draw
 					if(!blockExposed && chunk.blockBytes[x,y,z] == 0) { continue; }
 
-					//	Draw shapes
+					//	Check block shapes and generate mesh data
 					int localVertCount = 0;
 					Quaternion shapeRotation = Quaternion.Euler(0, (int)chunk.blockYRotation[x,y,z], 0);
 					switch(chunk.blockShapes[x,y,z])
 					{
 						case Shapes.Shape.WEDGE:
-							localVertCount = DrawWedge(verts, norms, tris, cols, blockPosition, shapeRotation, exposedFaces, vertexCount);
+							localVertCount = DrawWedge(		verts, norms, tris, cols, blockPosition, shapeRotation,
+															exposedFaces, vertexCount);
 							break;
 
-						case Shapes.Shape.CORNEROUT:		 
-							byte belowBlock;	//	Handle case where there is a slope under this slope
+						case Shapes.Shape.CORNEROUT:	
+
+							byte belowBlock;	//	Handle case where there is a slope under this slope			//			//
 							if(y == 0)			//	Uses bitmask to check diagonally adjacent blocks
-							{	
-								Chunk belowChunk = World.BlockOwnerChunk(chunk.position + (blockPosition  + Vector3.down)); 
+							{					//	Only creates bottom triangle if below/adjacent corner is not see through
+								Chunk belowChunk = World.BlockOwnerChunk(chunk.position + (blockPosition + Vector3.down)); 
 								belowBlock = belowChunk.blockBytes[x, World.chunkSize - 1, z];
-							}
+							}																	//TODO: Make this go away	//
 							else
 							{
 								belowBlock = chunk.blockBytes[x, y-1, z];
-							}
+							}			//			//			//			//			//			//			//			//
 
-							localVertCount = DrawCornerOut(verts, norms, tris, cols, blockPosition, shapeRotation, exposedFaces, vertexCount, belowBlock);							
+							localVertCount = DrawCornerOut(	verts, norms, tris, cols, blockPosition, shapeRotation,
+															exposedFaces, vertexCount, belowBlock);							
 							break;
 
 						case Shapes.Shape.CORNERIN:
-							localVertCount = DrawCornerIn(verts, norms, tris, cols, blockPosition, shapeRotation, exposedFaces, vertexCount, chunk.blockBytes[x,y,z]);
+							localVertCount = DrawCornerIn(	verts, norms, tris, cols, blockPosition, shapeRotation,
+															exposedFaces, vertexCount, chunk.blockBytes[x,y,z]);
 							break;
 
 						default:
-							localVertCount = DrawCube(verts, norms, tris, cols, blockPosition, exposedFaces, vertexCount);
+							localVertCount = DrawCube(		verts, norms, tris, cols, blockPosition,
+															exposedFaces, vertexCount);
 							break;
 					}
 					//	Keep count of vertices to offset triangles
@@ -74,6 +81,7 @@ public static class ChunkMesh
 					cols.AddRange(	Enumerable.Repeat(	(Color)Blocks.colors[(int)chunk.blockTypes[x,y,z]],
 														localVertCount));
 				}
+
 		chunk.CreateMesh(verts, norms, tris, cols);
 	}
 
@@ -100,11 +108,11 @@ public static class ChunkMesh
 				triangles.AddRange(	Shapes.Cube.Triangles(	face,
 															vertCount + localVertCount));
 
-				//	Count vertices locally
+				//	Count vertices in shape
 				localVertCount += faceVerts.Length;
 			}
 		}
-		//	Count vertices globalls
+		//	Count vertices in chunk
 		return localVertCount;
 	}
 
@@ -223,7 +231,7 @@ public static class ChunkMesh
 
 	static bool TopFrontRight(bool[] exposedFaces, Quaternion rotation)
 	{
-		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.TOP, rotation)] ||
+		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.TOP, rotation)]   ||
 				exposedFaces[(int)RotateFace(Shapes.CubeFace.FRONT, rotation)] ||
 				exposedFaces[(int)RotateFace(Shapes.CubeFace.RIGHT, rotation)]);
 	}
@@ -252,33 +260,13 @@ public static class ChunkMesh
 		
 		switch(face)
 		{
-			case Shapes.CubeFace.TOP:
-				direction = Vector3.up;
-			break;
-
-			case Shapes.CubeFace.BOTTOM:
-				direction = Vector3.down;
-			break;
-			
-			case Shapes.CubeFace.RIGHT:
-				direction = Vector3.right;
-			break;
-
-			case Shapes.CubeFace.LEFT:
-				direction = Vector3.left;
-			break;
-
-			case Shapes.CubeFace.FRONT:
-				direction = Vector3.forward;
-			break;
-
-			case Shapes.CubeFace.BACK:
-				direction = Vector3.back;
-			break;
-
-			default:
-				direction = Vector3.zero;
-			break;
+			case Shapes.CubeFace.TOP: direction = Vector3.up; break;
+			case Shapes.CubeFace.BOTTOM: direction = Vector3.down; break;
+			case Shapes.CubeFace.RIGHT: direction = Vector3.right; break;
+			case Shapes.CubeFace.LEFT: direction = Vector3.left; break;
+			case Shapes.CubeFace.FRONT: direction = Vector3.forward; break;
+			case Shapes.CubeFace.BACK: direction = Vector3.back; break;
+			default: direction = Vector3.zero; break;
 		}
 
 		return direction;
@@ -287,29 +275,16 @@ public static class ChunkMesh
 	//	Return cube face facing direction
 	static Shapes.CubeFace DirectionToFace(Vector3 direction)
 	{
-		if(direction == Vector3.up)
-			return Shapes.CubeFace.TOP;
-
-		if(direction == Vector3.down)
-			return Shapes.CubeFace.BOTTOM;
-		
-		if(direction == Vector3.right)
-			return Shapes.CubeFace.RIGHT;
-
-		if(direction == Vector3.left)
-			return Shapes.CubeFace.LEFT;
-
-		if(direction == Vector3.forward)
-			return Shapes.CubeFace.FRONT;
-
-		if(direction == Vector3.back)
-			return Shapes.CubeFace.BACK;
-		else
-			Debug.Log("No face matched direction " + direction);
-			return Shapes.CubeFace.TOP;
+		if(direction == Vector3.up) return Shapes.CubeFace.TOP;
+		if(direction == Vector3.down) return Shapes.CubeFace.BOTTOM;
+		if(direction == Vector3.right) return Shapes.CubeFace.RIGHT;
+		if(direction == Vector3.left) return Shapes.CubeFace.LEFT;
+		if(direction == Vector3.forward) return Shapes.CubeFace.FRONT;
+		if(direction == Vector3.back) return Shapes.CubeFace.BACK;
+		else Debug.Log("BAD FACE"); return Shapes.CubeFace.TOP;
 	}
 
-	//	Block face is on map edge or player can see through adjacent block
+	//	Player can see through adjacent block
 	static bool FaceExposed(Shapes.CubeFace face, Vector3 blockPosition, Chunk chunk)
 	{	
 		//	Direction of neighbour
@@ -353,7 +328,7 @@ public static class ChunkMesh
 
     #region Rotation
 
-	//	Rotate given vertex around centre by yRotation on Y axis
+	//	Rotate vertices around centre by yRotation on Y axis
 	static Vector3[] RotateVectors(Vector3[] vectors, Vector3 centre, Quaternion rotation)
 	{		
 		Vector3[] rotatedVertices = new Vector3[vectors.Length];
@@ -366,6 +341,7 @@ public static class ChunkMesh
 		return rotatedVertices;
 	}
 
+	//	Rotate vertex around centre by yRotation on Y axis
 	static Vector3 RotateVector(Vector3 vector, Vector3 centre, Quaternion rotation)
 	{				
 		return rotation * (vector - centre) + centre;
@@ -386,6 +362,7 @@ public static class ChunkMesh
 	//	Adjust face enum by direction
 	static Shapes.CubeFace RotateFace(Shapes.CubeFace face, Quaternion rotation)
 	{
+		//	Convert to Vector3 direction, rotate then convert back to face
 		return DirectionToFace(RotateVector(FaceToDirection(face), Vector3.zero, rotation));
 	}
 
