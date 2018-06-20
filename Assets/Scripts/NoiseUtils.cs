@@ -9,7 +9,7 @@ public static class NoiseUtils
 	public static int GroundHeight(int x, int z, int maxHeight)
 	{
 		float height;
-		height = BrownianMotion(x * 0.001f,z * 0.001f);
+		height = BrownianMotion(x * 0.01f,z * 0.01f);
 
 		return (int)Map(0, maxHeight, 0, 1, height);;
 	}

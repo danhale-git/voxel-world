@@ -25,6 +25,7 @@ public static class ChunkMesh
 					if(blockType == Blocks.Types.AIR) { continue; }
 
 					Vector3 blockPosition = new Vector3(x,y,z);
+					Shapes.Shape blockShape = chunk.blockShapes[x,y,z];
 				
 					//	Check if adjacent blocks are exposed
 					bool[] exposedFaces = new bool[6];
@@ -42,10 +43,10 @@ public static class ChunkMesh
 					//	Check block shapes and generate mesh data
 					int localVertCount = 0;
 					Quaternion shapeRotation = Quaternion.Euler(0, (int)chunk.blockYRotation[x,y,z], 0);
-					switch(chunk.blockShapes[x,y,z])
+					switch(blockShape)
 					{
 						case Shapes.Shape.WEDGE:
-							localVertCount = DrawWedge(		verts, norms, tris, cols, blockPosition, shapeRotation,
+							localVertCount = DrawWedge(		verts, norms, tris, blockPosition, shapeRotation,
 															exposedFaces, vertexCount);
 							break;
 
@@ -62,17 +63,22 @@ public static class ChunkMesh
 								belowBlock = chunk.blockBytes[x, y-1, z];
 							}			//			//			//			//			//			//			//			//
 
-							localVertCount = DrawCornerOut(	verts, norms, tris, cols, blockPosition, shapeRotation,
+							localVertCount = DrawCornerOut(	verts, norms, tris, blockPosition, shapeRotation,
 															exposedFaces, vertexCount, belowBlock);							
 							break;
 
 						case Shapes.Shape.CORNERIN:
-							localVertCount = DrawCornerIn(	verts, norms, tris, cols, blockPosition, shapeRotation,
-															exposedFaces, vertexCount, chunk.blockBytes[x,y,z]);
+							localVertCount = DrawCornerIn(	verts, norms, tris, blockPosition, shapeRotation,
+															exposedFaces, vertexCount);
+							break;
+
+						case Shapes.Shape.OUTCROP:
+							localVertCount = DrawOutcrop(	verts, norms, tris, blockPosition, shapeRotation,
+															exposedFaces, vertexCount);
 							break;
 
 						default:
-							localVertCount = DrawCube(		verts, norms, tris, cols, blockPosition,
+							localVertCount = DrawCube(		verts, norms, tris, blockPosition,
 															exposedFaces, vertexCount);
 							break;
 					}
@@ -86,7 +92,7 @@ public static class ChunkMesh
 	}
 
 	//	Cube
-	static int DrawCube(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles, List<Color> colors,
+	static int DrawCube(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles,
 							Vector3 position, 			bool[] exposedFaces, 	int vertCount)
 	{
 		int localVertCount = 0;
@@ -118,7 +124,7 @@ public static class ChunkMesh
 
 
 	//	Wedge
-	static int DrawWedge(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles, List<Color> colors,
+	static int DrawWedge(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles,
 							Vector3 position, 			Quaternion rotation, 	bool[] exposedFaces, int vertCount)
 	{
 		List<Shapes.WedgeFace> faces = new List<Shapes.WedgeFace>();
@@ -127,9 +133,9 @@ public static class ChunkMesh
 		if(TopFront(exposedFaces, rotation))
 			faces.Add(Shapes.WedgeFace.SLOPE);
 		if(Left(exposedFaces, rotation))
-			faces.Add(Shapes.WedgeFace.LEFT);
-		if(Right(exposedFaces, rotation))
 			faces.Add(Shapes.WedgeFace.RIGHT);
+		if(Right(exposedFaces, rotation))
+			faces.Add(Shapes.WedgeFace.LEFT);
 
 		
 		int localVertCount = 0;
@@ -154,7 +160,7 @@ public static class ChunkMesh
 	}
 
 	//	Corner out
-	static int DrawCornerOut(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles, List<Color> colors,
+	static int DrawCornerOut(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles,
 								Vector3 position, 			Quaternion rotation, 	bool[] exposedFaces, int vertCount, byte belowBlock)
 	{
 		List<Shapes.CornerOutFace> faces = new List<Shapes.CornerOutFace>();
@@ -185,13 +191,14 @@ public static class ChunkMesh
 	}
 
 	//	Corner in
-	static int DrawCornerIn(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles, List<Color> colors,
-								Vector3 position, 			Quaternion rotation, 	bool[] exposedFaces, int vertCount, byte blockByte )
+	static int DrawCornerIn(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles,
+								Vector3 position, 			Quaternion rotation, 	bool[] exposedFaces, int vertCount)
 	{
 		List<Shapes.CornerInFace> faces = new List<Shapes.CornerInFace>();
 
 		faces.Add(Shapes.CornerInFace.SLOPE);
-		if(	exposedFaces[(int)RotateFace(Shapes.CubeFace.TOP, rotation)])
+
+		if(Top(exposedFaces, rotation))
 			faces.Add(Shapes.CornerInFace.TOP);
 
 		int localVertCount = 0;
@@ -207,6 +214,48 @@ public static class ChunkMesh
 												rotation));
 
 			triangles.AddRange(	Shapes.CornerIn.Triangles(faces[i],
+								vertCount + localVertCount));
+
+			localVertCount += faceVerts.Length;	
+		}
+		return localVertCount;			
+	}
+
+	//	Outcrop
+	static int DrawOutcrop(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles,
+							Vector3 position, 			Quaternion rotation, 	bool[] exposedFaces, int vertCount)
+	{
+		List<Shapes.OutcropFace> faces = new List<Shapes.OutcropFace>();
+
+		if(TopFront(exposedFaces, rotation))
+			faces.Add(Shapes.OutcropFace.RSLOPE);
+			faces.Add(Shapes.OutcropFace.LSLOPE);
+			faces.Add(Shapes.OutcropFace.TOP);
+
+		if(Right(exposedFaces, rotation))
+			faces.Add(Shapes.OutcropFace.RIGHT);
+		if(Left(exposedFaces, rotation))
+			faces.Add(Shapes.OutcropFace.LEFT);
+		if(Front(exposedFaces, rotation))
+			faces.Add(Shapes.OutcropFace.FRONT);
+		if(Back(exposedFaces, rotation))
+			faces.Add(Shapes.OutcropFace.BACK);
+		if(Bottom(exposedFaces, rotation))
+			faces.Add(Shapes.OutcropFace.BOTTOM);
+
+		int localVertCount = 0;
+		for(int i = 0; i < faces.Count; i++)
+		{
+			Vector3[] faceVerts = Shapes.Outcrop.Vertices(faces[i], position);
+
+			vertices.AddRange(	RotateVectors(	faceVerts,
+												position,
+												rotation));
+
+			normals.AddRange(	RotateNormals(	Shapes.Outcrop.Normals(faces[i]),
+												rotation));
+
+			triangles.AddRange(	Shapes.Outcrop.Triangles(faces[i],
 								vertCount + localVertCount));
 
 			localVertCount += faceVerts.Length;	
@@ -236,6 +285,13 @@ public static class ChunkMesh
 				exposedFaces[(int)RotateFace(Shapes.CubeFace.RIGHT, rotation)]);
 	}
 
+	static bool TopFrontLeft(bool[] exposedFaces, Quaternion rotation)
+	{
+		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.TOP, rotation)]   ||
+				exposedFaces[(int)RotateFace(Shapes.CubeFace.FRONT, rotation)] ||
+				exposedFaces[(int)RotateFace(Shapes.CubeFace.LEFT, rotation)]);
+	}
+
 	static bool Right(bool[] exposedFaces, Quaternion rotation)
 	{
 		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.RIGHT, rotation)]);
@@ -246,9 +302,24 @@ public static class ChunkMesh
 		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.LEFT, rotation)]);
 	}
 
+	static bool Front(bool[] exposedFaces, Quaternion rotation)
+	{
+		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.FRONT, rotation)]);
+	}
+
 	static bool Back(bool[] exposedFaces, Quaternion rotation)
 	{
 		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.BACK, rotation)]);
+	}
+
+	static bool Top(bool[] exposedFaces, Quaternion rotation)
+	{
+		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.TOP, rotation)]);
+	}
+
+	static bool Bottom(bool[] exposedFaces, Quaternion rotation)
+	{
+		return (exposedFaces[(int)RotateFace(Shapes.CubeFace.BOTTOM, rotation)]);
 	}
 	
 	

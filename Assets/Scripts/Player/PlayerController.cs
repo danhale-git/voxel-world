@@ -7,7 +7,7 @@ public class PlayerController : MonoBehaviour {
 
 	public Chunk currentChunk;
 	public World world;
-
+	public Shapes.Shape blockPlaceShape;
 	//	First person controls
 	public int speed = 25;
 	int sensitivity = 1;
@@ -184,7 +184,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point + (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			World.ChangeBlock(voxel, Blocks.Types.DIRT);
+			World.ChangeBlock(voxel, Blocks.Types.STONE, blockPlaceShape);
 		}
 	}
 
@@ -198,9 +198,6 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 			Debug.Log(World.GetBitMask(voxel));
-
-			Vector3 blockPos = voxel - World.BlockOwner(voxel);
-			Debug.Log(World.chunks[World.BlockOwner(voxel)].blockBytes[(int)blockPos.x, (int)blockPos.y, (int)blockPos.z]);
 		}
 	}
 
