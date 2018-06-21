@@ -74,7 +74,7 @@ public class World : MonoBehaviour
 		//	redraw chunks
 		foreach(Vector3 chunkPosition in redraw)
 		{
-			World.chunks[chunkPosition].SmoothBlocks();
+			//World.chunks[chunkPosition].SmoothBlocks();
 			World.chunks[chunkPosition].Redraw();
 		}
 		return true;
@@ -143,7 +143,7 @@ public class World : MonoBehaviour
 					GenerateChunk(location);
 				}
 
-		//	Graw chunks in view distance
+		/*//	Smooth chunks in view distance
 		for(int x = -viewDistance; x < viewDistance; x++)
 			for(int z = -viewDistance; z < viewDistance; z++)
 				for(int y = -viewDistance; y < viewDistance; y++)
@@ -151,9 +151,9 @@ public class World : MonoBehaviour
 					Vector3 offset = new Vector3(x, y, z) * chunkSize;
 					Vector3 location = centerChunk + offset;
 					chunks[location].SmoothBlocks();
-				}
+				}*/
 
-		//	Graw chunks in view distance
+		//	Draw chunks in view distance
 		for(int x = -viewDistance; x < viewDistance; x++)
 			for(int z = -viewDistance; z < viewDistance; z++)
 				for(int y = -viewDistance; y < viewDistance; y++)
@@ -171,12 +171,6 @@ public class World : MonoBehaviour
 		Chunk chunk = new Chunk(position, this);
 		chunks.Add(position, chunk);
 		chunk.status = Chunk.Status.GENERATED;		
-	}
-
-	//	Shape blocks to smooth chunk surface
-	void SetChunkShapes(Vector3 position)
-	{
-		chunks[position].SmoothBlocks();
 	}
 
 	//	Draw chunk at position key in dictionary
