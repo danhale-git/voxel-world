@@ -7,7 +7,7 @@ public static class Shapes
 {
 	
 	public enum Rotate { FRONT = 0, RIGHT = 90, BACK = 180, LEFT = 270 }
-	public enum Shape {CUBE, WEDGE, CORNERIN, CORNEROUT, OUTCROP, STRIP}
+	public enum Types {CUBE, WEDGE, CORNERIN, CORNEROUT, OUTCROP, STRIP, STRIPEND}
 
 	//	For specifying which face of a shape is being worked on
 	public enum CubeFace {TOP, BOTTOM, RIGHT, LEFT, FRONT, BACK}
@@ -16,25 +16,27 @@ public static class Shapes
 	public enum CornerInFace {SLOPE, TOP}
 	public enum OutcropFace {RSLOPE, LSLOPE, RIGHT, LEFT, FRONT, BACK, TOP, BOTTOM}
 	public enum StripFace {RIGHT, LEFT, FRONT, BACK, TOP, BOTTOM}
+	public enum StripEndFace {RIGHT, LEFT, FRONT, BACK, TOP, BOTTOM}
+	public enum LumpFace {RIGHT, LEFT, FRONT, BACK, BOTTOM}
+
 
 	// Coordinates for 1x1 cube vertices relative to center	
-	public static Vector3 v0 = new Vector3( -0.5f,  -0.5f,  0.5f );	//	left bottom front
-	public static Vector3 v2 = new Vector3(  0.5f,  -0.5f, -0.5f );	//	right bottom back
-	public static Vector3 v3 = new Vector3( -0.5f,  -0.5f, -0.5f ); //	left bottom back
-	public static Vector3 v1 = new Vector3(  0.5f,  -0.5f,  0.5f );	//	right bottom front
-	public static Vector3 v4 = new Vector3( -0.5f,   0.5f,  0.5f );	//	left top front
-	public static Vector3 v5 = new Vector3(  0.5f,   0.5f,  0.5f );	//	right top front
-	public static Vector3 v6 = new Vector3(  0.5f,   0.5f, -0.5f );	//	right top back
-	public static Vector3 v7 = new Vector3( -0.5f,   0.5f, -0.5f );	//	left top back
+	readonly static Vector3 v0 = new Vector3( 	-0.5f, -0.5f,	 0.5f );	//	left bottom front
+	readonly static Vector3 v2 = new Vector3( 	 0.5f, -0.5f,	-0.5f );	//	right bottom back
+	readonly static Vector3 v3 = new Vector3( 	-0.5f, -0.5f,	-0.5f ); 	//	left bottom back
+	readonly static Vector3 v1 = new Vector3( 	 0.5f, -0.5f,	 0.5f );	//	right bottom front
+	readonly static Vector3 v4 = new Vector3( 	-0.5f,  0.5f,	 0.5f );	//	left top front
+	readonly static Vector3 v5 = new Vector3( 	 0.5f,  0.5f,	 0.5f );	//	right top front
+	readonly static Vector3 v6 = new Vector3( 	 0.5f,  0.5f,	-0.5f );	//	right top back
+	readonly static Vector3 v7 = new Vector3( 	-0.5f,  0.5f,	-0.5f );	//	left top back
 	
-	public static Vector3 v8 = new Vector3(	 0f, 	 0f,   -0.5f);	//	middle back
-	public static Vector3 v9 = new Vector3(  0f, 	 0f,	0.5f);	//	middle front
-	public static Vector3 v10 = new Vector3( 0.5f, 	 0f,    0f);	//	middle right
-	public static Vector3 v11 = new Vector3(-0.5f, 	 0f, 	0f);	//	middle left
-	public static Vector3 v12 = new Vector3( 0f, 	 0f,    0f);	//	middle
+	readonly static Vector3 v8 = new Vector3(  	0f, 	0f,		-0.5f);		//	middle back
+	readonly static Vector3 v9 = new Vector3(  	0f, 	0f,		 0.5f);		//	middle front
+	readonly static Vector3 v10 = new Vector3( 	0.5f,	0f,		 0f);		//	middle right
+	readonly static Vector3 v11 = new Vector3( -0.5f,	0f,		 0f);		//	middle left
+	readonly static Vector3 v12 = new Vector3( 	0f, 	0f,		 0f);		//	middle
 	
-
-	public static class Cube
+	public struct Cube
 	{
 		public static Vector3[] Vertices(CubeFace face, Vector3 offset)
 		{
@@ -417,9 +419,6 @@ public static class Shapes
 
 	public static class Strip
 	{
-
-		 
-
 		public static Vector3[] Vertices(StripFace face, Vector3 offset)
 		{
 			Vector3[] vertices;
@@ -429,16 +428,16 @@ public static class Shapes
 				case StripFace.RIGHT: vertices = new Vector3[] {v0+offset, v9+offset, v8+offset, v3+offset};
 					break;
 
-				case StripFace.LEFT: vertices = new Vector3[] {v8+offset, v2+offset, v1+offset, v9+offset};
+				case StripFace.LEFT: vertices = new Vector3[] {v9+offset, v1+offset, v2+offset, v8+offset};
 					break;
 				
 				case StripFace.FRONT: vertices = new Vector3[] {v0+offset, v1+offset, v9+offset};
 					break;
 
-				case StripFace.BACK: vertices = new Vector3[] {v3+offset, v2+offset, v1+offset};
+				case StripFace.BACK: vertices = new Vector3[] {v8+offset, v2+offset, v3+offset};
 					break;
 
-				case StripFace.BOTTOM: vertices = new Vector3[] {v0+offset, v1+offset, v2+offset, v3+offset};
+				case StripFace.BOTTOM: vertices = new Vector3[] {v3+offset, v2+offset, v1+offset, v0+offset};
 					break;
 
 				default: vertices = null;
@@ -503,7 +502,92 @@ public static class Shapes
 		}
 	}
 
+	public static class StripEnd
+	{
+		public static Vector3[] Vertices(StripEndFace face, Vector3 offset)
+		{
+			Vector3[] vertices;
+		
+			switch(face)
+			{
+				case StripEndFace.RIGHT: vertices = new Vector3[] {v0+offset, v12+offset, v8+offset, v3+offset};
+					break;
 
+				case StripEndFace.LEFT: vertices = new Vector3[] {v12+offset, v1+offset, v2+offset, v8+offset};
+					break;
+				
+				case StripEndFace.FRONT: vertices = new Vector3[] {v0+offset, v1+offset, v12+offset};
+					break;
+
+				case StripEndFace.BACK: vertices = new Vector3[] {v8+offset, v2+offset, v3+offset};
+					break;
+
+				case StripEndFace.BOTTOM: vertices = new Vector3[] {v3+offset, v2+offset, v1+offset, v0+offset};
+					break;
+
+				default: vertices = null;
+					break;
+			}
+					
+			return vertices;
+		}
+
+		public static int[] Triangles(StripEndFace face, int offset)
+		{
+			int[] triangles;
+			switch(face)
+			{
+				case StripEndFace.RIGHT: triangles = new int[] {0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset};
+					break;
+
+				case StripEndFace.LEFT: triangles = new int[] {0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset};
+					break;
+
+				case StripEndFace.FRONT: triangles = new int[] {0+offset, 1+offset, 2+offset};
+					break;
+				
+				case StripEndFace.BACK: triangles = new int[] {0+offset, 1+offset, 2+offset};
+					break;
+
+				case StripEndFace.BOTTOM: triangles = new int[] {0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset};
+					break;
+				
+				default: triangles = null;
+					break;
+			}
+			return triangles;
+		}
+
+		public static Vector3[] Normals(StripEndFace face)
+		{
+			Vector3[] normals;
+			
+			switch(face)
+			{
+				case StripEndFace.RIGHT: normals = Enumerable.Repeat(Vector3.right + Vector3.up, 4).ToArray();
+					break;
+				
+				case StripEndFace.LEFT: normals = Enumerable.Repeat(Vector3.left + Vector3.up, 4).ToArray();
+					break;
+
+				case StripEndFace.FRONT: normals = Enumerable.Repeat(Vector3.forward, 3).ToArray();
+					break;
+				
+				case StripEndFace.BACK: normals = Enumerable.Repeat(Vector3.back, 3).ToArray();
+					break;
+
+				case StripEndFace.BOTTOM: normals = Enumerable.Repeat(Vector3.down, 4).ToArray();
+					break;
+
+				default: normals = null;
+					break;
+			}
+
+			return normals;
+		}
+	}
+	
+	//	Choose which shape a block has based on which adjacent blocks are see through
 	public static void SetSlopes(Chunk chunk, Vector3 voxel)
 	{
 		int x = (int)voxel.x;
@@ -520,7 +604,7 @@ public static class Shapes
 			case 21:
 			case 85:
 			case 117:
-				chunk.blockShapes[x,y,z] = Shape.CORNEROUT;
+				chunk.blockShapes[x,y,z] = Types.CORNEROUT;
 				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
 				break;
 
@@ -528,7 +612,7 @@ public static class Shapes
 			case 41:
 			case 169:
 			case 185:
-				chunk.blockShapes[x,y,z] = Shape.CORNEROUT;
+				chunk.blockShapes[x,y,z] = Types.CORNEROUT;
 				chunk.blockYRotation[x,y,z] = Rotate.RIGHT;
 				break;
 
@@ -536,7 +620,7 @@ public static class Shapes
 			case 138:
 			case 170:
 			case 234:
-				chunk.blockShapes[x,y,z] = Shape.CORNEROUT;
+				chunk.blockShapes[x,y,z] = Types.CORNEROUT;
 				chunk.blockYRotation[x,y,z] = Rotate.BACK;
 				break;
 
@@ -545,51 +629,91 @@ public static class Shapes
 			case 214:
 			case 82:
 			case 198:
-				chunk.blockShapes[x,y,z] = Shape.CORNEROUT;
+				chunk.blockShapes[x,y,z] = Types.CORNEROUT;
 				chunk.blockYRotation[x,y,z] = Rotate.LEFT;
 				break;
 
 			//	CORNER IN
 
 			case 16:
-				chunk.blockShapes[x,y,z] = Shape.CORNERIN;
+				chunk.blockShapes[x,y,z] = Types.CORNERIN;
 				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
 				break;
 
 			case 32:
-				chunk.blockShapes[x,y,z] = Shape.CORNERIN;
+				chunk.blockShapes[x,y,z] = Types.CORNERIN;
 				chunk.blockYRotation[x,y,z] = Rotate.RIGHT;
 				break;
 
 			case 128:
-				chunk.blockShapes[x,y,z] = Shape.CORNERIN;
+				chunk.blockShapes[x,y,z] = Types.CORNERIN;
 				chunk.blockYRotation[x,y,z] = Rotate.BACK;
 				break;
 
 			case 64:
-				chunk.blockShapes[x,y,z] = Shape.CORNERIN;
+				chunk.blockShapes[x,y,z] = Types.CORNERIN;
 				chunk.blockYRotation[x,y,z] = Rotate.LEFT;
 				break;
 
 			//	OUTCROP
 
 			case 80:
-				chunk.blockShapes[x,y,z] = Shape.OUTCROP;
+				chunk.blockShapes[x,y,z] = Types.OUTCROP;
 				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
 				break;
 
 			case 48:
-				chunk.blockShapes[x,y,z] = Shape.OUTCROP;
+				chunk.blockShapes[x,y,z] = Types.OUTCROP;
 				chunk.blockYRotation[x,y,z] = Rotate.RIGHT;
 				break;
 
 			case 160:
-				chunk.blockShapes[x,y,z] = Shape.OUTCROP;
+				chunk.blockShapes[x,y,z] = Types.OUTCROP;
 				chunk.blockYRotation[x,y,z] = Rotate.BACK;
 				break;
 
 			case 192:
-				chunk.blockShapes[x,y,z] = Shape.OUTCROP;
+				chunk.blockShapes[x,y,z] = Types.OUTCROP;
+				chunk.blockYRotation[x,y,z] = Rotate.LEFT;
+				break;
+
+			//  STRIP
+			case 243:
+			case 163:
+			case 83:
+				chunk.blockShapes[x,y,z] = Types.STRIP;
+				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
+				break;
+
+			case 252:
+			case 60:
+			case 204:
+				chunk.blockShapes[x,y,z] = Types.STRIP;
+				chunk.blockYRotation[x,y,z] = Rotate.RIGHT;
+				break;
+
+			//	STRIPEND
+			
+			case 247:
+			case 87:
+				chunk.blockShapes[x,y,z] = Types.STRIPEND;
+				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
+				break;
+			
+			case 61:
+				chunk.blockShapes[x,y,z] = Types.STRIPEND;
+				chunk.blockYRotation[x,y,z] = Rotate.RIGHT;
+				break;
+
+			case 251:
+			case 171:
+				chunk.blockShapes[x,y,z] = Types.STRIPEND;
+				chunk.blockYRotation[x,y,z] = Rotate.BACK;
+				break;
+
+			case 254:
+			case 206:
+				chunk.blockShapes[x,y,z] = Types.STRIPEND;
 				chunk.blockYRotation[x,y,z] = Rotate.LEFT;
 				break;
 
@@ -599,7 +723,7 @@ public static class Shapes
 			case 84:
 			case 68:
 			case 4:
-				chunk.blockShapes[x,y,z] = Shape.WEDGE;
+				chunk.blockShapes[x,y,z] = Types.WEDGE;
 				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
 				break;
 
@@ -607,7 +731,7 @@ public static class Shapes
 			case 17:
 			case 33:
 			case 1:
-				chunk.blockShapes[x,y,z] = Shape.WEDGE;
+				chunk.blockShapes[x,y,z] = Types.WEDGE;
 				chunk.blockYRotation[x,y,z] = Rotate.RIGHT;
 				break;
 
@@ -615,7 +739,7 @@ public static class Shapes
 			case 40:
 			case 8:
 			case 136:
-				chunk.blockShapes[x,y,z] = Shape.WEDGE;
+				chunk.blockShapes[x,y,z] = Types.WEDGE;
 				chunk.blockYRotation[x,y,z] = Rotate.BACK;
 				break;
 
@@ -623,19 +747,19 @@ public static class Shapes
 			case 2:
 			case 130:
 			case 66:
-				chunk.blockShapes[x,y,z] = Shape.WEDGE;
+				chunk.blockShapes[x,y,z] = Types.WEDGE;
 				chunk.blockYRotation[x,y,z] = Rotate.LEFT;
 				break;
 
 			//	CUBE
 
 			case 0:
-				chunk.blockShapes[x,y,z] = Shape.CUBE;
+				chunk.blockShapes[x,y,z] = Types.CUBE;
 				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
 				break;
 
 			default:
-				chunk.blockShapes[x,y,z] = Shape.CUBE;
+				chunk.blockShapes[x,y,z] = Types.CUBE;
 				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
 				break;
 		}

@@ -7,7 +7,8 @@ public class PlayerController : MonoBehaviour {
 
 	public Chunk currentChunk;
 	public World world;
-	public Shapes.Shape blockPlaceShape;
+	public Shapes.Types blockPlaceShape;
+	public Blocks.Types blockPlaceType;
 	//	First person controls
 	public int speed = 25;
 	int sensitivity = 1;
@@ -184,7 +185,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point + (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			World.ChangeBlock(voxel, Blocks.Types.STONE, blockPlaceShape);
+			World.ChangeBlock(voxel, blockPlaceType, blockPlaceShape);
 		}
 	}
 

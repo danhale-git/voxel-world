@@ -25,7 +25,7 @@ public static class ChunkMesh
 					if(blockType == Blocks.Types.AIR) { continue; }
 
 					Vector3 blockPosition = new Vector3(x,y,z);
-					Shapes.Shape blockShape = chunk.blockShapes[x,y,z];
+					Shapes.Types blockShape = chunk.blockShapes[x,y,z];
 				
 					//	Check if adjacent blocks are exposed
 					bool[] exposedFaces = new bool[6];
@@ -45,12 +45,12 @@ public static class ChunkMesh
 					Quaternion shapeRotation = Quaternion.Euler(0, (int)chunk.blockYRotation[x,y,z], 0);
 					switch(blockShape)
 					{
-						case Shapes.Shape.WEDGE:
+						case Shapes.Types.WEDGE:
 							localVertCount = DrawWedge(		verts, norms, tris, blockPosition, shapeRotation,
 															exposedFaces, vertexCount);
 							break;
 
-						case Shapes.Shape.CORNEROUT:	
+						case Shapes.Types.CORNEROUT:	
 
 							byte belowBlock;	//	Handle case where there is a slope under this slope			//			//
 							if(y == 0)			//	Uses bitmask to check diagonally adjacent blocks
@@ -67,13 +67,23 @@ public static class ChunkMesh
 															exposedFaces, vertexCount, belowBlock);							
 							break;
 
-						case Shapes.Shape.CORNERIN:
+						case Shapes.Types.CORNERIN:
 							localVertCount = DrawCornerIn(	verts, norms, tris, blockPosition, shapeRotation,
 															exposedFaces, vertexCount);
 							break;
 
-						case Shapes.Shape.OUTCROP:
+						case Shapes.Types.OUTCROP:
 							localVertCount = DrawOutcrop(	verts, norms, tris, blockPosition, shapeRotation,
+															exposedFaces, vertexCount);
+							break;
+
+						case Shapes.Types.STRIP:
+							localVertCount = DrawStrip(		verts, norms, tris, blockPosition, shapeRotation,
+															exposedFaces, vertexCount);
+							break;
+
+						case Shapes.Types.STRIPEND:
+							localVertCount = DrawStripEnd(		verts, norms, tris, blockPosition, shapeRotation,
 															exposedFaces, vertexCount);
 							break;
 
@@ -263,6 +273,76 @@ public static class ChunkMesh
 		return localVertCount;			
 	}
 
+	//	Strip
+	static int DrawStrip(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles,
+							Vector3 position, 			Quaternion rotation, 	bool[] exposedFaces, int vertCount)
+	{
+		List<Shapes.StripFace> faces = new List<Shapes.StripFace>();
+
+		faces.Add(Shapes.StripFace.RIGHT);
+		faces.Add(Shapes.StripFace.LEFT);
+
+		if(Back(exposedFaces, rotation))
+			faces.Add(Shapes.StripFace.BACK);
+		if(Front(exposedFaces, rotation))
+			faces.Add(Shapes.StripFace.FRONT);
+		if(Bottom(exposedFaces, rotation))
+			faces.Add(Shapes.StripFace.BOTTOM);
+
+		int localVertCount = 0;
+		for(int i = 0; i < faces.Count; i++)
+		{
+			Vector3[] faceVerts = Shapes.Strip.Vertices(faces[i], position);
+
+			vertices.AddRange(	RotateVectors(	faceVerts,
+												position,
+												rotation));
+
+			normals.AddRange(	RotateNormals(	Shapes.Strip.Normals(faces[i]),
+												rotation));
+
+			triangles.AddRange(	Shapes.Strip.Triangles(faces[i],
+								vertCount + localVertCount));
+
+			localVertCount += faceVerts.Length;	
+		}
+		return localVertCount;			
+	}
+
+	//	Strip end
+	static int DrawStripEnd(	List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles,
+							Vector3 position, 			Quaternion rotation, 	bool[] exposedFaces, int vertCount)
+	{
+		List<Shapes.StripEndFace> faces = new List<Shapes.StripEndFace>();
+
+		faces.Add(Shapes.StripEndFace.RIGHT);
+		faces.Add(Shapes.StripEndFace.LEFT);
+		faces.Add(Shapes.StripEndFace.FRONT);
+
+		if(Back(exposedFaces, rotation))
+			faces.Add(Shapes.StripEndFace.BACK);
+		if(Bottom(exposedFaces, rotation))
+			faces.Add(Shapes.StripEndFace.BOTTOM);
+
+		int localVertCount = 0;
+		for(int i = 0; i < faces.Count; i++)
+		{
+			Vector3[] faceVerts = Shapes.StripEnd.Vertices(faces[i], position);
+
+			vertices.AddRange(	RotateVectors(	faceVerts,
+												position,
+												rotation));
+
+			normals.AddRange(	RotateNormals(	Shapes.StripEnd.Normals(faces[i]),
+												rotation));
+
+			triangles.AddRange(	Shapes.StripEnd.Triangles(faces[i],
+								vertCount + localVertCount));
+
+			localVertCount += faceVerts.Length;	
+		}
+		return localVertCount;			
+	}
 
 
 

@@ -31,7 +31,7 @@ public class World : MonoBehaviour
 	}
 
 	//	Change type of block at voxel
-	public static bool ChangeBlock(Vector3 voxel, Blocks.Types type, Shapes.Shape shape = Shapes.Shape.CUBE)
+	public static bool ChangeBlock(Vector3 voxel, Blocks.Types type, Shapes.Types shape = Shapes.Types.CUBE)
 	{
 		//	Find owner chunk
 		Chunk chunk;
