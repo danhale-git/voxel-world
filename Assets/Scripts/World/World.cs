@@ -31,7 +31,7 @@ public class World : MonoBehaviour
 	}
 
 	//	Change type of block at voxel
-	public static bool ChangeBlock(Vector3 voxel, Blocks.Types type)
+	public static bool ChangeBlock(Vector3 voxel, Blocks.Types type, Shapes.Types shape = Shapes.Types.CUBE)
 	{
 		//	Find owner chunk
 		Chunk chunk;
@@ -43,6 +43,7 @@ public class World : MonoBehaviour
 		//	Change block type
 		Vector3 local = voxel - chunk.position;
 		chunk.blockTypes[(int)local.x, (int)local.y, (int)local.z] = type;
+		chunk.blockShapes[(int)local.x, (int)local.y, (int)local.z] = shape;
 
 		List<Vector3> redraw = new List<Vector3>() { chunk.position };
 
@@ -73,6 +74,7 @@ public class World : MonoBehaviour
 		//	redraw chunks
 		foreach(Vector3 chunkPosition in redraw)
 		{
+			World.chunks[chunkPosition].SmoothBlocks();
 			World.chunks[chunkPosition].Redraw();
 		}
 		return true;
@@ -169,6 +171,12 @@ public class World : MonoBehaviour
 		Chunk chunk = new Chunk(position, this);
 		chunks.Add(position, chunk);
 		chunk.status = Chunk.Status.GENERATED;		
+	}
+
+	//	Shape blocks to smooth chunk surface
+	void SetChunkShapes(Vector3 position)
+	{
+		chunks[position].SmoothBlocks();
 	}
 
 	//	Draw chunk at position key in dictionary

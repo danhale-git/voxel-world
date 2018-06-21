@@ -28,7 +28,7 @@ public class Chunk
 	//	block data
 	public Blocks.Types[,,] blockTypes;
 	public byte[,,] blockBytes;
-	public Shapes.Shape[,,] blockShapes;
+	public Shapes.Types[,,] blockShapes;
 	public Shapes.Rotate[,,] blockYRotation;
 
 	void InitialiseArrays()
@@ -37,7 +37,7 @@ public class Chunk
 
 		blockTypes = new Blocks.Types[size,size,size];
 		blockBytes = new byte[size,size,size];
-		blockShapes = new Shapes.Shape[size,size,size];
+		blockShapes = new Shapes.Types[size,size,size];
 		blockYRotation = new Shapes.Rotate[size,size,size];
 	}
 

@@ -1,14 +1,16 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour {
 
 	public Chunk currentChunk;
 	public World world;
-
+	public Shapes.Types blockPlaceShape;
+	public Blocks.Types blockPlaceType;
 	//	First person controls
-	int speed = 25;
+	public int speed = 25;
 	int sensitivity = 1;
 	Rigidbody rigidBody;
 	Camera mycam;
@@ -30,9 +32,20 @@ public class PlayerController : MonoBehaviour {
 	//	The ray we are using for selection
 	Ray Ray()
 	{
-		return Camera.main.ScreenPointToRay(Input.mousePosition);
+		//return Camera.main.ScreenPointToRay(Input.mousePosition);
+		return mycam.ViewportPointToRay(new Vector3(0.5F, 0.5F, 0));
+	}
+
+	void CursorOff()
+	{
+		if(Cursor.lockState == CursorLockMode.None) Cursor.lockState = CursorLockMode.Locked;
 	}
 	
+	void CursorOn()
+	{
+		if(Cursor.lockState == CursorLockMode.Locked) Cursor.lockState = CursorLockMode.None;
+	}
+
 	void Update ()
 	{
 		Movement();
@@ -54,6 +67,11 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetButtonDown("Fire2"))
 		{
 			AddBlock(Ray());
+		}
+
+		if(Input.GetKeyDown(KeyCode.Escape))
+		{
+			CursorOn();
 		}
 		
 	}
@@ -107,27 +125,35 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetKey(KeyCode.W))	//	forward
 		{
 			transform.Translate((Vector3.forward * speed) * Time.deltaTime);
+			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.S))	//	back
 		{
 			transform.Translate((Vector3.back * speed) * Time.deltaTime);
+			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.A))	//	left
 		{
 			transform.Translate((Vector3.left * speed) * Time.deltaTime);
+			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.D))	//	right
 		{
 			transform.Translate((Vector3.right * speed) * Time.deltaTime);
+			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.LeftControl))	//	down
 		{
 			transform.Translate((Vector3.down * speed) * Time.deltaTime);
+			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.Space))	//	up
 		{
 			transform.Translate((Vector3.up * speed) * Time.deltaTime);
+			CursorOff();
 		}
+
+		if(Cursor.lockState != CursorLockMode.Locked) return;
 		
 		float horizontal = sensitivity * Input.GetAxis("Mouse X");
         float vertical = -(sensitivity * Input.GetAxis("Mouse Y"));
@@ -159,7 +185,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point + (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			World.ChangeBlock(voxel, Blocks.Types.DIRT);
+			World.ChangeBlock(voxel, blockPlaceType, blockPlaceShape);
 		}
 	}
 
@@ -173,9 +199,6 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 			Debug.Log(World.GetBitMask(voxel));
-
-			Vector3 blockPos = voxel - World.BlockOwner(voxel);
-			Debug.Log(World.chunks[World.BlockOwner(voxel)].blockBytes[(int)blockPos.x, (int)blockPos.y, (int)blockPos.z]);
 		}
 	}
 
