@@ -31,6 +31,12 @@ public class Chunk
 	public Shapes.Types[,,] blockShapes;
 	public Shapes.Rotate[,,] blockYRotation;
 
+	public List<Shapes.Shape> shapes = new List<Shapes.Shape>()
+	{
+		new Shapes.Cube(),
+		new Shapes.Wedge()
+	};
+
 	void InitialiseArrays()
 	{
 		heightmap = new int[size,size];
@@ -120,7 +126,7 @@ public class Chunk
 	//	Create a mesh representing all blocks in the chunk
 	public void DrawBlocks()
 	{	
-		ChunkMesh.Draw(this);
+		Draw();
 		return;
 	}
 
@@ -130,6 +136,56 @@ public class Chunk
 		Object.DestroyImmediate(renderer);
 		Object.DestroyImmediate(collider);
 		DrawBlocks();
+	}
+
+	public void Draw()
+	{
+		List<Vector3> verts = new List<Vector3>();
+		List<Vector3> norms = new List<Vector3>();
+		List<int> tris = new List<int>();
+		List<Color> cols = new List<Color>();
+
+		//	Vertex count for offsetting triangle indices
+		int vertexCount = 0;
+
+		//	Generate mesh data
+		for(int x = 0; x < World.chunkSize; x++)
+			for(int z = 0; z < World.chunkSize; z++)
+				for(int y = 0; y < World.chunkSize; y++)
+				{
+					//	Check block type, skip drawing if air
+					Blocks.Types type = blockTypes[x,y,z];
+					if(type == Blocks.Types.AIR) { continue; }
+
+					Vector3 blockPosition = new Vector3(x,y,z);
+					Shapes.Types shape = blockShapes[x,y,z];
+				
+					//	Check if adjacent blocks are exposed
+					bool[] exposedFaces = new bool[6];
+					bool blockExposed = false;
+					for(int e = 0; e < 6; e++)
+					{
+						exposedFaces[e] = FaceExposed((Shapes.CubeFace)e, blockPosition);
+						
+						if(exposedFaces[e] && !blockExposed) { blockExposed = true; }
+					}
+
+					//	Block is not visible so nothing to draw
+					if(!blockExposed && blockBytes[x,y,z] == 0) { continue; }
+
+					//	Check block shapes and generate mesh data
+					int localVertCount = 0;
+					Quaternion rotation = Quaternion.Euler(0, (int)blockYRotation[x,y,z], 0);
+
+					localVertCount = shapes[(int)blockShapes[x,y,z]].Draw(verts, norms, tris, blockPosition,
+														 rotation, exposedFaces, vertexCount);
+
+					//	Keep count of vertices to offset triangles
+					vertexCount += localVertCount;
+					cols.AddRange(	Enumerable.Repeat(	(Color)Blocks.colors[(int)blockTypes[x,y,z]],
+														localVertCount));
+				}
+		CreateMesh(verts, norms, tris, cols);
 	}
 
 	//	create a mesh with given attributes
@@ -142,6 +198,7 @@ public class Chunk
 		mesh.SetTriangles(triangles, 0);
 		mesh.SetColors(colors);
 
+
 		mesh.RecalculateNormals();
 
 		filter = gameObject.AddComponent<MeshFilter>();
@@ -152,5 +209,45 @@ public class Chunk
 
 		collider = gameObject.AddComponent<MeshCollider>();
 		collider.sharedMesh = filter.mesh;
+	}
+
+	//	Player can see through adjacent block
+	bool FaceExposed(Shapes.CubeFace face, Vector3 blockPosition)
+	{	
+		//	Direction of neighbour
+		Vector3 faceDirection = Shapes.FaceToDirection(face);	
+		//	Neighbour position
+		Vector3 neighbour = blockPosition + faceDirection;
+		
+		Chunk neighbourOwner;
+
+		//	Neighbour is outside this chunk
+		if(neighbour.x < 0 || neighbour.x >= World.chunkSize || 
+		   neighbour.y < 0 || neighbour.y >= World.chunkSize ||
+		   neighbour.z < 0 || neighbour.z >= World.chunkSize)
+		{
+			//	Next chunk in direction of neighbour
+			Vector3 neighbourChunkPos = position + (faceDirection * World.chunkSize);
+			
+			//Debug.Log(neighbourChunkPos);
+			
+			//	Neighbouring chunk does not exist (map edge)
+			if(!World.chunks.TryGetValue(neighbourChunkPos, out neighbourOwner))
+			{
+				return false;
+			}			
+			//	Convert local index to neighbouring chunk
+			neighbour = BlockUtils.WrapBlockIndex(neighbour);
+		}
+		//	Neighbour is in chunk being drawn		
+		else
+		{
+			neighbourOwner = this;
+		}
+		
+		//	Check seeThrough in neighbour
+		Blocks.Types type = neighbourOwner.blockTypes[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z];
+
+		return (Blocks.seeThrough[(int)type]);
 	}
 }
