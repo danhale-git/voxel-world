@@ -18,60 +18,88 @@ public class World : MonoBehaviour
 	public static bool drawEdges = true;
 	//	All chunks in the world
 	public static Dictionary<Vector3, Chunk> chunks = new Dictionary<Vector3, Chunk>();
-	public static Dictionary<Vector3, int[,]> heightMaps = new Dictionary<Vector3, int[,]>();
+	public static Dictionary<Vector3, Topology> topology = new Dictionary<Vector3, Topology>();
 																				
-	public static int worldSize = 2;
 	public Material defaultMaterial;
+
+	public class Topology
+	{
+		public int[,] heightMap =  new int[chunkSize,chunkSize];
+		public int highestPoint = 0;
+		public int lowestPoint = chunkSize;
+	}
 
 	void Start()
 	{
 		//	Create initial chunks
-		DrawSurroundingChunks(Vector3.zero);
+		UpdateChunks(Vector3.zero, viewDistance);
 	}
 
 	//	Temporary for testing and optimisation
 	//	Generate and draw chunks in a cube radius of veiwDistance around player
 	//	Called in PlayerController
-	public void DrawSurroundingChunks(Vector3 centerChunk)
+	public void UpdateChunks(Vector3 centerChunk, int radius)
 	{
-		for(int x = -viewDistance-1; x < viewDistance+1; x++)
-			for(int z = -viewDistance-1; z < viewDistance+1; z++)
+		for(int x = -radius-1; x < radius+1; x++)
+			for(int z = -radius-1; z < radius+1; z++)
 			{
 				Vector3 offset = new Vector3(x,0,z) * chunkSize;
 				Vector3 position = new Vector3(centerChunk.x, 0, centerChunk.z) + offset;
+				
+				if(topology.ContainsKey(position)) continue;	
 
-				heightMaps[position] = new int[chunkSize,chunkSize];
+				//	initalise lowest as heigest
+				int lowestPoint = (int)position.y + chunkSize;
+				//	initialise heighest as lowest
+				int highestPoint  = (int)position.y;
+
+				int[,] map = new int[chunkSize,chunkSize];
 				for(int _x = 0; _x < chunkSize; _x++)
 					for(int _z = 0; _z < chunkSize; _z++)
 					{
-						heightMaps[position][_x,_z] = NoiseUtils.GroundHeight(	_x + (int)position.x,
-																				_z + (int)position.z,
-																				World.maxGroundHeight);
+						map[_x,_z] = NoiseUtils.GroundHeight(	_x + (int)position.x,
+																_z + (int)position.z,
+																World.maxGroundHeight);
+						//	Lower than lowest
+						if(map[_x,_z] < lowestPoint)
+							lowestPoint = map[_x,_z];
+						//	Higher than highest
+						if(map[_x,_z] > highestPoint)
+							highestPoint = map[_x,_z];
 					}
- 
+				topology[position] = new Topology();
+				topology[position].heightMap = map;
+				topology[position].highestPoint = highestPoint;
+				topology[position].lowestPoint = lowestPoint;
 			}
 
 		//	Generate chunks in view distance + 1
-		for(int x = -viewDistance-1; x < viewDistance+1; x++)
-			for(int z = -viewDistance-1; z < viewDistance+1; z++)
-				for(int y = -viewDistance-1; y < viewDistance+1; y++)
+		for(int x = -radius-1; x < radius+1; x++)
+			for(int z = -radius-1; z < radius+1; z++)
+			{
+				Topology columnTopology = topology[new Vector3(x*chunkSize,0,z*chunkSize)];
+
+				for(int y = -radius-1; y < radius+1; y++)
 				{
 					Vector3 offset = new Vector3(x, y, z) * chunkSize;
 					Vector3 position = centerChunk + offset;
-
+					
 					if(chunks.ContainsKey(position)) { continue; }
 
 					Chunk chunk = new Chunk(position, this);
 					chunks.Add(position, chunk);
-					chunk.status = Chunk.Status.GENERATED;
+
+					if(chunk.status == Chunk.Status.GENERATED) { continue; }
 
 					chunk.GenerateBlocks();
+					chunk.status = Chunk.Status.GENERATED;
 				}
+			}
 
 		//	Find hidden chunks
-		/*for(int x = -viewDistance + 1; x < viewDistance - 1; x++)
-			for(int z = -viewDistance + 1; z < viewDistance - 1; z++)
-				for(int y = -viewDistance + 1; y < viewDistance - 1; y++)
+		/*for(int x = -radius + 1; x < radius - 1; x++)
+			for(int z = -radius + 1; z < radius - 1; z++)
+				for(int y = -radius + 1; y < radius - 1; y++)
 				{
 					Vector3 offset = new Vector3(x, y, z) * chunkSize;
 					Vector3 position = centerChunk + offset;
@@ -104,9 +132,9 @@ public class World : MonoBehaviour
 				}*/
 
 		/*//	Smooth chunks in view distance
-		for(int x = -viewDistance; x < viewDistance; x++)
-			for(int z = -viewDistance; z < viewDistance; z++)
-				for(int y = -viewDistance; y < viewDistance; y++)
+		for(int x = -radius; x < radius; x++)
+			for(int z = -radius; z < radius; z++)
+				for(int y = -radius; y < radius; y++)
 				{
 					Vector3 offset = new Vector3(x, y, z) * chunkSize;
 					Vector3 location = centerChunk + offset;
@@ -114,29 +142,41 @@ public class World : MonoBehaviour
 				}*/
 
 		//	Draw chunks in view distance
-		for(int x = -viewDistance; x < viewDistance; x++)
-			for(int z = -viewDistance; z < viewDistance; z++)
-				for(int y = -viewDistance; y < viewDistance; y++)
+		for(int x = -radius; x < radius; x++)
+			for(int z = -radius; z < radius; z++)
+				for(int y = -radius; y < radius; y++)
 				{
 					Vector3 offset = new Vector3(x, y, z) * chunkSize;
 					Vector3 position = centerChunk + offset;
 					
 					Chunk chunk = chunks[position];
 					if(chunk.status == Chunk.Status.DRAWN || chunk.hidden) { continue; }
-					chunk.status = Chunk.Status.DRAWN;
 
 					chunk.Draw();
+					chunk.status = Chunk.Status.DRAWN;
 				}
 	}
 
 	//	Change type of block at voxel
-	public static bool ChangeBlock(Vector3 voxel, Blocks.Types type, Shapes.Types shape = Shapes.Types.CUBE)
+	public bool ChangeBlock(Vector3 voxel, Blocks.Types type, Shapes.Types shape = Shapes.Types.CUBE)
 	{
 		//	Find owner chunk
 		Chunk chunk;
 		if(!chunks.TryGetValue(BlockOwner(voxel), out chunk))
 		{
 			return false;
+		}
+
+		Topology columnTopology = topology[new Vector3(chunk.position.x, 0, chunk.position.z)];
+		
+		//	Check highest/lowest blocks in column
+		if(type == Blocks.Types.AIR)
+		{
+			if(voxel.y < columnTopology.lowestPoint) columnTopology.lowestPoint = (int)voxel.y;
+		}
+		else
+		{
+			if(voxel.y > columnTopology.highestPoint) columnTopology.highestPoint = (int)voxel.y;
 		}
 
 		//	Change block type
@@ -173,8 +213,19 @@ public class World : MonoBehaviour
 		//	redraw chunks
 		foreach(Vector3 chunkPosition in redraw)
 		{
-			//World.chunks[chunkPosition].SmoothBlocks();
-			World.chunks[chunkPosition].Redraw();
+			Chunk updateChunk = World.chunks[chunkPosition];
+			//updateChunk.SmoothBlocks();
+			updateChunk.Redraw();
+
+			/*if(updateChunk.hidden)
+			{
+				updateChunk.hidden = false;
+				UpdateChunks(updateChunk.position, 1);
+			}
+			else
+			{
+				updateChunk.Redraw();
+			}*/
 		}
 		return true;
 	}

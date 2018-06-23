@@ -107,7 +107,7 @@ public class PlayerController : MonoBehaviour {
 					currentChunk = chunk;
 
 					//	Generate chunks around player location
-					world.DrawSurroundingChunks(currentChunk.gameObject.transform.position);
+					world.UpdateChunks(currentChunk.gameObject.transform.position, World.viewDistance);
 				}
 			}
 			else
@@ -171,7 +171,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			World.ChangeBlock(voxel, Blocks.Types.AIR);
+			world.ChangeBlock(voxel, Blocks.Types.AIR);
 		}
 	}
 
@@ -185,7 +185,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point + (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			World.ChangeBlock(voxel, blockPlaceType, blockPlaceShape);
+			world.ChangeBlock(voxel, blockPlaceType, blockPlaceShape);
 		}
 	}
 
@@ -212,7 +212,9 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 			Chunk chunk = World.chunks[World.BlockOwner(voxel)];
-			Debug.Log(chunk.hidden);
+			Debug.Log(chunk.position.y + " " + chunk.hidden);
+			World.Topology topology = World.topology[new Vector3(chunk.position.x, 0, chunk.position.z)];
+			Debug.Log(topology.lowestPoint+" - "+topology.highestPoint);
 		}
 	}
 

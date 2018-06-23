@@ -6,19 +6,21 @@ using System.Linq;
 public class Chunk
 {
 	//	DEBUG
+	bool chunkDebug = false;
 	GameObject debugMarker;
 	public void DebugMarkerColor(Color color)
 	{
-		Mesh mesh = debugMarker.GetComponent<MeshFilter>().mesh;
-		Color[] markerColors = Enumerable.Repeat(Color.red, mesh.colors.Length).ToArray();
-		mesh.colors = markerColors;
+		if(!chunkDebug) return;
+		MeshFilter meshFilter = debugMarker.GetComponent<MeshFilter>();
+		Color[] markerColors = Enumerable.Repeat(Color.red, meshFilter.mesh.colors.Length).ToArray();
+		meshFilter.mesh.colors = markerColors;
 	}
 	//	DEBUG
 	//	Chunk local space and game components
 	public GameObject gameObject;
 
 	//	Chunk status
-	public enum Status {GENERATED, DRAWN}
+	public enum Status {CREATED, GENERATED, DRAWN}
 	public Status status;
 	public enum Composition {EMPTY, SURFACE, SOLID}
 	public Composition composition;
@@ -36,7 +38,7 @@ public class Chunk
 	int size;
 	public Vector3 position;
 
-	public int[,] heightmap; 
+	public int[,] heightmap;
 
 	//	block data
 	public Blocks.Types[,,] blockTypes;
@@ -60,19 +62,19 @@ public class Chunk
 		blockYRotation = new Shapes.Rotate[size,size,size];
 	}
 
-	
-
 	public Chunk(Vector3 _position, World _world)
 	{
 		//	Create GameObject
 		gameObject = new GameObject("chunk");
 		gameObject.layer = 9;
-
-		debugMarker = GameObject.Instantiate(_world.chunkMarker, position, Quaternion.identity, gameObject.transform);
 		
 		world = _world;
 		position = _position;
 		
+		if(chunkDebug)
+			debugMarker = GameObject.Instantiate(world.chunkMarker, position,
+										Quaternion.identity, gameObject.transform);
+
 		//	Apply chunk size
 		size = World.chunkSize;
 
@@ -87,7 +89,7 @@ public class Chunk
 	//	Choose types of all blocks in the chunk based on Perlin noise
 	public void GenerateBlocks()
 	{
-		heightmap = World.heightMaps[new Vector3(position.x, 0, position.z)];
+		heightmap = World.topology[new Vector3(position.x, 0, position.z)].heightMap;
 
 		bool hasAir = false;
 		bool hasBlocks = false;
