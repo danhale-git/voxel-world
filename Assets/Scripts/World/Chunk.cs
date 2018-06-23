@@ -229,13 +229,8 @@ public class Chunk
 			//	Next chunk in direction of neighbour
 			Vector3 neighbourChunkPos = position + (faceDirection * World.chunkSize);
 			
-			//Debug.Log(neighbourChunkPos);
-			
-			//	Neighbouring chunk does not exist (map edge)
-			if(!World.chunks.TryGetValue(neighbourChunkPos, out neighbourOwner))
-			{
-				return false;
-			}			
+			neighbourOwner = World.chunks[neighbourChunkPos];
+
 			//	Convert local index to neighbouring chunk
 			neighbour = BlockUtils.WrapBlockIndex(neighbour);
 		}
