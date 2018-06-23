@@ -4,30 +4,129 @@ using UnityEngine;
 
 public class World : MonoBehaviour
 {
+	//	DEBUG
+	public GameObject chunkMarker;
+	//	DEBUG
+
 	//	Number of chunks that are generated around the player
 	public static int viewDistance = 6;
 	//	Size of all chunks
 	public static int chunkSize = 8;
 	//	Maximum height of non-air blocks
 	public static int maxGroundHeight = 20;
-	//	Height of world in chunks
-	public static int worldHeight = 2;
 	//	Draw edges where no more chunks exist
 	public static bool drawEdges = true;
 	//	All chunks in the world
 	public static Dictionary<Vector3, Chunk> chunks = new Dictionary<Vector3, Chunk>();
+	public static Dictionary<Vector3, int[,]> heightMaps = new Dictionary<Vector3, int[,]>();
 																				
 	public static int worldSize = 2;
 	public Material defaultMaterial;
-
-	public static bool gameStarted = false;
 
 	void Start()
 	{
 		//	Create initial chunks
 		DrawSurroundingChunks(Vector3.zero);
+	}
 
-		gameStarted = true;
+	//	Temporary for testing and optimisation
+	//	Generate and draw chunks in a cube radius of veiwDistance around player
+	//	Called in PlayerController
+	public void DrawSurroundingChunks(Vector3 centerChunk)
+	{
+		for(int x = -viewDistance-1; x < viewDistance+1; x++)
+			for(int z = -viewDistance-1; z < viewDistance+1; z++)
+			{
+				Vector3 offset = new Vector3(x,0,z) * chunkSize;
+				Vector3 position = new Vector3(centerChunk.x, 0, centerChunk.z) + offset;
+
+				heightMaps[position] = new int[chunkSize,chunkSize];
+				for(int _x = 0; _x < chunkSize; _x++)
+					for(int _z = 0; _z < chunkSize; _z++)
+					{
+						heightMaps[position][_x,_z] = NoiseUtils.GroundHeight(	_x + (int)position.x,
+																				_z + (int)position.z,
+																				World.maxGroundHeight);
+					}
+ 
+			}
+
+		//	Generate chunks in view distance + 1
+		for(int x = -viewDistance-1; x < viewDistance+1; x++)
+			for(int z = -viewDistance-1; z < viewDistance+1; z++)
+				for(int y = -viewDistance-1; y < viewDistance+1; y++)
+				{
+					Vector3 offset = new Vector3(x, y, z) * chunkSize;
+					Vector3 position = centerChunk + offset;
+
+					if(chunks.ContainsKey(position)) { continue; }
+
+					Chunk chunk = new Chunk(position, this);
+					chunks.Add(position, chunk);
+					chunk.status = Chunk.Status.GENERATED;
+
+					chunk.GenerateBlocks();
+				}
+
+		//	Find hidden chunks
+		/*for(int x = -viewDistance + 1; x < viewDistance - 1; x++)
+			for(int z = -viewDistance + 1; z < viewDistance - 1; z++)
+				for(int y = -viewDistance + 1; y < viewDistance - 1; y++)
+				{
+					Vector3 offset = new Vector3(x, y, z) * chunkSize;
+					Vector3 position = centerChunk + offset;
+					Chunk chunk = chunks[position];
+
+					bool hasSurface = false;
+					bool hasSolid = false;
+					bool hasEmpty = false;
+
+					for(int _x = -1; _x < 2; _x++)
+						for(int _y = -1; _y < 2; _y++)
+							for(int _z = -1; _z < 2; _z++)
+							{
+								Chunk neighbourChunk;
+								if(!chunks.TryGetValue(position + new Vector3(x,y,z), out neighbourChunk))
+									continue;
+
+								switch(neighbourChunk.composition)
+								{
+									case Chunk.Composition.SURFACE: if(!hasSurface) hasSurface = true; break;
+									case Chunk.Composition.SOLID: if(!hasSolid) hasSolid = true; break;
+									case Chunk.Composition.EMPTY: if(!hasEmpty) hasEmpty = true; break;
+								}
+							}
+					if( (hasEmpty && !hasSolid && !hasSurface) || (!hasEmpty && hasSolid && !hasSurface) )
+					{
+						chunk.hidden = true;
+						chunk.DebugMarkerColor(Color.red);
+					}
+				}*/
+
+		/*//	Smooth chunks in view distance
+		for(int x = -viewDistance; x < viewDistance; x++)
+			for(int z = -viewDistance; z < viewDistance; z++)
+				for(int y = -viewDistance; y < viewDistance; y++)
+				{
+					Vector3 offset = new Vector3(x, y, z) * chunkSize;
+					Vector3 location = centerChunk + offset;
+					chunks[location].SmoothBlocks();
+				}*/
+
+		//	Draw chunks in view distance
+		for(int x = -viewDistance; x < viewDistance; x++)
+			for(int z = -viewDistance; z < viewDistance; z++)
+				for(int y = -viewDistance; y < viewDistance; y++)
+				{
+					Vector3 offset = new Vector3(x, y, z) * chunkSize;
+					Vector3 position = centerChunk + offset;
+					
+					Chunk chunk = chunks[position];
+					if(chunk.status == Chunk.Status.DRAWN || chunk.hidden) { continue; }
+					chunk.status = Chunk.Status.DRAWN;
+
+					chunk.Draw();
+				}
 	}
 
 	//	Change type of block at voxel
@@ -80,6 +179,8 @@ public class World : MonoBehaviour
 		return true;
 	}
 
+	#region Utility
+
 	//	Find position of chunk that owns block
 	public static Vector3 BlockOwner(Vector3 voxel)
 	{
@@ -114,60 +215,7 @@ public class World : MonoBehaviour
 		return (byte)total;
 	}
 
-	//	Temporary for testing and optimisation
-	//	Generate and draw chunks in a cube radius of veiwDistance around player
-	//	Called in PlayerController
-	public void DrawSurroundingChunks(Vector3 centerChunk)
-	{
-		//if(gameStarted) return;	//	DEBUG
+	#endregion
 
-		//	Generate chunks in view distance + 1
-		for(int x = -viewDistance-1; x < viewDistance+1; x++)
-			for(int z = -viewDistance-1; z < viewDistance+1; z++)
-				for(int y = -viewDistance-1; y < viewDistance+1; y++)
-				{
-					Vector3 offset = new Vector3(x, y, z) * chunkSize;
-					Vector3 location = centerChunk + offset;
-					GenerateChunk(location);
-				}
-
-		/*//	Smooth chunks in view distance
-		for(int x = -viewDistance; x < viewDistance; x++)
-			for(int z = -viewDistance; z < viewDistance; z++)
-				for(int y = -viewDistance; y < viewDistance; y++)
-				{
-					Vector3 offset = new Vector3(x, y, z) * chunkSize;
-					Vector3 location = centerChunk + offset;
-					chunks[location].SmoothBlocks();
-				}*/
-
-		//	Draw chunks in view distance
-		for(int x = -viewDistance; x < viewDistance; x++)
-			for(int z = -viewDistance; z < viewDistance; z++)
-				for(int y = -viewDistance; y < viewDistance; y++)
-				{
-					Vector3 offset = new Vector3(x, y, z) * chunkSize;
-					Vector3 location = centerChunk + offset;
-					DrawChunk(location);
-				}
-	}
-
-	//	Generate chunk at position in world
-	void GenerateChunk(Vector3 position)
-	{
-		if(chunks.ContainsKey(position)) { return; }
-		Chunk chunk = new Chunk(position, this);
-		chunks.Add(position, chunk);
-		chunk.status = Chunk.Status.GENERATED;		
-	}
-
-	//	Draw chunk at position key in dictionary
-	void DrawChunk(Vector3 position)
-	{		
-		Chunk chunk = chunks[position];
-		if(chunk.status == Chunk.Status.DRAWN) { return; }
-		chunk.DrawBlocks();
-		chunk.status = Chunk.Status.DRAWN;
-	}
 }
 

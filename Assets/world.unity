@@ -113,6 +113,48 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &20448314
+Prefab:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4285455008588026, guid: b7e759b739f6b4a4fa63d0dd24e7d40b, type: 2}
+      propertyPath: m_LocalPosition.x
+      value: -26.16726
+      objectReference: {fileID: 0}
+    - target: {fileID: 4285455008588026, guid: b7e759b739f6b4a4fa63d0dd24e7d40b, type: 2}
+      propertyPath: m_LocalPosition.y
+      value: 9.707304
+      objectReference: {fileID: 0}
+    - target: {fileID: 4285455008588026, guid: b7e759b739f6b4a4fa63d0dd24e7d40b, type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 5.9076743
+      objectReference: {fileID: 0}
+    - target: {fileID: 4285455008588026, guid: b7e759b739f6b4a4fa63d0dd24e7d40b, type: 2}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4285455008588026, guid: b7e759b739f6b4a4fa63d0dd24e7d40b, type: 2}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4285455008588026, guid: b7e759b739f6b4a4fa63d0dd24e7d40b, type: 2}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4285455008588026, guid: b7e759b739f6b4a4fa63d0dd24e7d40b, type: 2}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4285455008588026, guid: b7e759b739f6b4a4fa63d0dd24e7d40b, type: 2}
+      propertyPath: m_RootOrder
+      value: 6
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b7e759b739f6b4a4fa63d0dd24e7d40b, type: 2}
+  m_IsPrefabAsset: 0
 --- !u!1 &293073952
 GameObject:
   m_ObjectHideFlags: 0
@@ -140,6 +182,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0303d9e45b9ec3a48a3b5cbcd95b3837, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chunkMarker: {fileID: 1472134897473722, guid: b7e759b739f6b4a4fa63d0dd24e7d40b,
+    type: 2}
   defaultMaterial: {fileID: 2100000, guid: e6e3f442e423995478927bea6169cb7f, type: 2}
 --- !u!4 &293073954
 Transform:

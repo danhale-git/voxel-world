@@ -5,12 +5,25 @@ using System.Linq;
 
 public class Chunk
 {
+	//	DEBUG
+	GameObject debugMarker;
+	public void DebugMarkerColor(Color color)
+	{
+		Mesh mesh = debugMarker.GetComponent<MeshFilter>().mesh;
+		Color[] markerColors = Enumerable.Repeat(Color.red, mesh.colors.Length).ToArray();
+		mesh.colors = markerColors;
+	}
+	//	DEBUG
 	//	Chunk local space and game components
 	public GameObject gameObject;
 
 	//	Chunk status
 	public enum Status {GENERATED, DRAWN}
 	public Status status;
+	public enum Composition {EMPTY, SURFACE, SOLID}
+	public Composition composition;
+
+	public bool hidden = false;
 
 	MeshFilter filter;
 	MeshRenderer renderer;
@@ -47,12 +60,16 @@ public class Chunk
 		blockYRotation = new Shapes.Rotate[size,size,size];
 	}
 
+	
+
 	public Chunk(Vector3 _position, World _world)
 	{
 		//	Create GameObject
-		gameObject = new GameObject(_position.ToString());
+		gameObject = new GameObject("chunk");
 		gameObject.layer = 9;
 
+		debugMarker = GameObject.Instantiate(_world.chunkMarker, position, Quaternion.identity, gameObject.transform);
+		
 		world = _world;
 		position = _position;
 		
@@ -65,23 +82,15 @@ public class Chunk
 		//	Set transform
 		gameObject.transform.parent = world.gameObject.transform;
 		gameObject.transform.position = position;
-
-		//	Always generate blocks when a new chunk is created
-		GenerateBlocks();		
 	}
 
 	//	Choose types of all blocks in the chunk based on Perlin noise
-	void GenerateBlocks()
+	public void GenerateBlocks()
 	{
-		//	Heightmap
+		heightmap = World.heightMaps[new Vector3(position.x, 0, position.z)];
 
-		for(int x = 0; x < size; x++)
-			for(int z = 0; z < size; z++)
-			{
-				heightmap[x,z] = NoiseUtils.GroundHeight( x + (int)position.x,
-															z + (int)position.z,
-															World.maxGroundHeight);
-			}
+		bool hasAir = false;
+		bool hasBlocks = false;
 
 		//	Iterate over all blocks in chunk
 		for(int x = 0; x < size; x++)
@@ -97,16 +106,27 @@ public class Chunk
 					if (y + this.position.y > groundHeight)
 					{
 						type = Blocks.Types.AIR;
+						if(!hasAir)
+							hasAir = true;
 					}
 					else
 					{
 						type = Blocks.Types.DIRT;
+						if(!hasBlocks)
+							hasBlocks = true;
 					}
 
 					//	Store new block in 3D array
 					blockTypes[x,y,z] = type;
 				}
 			}
+	
+		if(hasAir && !hasBlocks)
+			composition = Composition.EMPTY;
+		else if(!hasAir && hasBlocks)
+			composition = Composition.SOLID;
+		else if(hasAir && hasBlocks)
+			composition = Composition.SURFACE;
 	}
 
 	//	Generate bitmask representing surrounding blocks and chose slope type
@@ -123,19 +143,12 @@ public class Chunk
 				}
 	}
 
-	//	Create a mesh representing all blocks in the chunk
-	public void DrawBlocks()
-	{	
-		Draw();
-		return;
-	}
-
 	public void Redraw()
 	{
 		Object.DestroyImmediate(filter);
 		Object.DestroyImmediate(renderer);
 		Object.DestroyImmediate(collider);
-		DrawBlocks();
+		Draw();
 	}
 
 	public void Draw()

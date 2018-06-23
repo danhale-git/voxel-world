@@ -56,7 +56,7 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetButtonDown("Fire1") && !Input.GetKeyDown(KeyCode.LeftControl))
 		{
 			if(Input.GetKey(KeyCode.LeftShift))
-				DebugBitMask(Ray());
+				DebugChunk(Ray());
 			else if(Input.GetKey(KeyCode.LeftAlt))
 				Redraw(Ray());
 			else
@@ -199,6 +199,20 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 			Debug.Log(World.GetBitMask(voxel));
+		}
+	}
+
+	void DebugChunk(Ray ray)
+	{
+		RaycastHit hit;
+
+		if (Physics.Raycast(ray, out hit))
+		{
+			//	get voxel position
+			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
+			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Chunk chunk = World.chunks[World.BlockOwner(voxel)];
+			Debug.Log(chunk.hidden);
 		}
 	}
 
