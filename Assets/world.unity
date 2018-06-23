@@ -483,7 +483,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   world: {fileID: 293073953}
-  blockPlaceShape: 5
+  blockPlaceShape: 0
+  blockPlaceType: 1
   speed: 10
 --- !u!23 &1504611314
 MeshRenderer:

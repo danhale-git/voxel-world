@@ -5,13 +5,15 @@ using UnityEngine;
 public class World : MonoBehaviour
 {
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 4;
+	public static int viewDistance = 6;
 	//	Size of all chunks
-	public static int chunkSize = 3;
+	public static int chunkSize = 8;
 	//	Maximum height of non-air blocks
 	public static int maxGroundHeight = 20;
 	//	Height of world in chunks
 	public static int worldHeight = 2;
+	//	Draw edges where no more chunks exist
+	public static bool drawEdges = true;
 	//	All chunks in the world
 	public static Dictionary<Vector3, Chunk> chunks = new Dictionary<Vector3, Chunk>();
 																				
@@ -23,8 +25,6 @@ public class World : MonoBehaviour
 	void Start()
 	{
 		//	Create initial chunks
-		GenerateChunk(Vector3.zero);
-		DrawChunk(Vector3.zero);
 		DrawSurroundingChunks(Vector3.zero);
 
 		gameStarted = true;
@@ -89,22 +89,10 @@ public class World : MonoBehaviour
 		return new Vector3(x*chunkSize,y*chunkSize,z*chunkSize);
 	}
 
-	public static Chunk BlockOwnerChunk(Vector3 voxel)
-	{
-		Chunk chunk;
-		if(chunks.TryGetValue(BlockOwner(voxel), out chunk))
-			return chunk;
-		return null;
-	}
-
 	//	Get type of block at voxel
 	public static Blocks.Types GetType(Vector3 voxel)
 	{
-		Chunk chunk;
-		if(!chunks.TryGetValue(BlockOwner(voxel), out chunk))
-		{
-			return 0;
-		}
+		Chunk chunk = chunks[BlockOwner(voxel)];
 		Vector3 local = voxel - chunk.position;
 		return chunk.blockTypes[(int)local.x, (int)local.y, (int)local.z];
 	}
