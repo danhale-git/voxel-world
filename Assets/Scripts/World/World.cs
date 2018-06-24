@@ -119,7 +119,7 @@ public class World : MonoBehaviour
 					Vector3 offset = new Vector3(x, y, z) * chunkSize;
 					Vector3 position = centerChunk + offset;
 					Chunk chunk = chunks[position];
-					if(chunk.status == Chunk.Status.GENERATED) continue;
+					if(chunk.status == Chunk.Status.GENERATED || chunk.hidden) continue;
 					chunk.GenerateBlocks();
 				}
 		//	DEBUG
@@ -252,9 +252,9 @@ public class World : MonoBehaviour
 		{
 			Chunk updateChunk = World.chunks[chunkPosition];
 			//updateChunk.SmoothBlocks();
-			updateChunk.Redraw();
+			//updateChunk.Redraw();
 
-			/*if(updateChunk.hidden)
+			if(updateChunk.hidden)
 			{
 				updateChunk.hidden = false;
 				UpdateChunks(updateChunk.position, 1);
@@ -262,7 +262,7 @@ public class World : MonoBehaviour
 			else
 			{
 				updateChunk.Redraw();
-			}*/
+			}
 		}
 		return true;
 	}

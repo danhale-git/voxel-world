@@ -11,7 +11,7 @@ public static class Blocks
 							};
 
 	//	Block type is see-through
-	public static bool[] seeThrough = new bool[] {	true,		//	0	//	AIR
+	public static bool[] seeThrough = new bool[] {		true,		//	0	//	AIR
 														false,		//	1	//	DIRT
 														false		//	2	//	STONE
 														};

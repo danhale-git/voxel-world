@@ -264,6 +264,11 @@ public class Chunk
 		{
 			neighbourOwner = this;
 		}
+
+		if(neighbourOwner.status == Chunk.Status.CREATED)
+		{
+			return false;
+		}
 		
 		//	Check seeThrough in neighbour
 		Blocks.Types type = neighbourOwner.blockTypes[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z];
