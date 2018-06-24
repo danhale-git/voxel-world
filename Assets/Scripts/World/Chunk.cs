@@ -6,7 +6,7 @@ using System.Linq;
 public class Chunk
 {
 	//	DEBUG
-	bool chunkDebug = false;
+	bool chunkDebug = true;
 	GameObject debugMarker;
 	public void DebugMarkerColor(Color color)
 	{
@@ -22,7 +22,7 @@ public class Chunk
 	//	Chunk status
 	public enum Status {CREATED, GENERATED, DRAWN}
 	public Status status;
-	public enum Composition {EMPTY, SURFACE, SOLID}
+	public enum Composition {EMPTY, MIX, SOLID}
 	public Composition composition;
 
 	public bool hidden = false;
@@ -89,6 +89,7 @@ public class Chunk
 	//	Choose types of all blocks in the chunk based on Perlin noise
 	public void GenerateBlocks()
 	{
+		if(status == Chunk.Status.GENERATED) return;
 		heightmap = World.topology[new Vector3(position.x, 0, position.z)].heightMap;
 
 		bool hasAir = false;
@@ -123,12 +124,15 @@ public class Chunk
 				}
 			}
 	
+		//	Record the composition of the chunk
 		if(hasAir && !hasBlocks)
 			composition = Composition.EMPTY;
 		else if(!hasAir && hasBlocks)
 			composition = Composition.SOLID;
 		else if(hasAir && hasBlocks)
-			composition = Composition.SURFACE;
+			composition = Composition.MIX;
+		
+		status = Status.GENERATED;
 	}
 
 	//	Generate bitmask representing surrounding blocks and chose slope type
@@ -150,11 +154,14 @@ public class Chunk
 		Object.DestroyImmediate(filter);
 		Object.DestroyImmediate(renderer);
 		Object.DestroyImmediate(collider);
-		Draw();
+		Draw(redraw: true);
 	}
 
-	public void Draw()
+	public void Draw(bool redraw = false)
 	{
+		if(status == Status.DRAWN && !redraw) return;
+		else GameObject.Destroy(debugMarker);
+
 		List<Vector3> verts = new List<Vector3>();
 		List<Vector3> norms = new List<Vector3>();
 		List<int> tris = new List<int>();
@@ -201,6 +208,7 @@ public class Chunk
 														localVertCount));
 				}
 		CreateMesh(verts, norms, tris, cols);
+		status = Status.DRAWN;
 	}
 
 	//	create a mesh with given attributes

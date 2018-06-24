@@ -40,6 +40,11 @@ public class World : MonoBehaviour
 	//	Called in PlayerController
 	public void UpdateChunks(Vector3 centerChunk, int radius)
 	{
+		//	DEBUG
+		Debug.Log("Generating "+Mathf.Pow((radius*2+1), 3)+" chunks: "+(radius*2+1)+"x"+(radius*2+1)+"x"+(radius*2+1));
+		int epoch = (int)(System.DateTime.UtcNow - new System.DateTime(1970, 1, 1)).TotalSeconds;
+		//	DEBUG
+
 		for(int x = -radius-1; x < radius+1; x++)
 			for(int z = -radius-1; z < radius+1; z++)
 			{
@@ -73,6 +78,9 @@ public class World : MonoBehaviour
 				topology[position].lowestPoint = lowestPoint;
 			}
 
+		int currentEpoch = (int)(System.DateTime.UtcNow - new System.DateTime(1970, 1, 1)).TotalSeconds;
+		Debug.Log(topology.Count+" columns topology generated in "+(currentEpoch - epoch)+" seconds");
+
 		//	Generate chunks in view distance + 1
 		for(int x = -radius-1; x < radius+1; x++)
 			for(int z = -radius-1; z < radius+1; z++)
@@ -89,12 +97,13 @@ public class World : MonoBehaviour
 					Chunk chunk = new Chunk(position, this);
 					chunks.Add(position, chunk);
 
-					if(chunk.status == Chunk.Status.GENERATED) { continue; }
 
 					chunk.GenerateBlocks();
-					chunk.status = Chunk.Status.GENERATED;
 				}
 			}
+
+		currentEpoch = (int)(System.DateTime.UtcNow - new System.DateTime(1970, 1, 1)).TotalSeconds;
+		Debug.Log(chunks.Count+" chunks GENERATED in "+(currentEpoch - epoch)+" seconds");
 
 		//	Find hidden chunks
 		/*for(int x = -radius + 1; x < radius - 1; x++)
@@ -142,6 +151,7 @@ public class World : MonoBehaviour
 				}*/
 
 		//	Draw chunks in view distance
+		int drawnChunkCount = 0;
 		for(int x = -radius; x < radius; x++)
 			for(int z = -radius; z < radius; z++)
 				for(int y = -radius; y < radius; y++)
@@ -153,8 +163,11 @@ public class World : MonoBehaviour
 					if(chunk.status == Chunk.Status.DRAWN || chunk.hidden) { continue; }
 
 					chunk.Draw();
-					chunk.status = Chunk.Status.DRAWN;
+					drawnChunkCount++;
 				}
+		
+		currentEpoch = (int)(System.DateTime.UtcNow - new System.DateTime(1970, 1, 1)).TotalSeconds;
+		Debug.Log(drawnChunkCount+" chunks DRAWN in "+(currentEpoch - epoch)+" seconds");
 	}
 
 	//	Change type of block at voxel
@@ -173,10 +186,12 @@ public class World : MonoBehaviour
 		if(type == Blocks.Types.AIR)
 		{
 			if(voxel.y < columnTopology.lowestPoint) columnTopology.lowestPoint = (int)voxel.y;
+			if(chunk.composition == Chunk.Composition.SOLID) chunk.composition = Chunk.Composition.MIX;
 		}
 		else
 		{
 			if(voxel.y > columnTopology.highestPoint) columnTopology.highestPoint = (int)voxel.y;
+			if(chunk.composition == Chunk.Composition.EMPTY) chunk.composition = Chunk.Composition.MIX;
 		}
 
 		//	Change block type
