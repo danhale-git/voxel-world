@@ -78,12 +78,12 @@ public static class Shapes
 		public override List<Faces> GetFaces(bool[] exposedFaces, Quaternion rotation)
 		{
 			List<Faces> faces = new List<Faces>();
-			if(Top(exposedFaces, rotation))		faces.Add(Faces.TOP);
-			if(Bottom(exposedFaces, rotation))	faces.Add(Faces.BOTTOM);
-			if(Front(exposedFaces, rotation))	faces.Add(Faces.FRONT);
-			if(Back(exposedFaces, rotation))	faces.Add(Faces.BACK);
-			if(Right(exposedFaces, rotation))	faces.Add(Faces.RIGHT);
-			if(Left(exposedFaces, rotation))	faces.Add(Faces.LEFT);
+			if(exposedFaces[(int)Shapes.CubeFace.TOP])		faces.Add(Faces.TOP);
+			if(exposedFaces[(int)Shapes.CubeFace.BOTTOM])	faces.Add(Faces.BOTTOM);
+			if(exposedFaces[(int)Shapes.CubeFace.FRONT])	faces.Add(Faces.FRONT);
+			if(exposedFaces[(int)Shapes.CubeFace.BACK])		faces.Add(Faces.BACK);
+			if(exposedFaces[(int)Shapes.CubeFace.RIGHT])	faces.Add(Faces.RIGHT);
+			if(exposedFaces[(int)Shapes.CubeFace.LEFT])		faces.Add(Faces.LEFT);
 			return faces;	
 		}
 
@@ -110,14 +110,15 @@ public static class Shapes
 		{
 			switch(face)
 			{
-				case Faces.TOP: 	return Enumerable.Repeat(Vector3.up, 4).ToArray();
-				case Faces.BOTTOM: 	return Enumerable.Repeat(Vector3.down, 4).ToArray();
-				case Faces.RIGHT: 	return Enumerable.Repeat(Vector3.right, 4).ToArray();
-				case Faces.LEFT: 	return Enumerable.Repeat(Vector3.left, 4).ToArray();
-				case Faces.FRONT: 	return Enumerable.Repeat(Vector3.forward, 4).ToArray();
-				case Faces.BACK: 	return Enumerable.Repeat(Vector3.back, 4).ToArray();
-				default: 			return null;
+				case Faces.TOP: return new Vector3[] {Vector3.up,Vector3.up,Vector3.up,Vector3.up};
+				case Faces.BOTTOM: return new Vector3[] {Vector3.down,Vector3.down,Vector3.down,Vector3.down};				
+				case Faces.RIGHT: return new Vector3[] {Vector3.right,Vector3.right,Vector3.right,Vector3.right};
+				case Faces.LEFT: return new Vector3[] {Vector3.left,Vector3.left,Vector3.left,Vector3.left};
+				case Faces.FRONT: return new Vector3[] {Vector3.forward,Vector3.forward,Vector3.forward,Vector3.forward};
+				case Faces.BACK: return new Vector3[] {Vector3.back,Vector3.back,Vector3.back,Vector3.back};
+				default: return null;
 			}
+
 		}
 	}
 
