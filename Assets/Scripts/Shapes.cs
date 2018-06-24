@@ -47,22 +47,47 @@ public static class Shapes
 		{
 			List<Faces> faces = GetFaces(exposedFaces, rotation);
 			int localVertCount = 0;
+			int localTriCount = 0;
+			
+			Vector3[][] vertArrays = new Vector3[faces.Count][];
+			Vector3[][] normArrays = new Vector3[faces.Count][];
+			int[][] triArrays = new int[faces.Count][];
+
 			for(int i = 0; i < faces.Count; i++)
 			{
-				Vector3[] verts = Vertices(faces[i], position);
-
-				vertices.AddRange(	RotateVectors(	verts,
+				vertArrays[i] =	RotateVectors(		Vertices(faces[i], position),
 													position,
-													rotation));
+													rotation);
 
-				normals.AddRange(	RotateNormals(	Normals(faces[i]),
-													rotation));
+				normArrays[i] =	RotateNormals(		Normals(faces[i]),
+													rotation);
 
-				triangles.AddRange(					Triangles(faces[i],
-													vertCount + localVertCount));
-
-				localVertCount += verts.Length;
+				triArrays[i] = Triangles(faces[i], vertCount + localVertCount);
+				
+				localTriCount += triArrays[i].Length;
+				localVertCount += vertArrays[i].Length;
 			}
+
+			Vector3[] allVerts = new Vector3[localVertCount];
+			Vector3[] allNorms = new Vector3[localVertCount];
+			int[] allTris = new int[localTriCount];
+
+			int vertIndexOffset = 0;
+			int triIndexOffset = 0;
+			for(int i = 0; i < faces.Count; i++)
+			{
+				vertArrays[i].CopyTo(allVerts, vertIndexOffset);
+				normArrays[i].CopyTo(allNorms, vertIndexOffset);
+
+				triArrays[i].CopyTo( allTris,  triIndexOffset);
+
+				vertIndexOffset += vertArrays[i].Length;
+				triIndexOffset += triArrays[i].Length;
+			}
+			vertices.AddRange(allVerts);
+			normals.AddRange(allNorms);
+			triangles.AddRange(allTris);
+
 			return localVertCount;
 		}
 
