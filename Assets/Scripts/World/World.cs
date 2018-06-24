@@ -9,9 +9,9 @@ public class World : MonoBehaviour
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 6;
+	public static int viewDistance = 5;
 	//	Size of all chunks
-	public static int chunkSize = 8;
+	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
 	public static int maxGroundHeight = 20;
 	//	Draw edges where no more chunks exist
@@ -41,10 +41,11 @@ public class World : MonoBehaviour
 	public void UpdateChunks(Vector3 centerChunk, int radius)
 	{
 		//	DEBUG
-		Debug.Log("Generating "+Mathf.Pow((radius*2+1), 3)+" chunks: "+(radius*2+1)+"x"+(radius*2+1)+"x"+(radius*2+1));
-		int epoch = (int)(System.DateTime.UtcNow - new System.DateTime(1970, 1, 1)).TotalSeconds;
+		//Debug.Log("Generating "+Mathf.Pow((radius*2+1), 3)+" chunks: "+(radius*2+1)+"x"+(radius*2+1)+"x"+(radius*2+1));
+		double epoch = Util.EpochMilliseconds();
 		//	DEBUG
 
+		int topologyCount = 0;
 		for(int x = -radius-1; x < radius+1; x++)
 			for(int z = -radius-1; z < radius+1; z++)
 			{
@@ -52,11 +53,12 @@ public class World : MonoBehaviour
 				Vector3 position = new Vector3(centerChunk.x, 0, centerChunk.z) + offset;
 				
 				if(topology.ContainsKey(position)) continue;	
+				else topologyCount++;
 
-				//	initalise lowest as heigest
-				int lowestPoint = (int)position.y + chunkSize;
-				//	initialise heighest as lowest
-				int highestPoint  = (int)position.y;
+				//	initalise lowest as high
+				int lowestPoint = 10000;
+				//	initialise heighest low
+				int highestPoint  = 0;
 
 				int[,] map = new int[chunkSize,chunkSize];
 				for(int _x = 0; _x < chunkSize; _x++)
@@ -78,9 +80,12 @@ public class World : MonoBehaviour
 				topology[position].lowestPoint = lowestPoint;
 			}
 
-		int currentEpoch = (int)(System.DateTime.UtcNow - new System.DateTime(1970, 1, 1)).TotalSeconds;
-		Debug.Log(topology.Count+" columns topology generated in "+(currentEpoch - epoch)+" seconds");
+		//	DEBUG
+		double currentEpoch =Util.EpochMilliseconds();
+		//Debug.Log(topologyCount+" columns topology generated in "+Mathf.Round((float)(currentEpoch - epoch))+" milliseconds");
+		//	DEBUG
 
+		int chunkCount = 0;
 		//	Generate chunks in view distance + 1
 		for(int x = -radius-1; x < radius+1; x++)
 			for(int z = -radius-1; z < radius+1; z++)
@@ -93,17 +98,34 @@ public class World : MonoBehaviour
 					Vector3 position = centerChunk + offset;
 					
 					if(chunks.ContainsKey(position)) { continue; }
+					else chunkCount++;
 
 					Chunk chunk = new Chunk(position, this);
 					chunks.Add(position, chunk);
-
-
-					chunk.GenerateBlocks();
+	
+					if( chunk.position.y > columnTopology.highestPoint + (chunkSize * 2) ||
+						chunk.position.y < columnTopology.lowestPoint - (chunkSize * 2))
+					{
+						chunk.hidden = true;
+						
+					}
 				}
 			}
 
-		currentEpoch = (int)(System.DateTime.UtcNow - new System.DateTime(1970, 1, 1)).TotalSeconds;
-		Debug.Log(chunks.Count+" chunks GENERATED in "+(currentEpoch - epoch)+" seconds");
+		for(int x = -radius-1; x < radius+1; x++)
+			for(int z = -radius-1; z < radius+1; z++)
+				for(int y = -radius-1; y < radius+1; y++)
+				{
+					Vector3 offset = new Vector3(x, y, z) * chunkSize;
+					Vector3 position = centerChunk + offset;
+					Chunk chunk = chunks[position];
+					if(chunk.status == Chunk.Status.GENERATED) continue;
+					chunk.GenerateBlocks();
+				}
+		//	DEBUG
+		currentEpoch = Util.EpochMilliseconds();
+		Debug.Log(chunkCount+" chunks GEN - "+Mathf.Round((float)(currentEpoch - epoch))+" ms");
+		//	DEBUG
 
 		//	Find hidden chunks
 		/*for(int x = -radius + 1; x < radius - 1; x++)
@@ -166,8 +188,8 @@ public class World : MonoBehaviour
 					drawnChunkCount++;
 				}
 		
-		currentEpoch = (int)(System.DateTime.UtcNow - new System.DateTime(1970, 1, 1)).TotalSeconds;
-		Debug.Log(drawnChunkCount+" chunks DRAWN in "+(currentEpoch - epoch)+" seconds");
+		currentEpoch = Util.EpochMilliseconds();
+	Debug.Log(drawnChunkCount+" chunks DRAWN - "+Mathf.Round((float)(currentEpoch - epoch))+" ms");
 	}
 
 	//	Change type of block at voxel

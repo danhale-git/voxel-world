@@ -56,8 +56,8 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetButtonDown("Fire1") && !Input.GetKeyDown(KeyCode.LeftControl))
 		{
 			if(Input.GetKey(KeyCode.LeftShift))
-				DebugVertColor(Ray());
-				//DebugChunk(Ray());
+				DebugChunk(Ray());
+				//DebugVertColor(Ray());
 			else if(Input.GetKey(KeyCode.LeftAlt))
 				Redraw(Ray());
 			else
@@ -212,6 +212,7 @@ public class PlayerController : MonoBehaviour {
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Debug.Log(World.BlockOwner(voxel));
 			Chunk chunk = World.chunks[World.BlockOwner(voxel)];
 			Debug.Log(chunk.position.y + " " + chunk.hidden);
 			World.Topology topology = World.topology[new Vector3(chunk.position.x, 0, chunk.position.z)];
