@@ -22,6 +22,7 @@ public class World : MonoBehaviour
 																				
 	public Material defaultMaterial;
 
+	//	Terrain data
 	public class Topology
 	{
 		public int[,] heightMap =  new int[chunkSize,chunkSize];
@@ -32,13 +33,12 @@ public class World : MonoBehaviour
 	void Start()
 	{
 		//	Create initial chunks
-		UpdateChunks(Vector3.zero, viewDistance);
+		LoadChunks(Vector3.zero, viewDistance);
 	}
 
-	//	Temporary for testing and optimisation
 	//	Generate and draw chunks in a cube radius of veiwDistance around player
 	//	Called in PlayerController
-	public void UpdateChunks(Vector3 centerChunk, int radius)
+	public void LoadChunks(Vector3 centerChunk, int radius)
 	{
 		//	DEBUG
 		//Debug.Log("Generating "+Mathf.Pow((radius*2+1), 3)+" chunks: "+(radius*2+1)+"x"+(radius*2+1)+"x"+(radius*2+1));
@@ -111,7 +111,7 @@ public class World : MonoBehaviour
 		//	DEBUG
 	}
 
-	void UpdateOneChunk(Vector3 position)
+	void UpdateChunk(Vector3 position)
 	{
 		Chunk chunk = chunks[position];
 
@@ -267,9 +267,9 @@ public class World : MonoBehaviour
 			Chunk updateChunk = World.chunks[chunkPosition];
 			//updateChunk.SmoothBlocks();
 			//updateChunk.Redraw();
-			UpdateOneChunk(chunkPosition);
+			UpdateChunk(chunkPosition);
 		}
-		UpdateOneChunk(chunk.position);
+		UpdateChunk(chunk.position);
 
 		return true;
 	}
