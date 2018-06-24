@@ -162,7 +162,7 @@ public class Chunk
 	public void Draw(bool redraw = false)
 	{
 		if(status == Status.DRAWN && !redraw) return;
-		else CreateDebugMarker();
+		//else CreateDebugMarker();
 
 		List<Vector3> verts = new List<Vector3>();
 		List<Vector3> norms = new List<Vector3>();
@@ -265,9 +265,9 @@ public class Chunk
 			neighbourOwner = this;
 		}
 
-		if(neighbourOwner.status == Chunk.Status.CREATED)
+		if(neighbourOwner.hidden)
 		{
-			//return false;
+			return false;
 		}
 		
 		//	Check seeThrough in neighbour
