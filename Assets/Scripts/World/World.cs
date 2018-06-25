@@ -10,7 +10,7 @@ public class World : MonoBehaviour
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 5;
+	public static int viewDistance = 10;
 	//	Size of all chunks
 	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
@@ -123,12 +123,6 @@ public class World : MonoBehaviour
 		Chunk chunk = new Chunk(position, this);
 		chunks.Add(position, chunk);
 
-		if( chunk.position.y > columnTopology.highestPoint + (chunkSize * 2) ||
-			chunk.position.y < columnTopology.lowestPoint - (chunkSize * 2))
-		{
-			chunk.hidden = true;
-			
-		}
 		return true;
 	}
 
@@ -149,7 +143,7 @@ public class World : MonoBehaviour
 	bool GenerateChunk(Vector3 position)
 	{
 		Chunk chunk = chunks[position];
-		if(chunk.status == Chunk.Status.GENERATED || chunk.hidden) return false;
+		if(chunk.status == Chunk.Status.GENERATED) return false;
 		chunk.GenerateBlocks();
 		return true;
 	}
@@ -172,7 +166,7 @@ public class World : MonoBehaviour
 	bool DrawChunk(Vector3 position)
 	{
 		Chunk chunk = chunks[position];
-		if(chunk.status == Chunk.Status.DRAWN || chunk.hidden) { return false; }
+		if(chunk.status == Chunk.Status.DRAWN) { return false; }
 		chunk.Draw();
 		return true;
 	}
@@ -193,8 +187,6 @@ public class World : MonoBehaviour
 	void UpdateChunk(Vector3 position)
 	{
 		Chunk chunk = chunks[position];
-
-		if(chunk.hidden) chunk.hidden = false;
 
 		//	Make sure
 		for(int i = 0; i < 6; i++)

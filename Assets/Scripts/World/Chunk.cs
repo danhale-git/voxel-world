@@ -30,8 +30,6 @@ public class Chunk
 	public enum Composition {EMPTY, MIX, SOLID}
 	public Composition composition;
 
-	public bool hidden = false;
-
 	MeshFilter filter;
 	MeshRenderer renderer;
 	MeshCollider collider;
@@ -162,9 +160,6 @@ public class Chunk
 	public void Draw(bool redraw = false)
 	{
 		if(status == Status.DRAWN && !redraw) return;
-		//else CreateDebugMarker();
-
-		//	Get adjacent chunks
 		
 		Chunk[] adjacentChunks = new Chunk[6];
 		Vector3[] offsets = Util.CubeFaceDirections();
@@ -232,7 +227,6 @@ public class Chunk
 				}
 		CreateMesh(verts, norms, tris, cols);
 		status = Status.DRAWN;
-		CreateDebugMarker();
 	}
 
 	//	create a mesh with given attributes
@@ -293,11 +287,6 @@ public class Chunk
 			if(composition == Composition.SOLID) return false;
 		}
 
-		if(neighbourOwner.hidden)
-		{
-			return false;
-		}
-		
 		//	Check seeThrough in neighbour
 		Blocks.Types type = neighbourOwner.blockTypes[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z];
 

@@ -213,7 +213,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 			Chunk chunk = World.chunks[World.BlockOwner(voxel)];
-			Debug.Log(chunk.position + " " + chunk.hidden);
+			Debug.Log(chunk.position);
 
 			Vector3[] offsets = Util.CubeFaceDirections();
 			for(int i = 0; i < 6; i++)
