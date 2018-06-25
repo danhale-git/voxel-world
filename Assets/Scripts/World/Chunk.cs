@@ -164,12 +164,18 @@ public class Chunk
 		if(status == Status.DRAWN && !redraw) return;
 		//else CreateDebugMarker();
 
-		//	Get adjacent chunks to save on dict calls in FaceExposed
+		//	Get adjacent chunks
 		Chunk[] adjacentChunks = new Chunk[6];
 		Vector3[] offsets = Util.CubeFaceDirections();
+		int solidAdjacentChunkCount = 0;
 		for(int i = 0; i < 6; i++)
 		{
 			adjacentChunks[i] = World.chunks[this.position + (offsets[i] * this.size)];
+			if(adjacentChunks[i].composition == Chunk.Composition.SOLID)
+			{
+				solidAdjacentChunkCount++;
+			}
+			if(solidAdjacentChunkCount == 6) return;
 		}
 
 		List<Vector3> verts = new List<Vector3>();
@@ -187,7 +193,10 @@ public class Chunk
 				{
 					//	Check block type, skip drawing if air
 					Blocks.Types type = blockTypes[x,y,z];
-					if(type == Blocks.Types.AIR) { continue; }
+					if(type == Blocks.Types.AIR)
+					{ continue; }
+					if(	composition == Composition.SOLID && (Util.InChunk(x, 1) && Util.InChunk(y, 1) && Util.InChunk(z, 1)) )
+					{ continue; }
 
 					Vector3 blockPosition = new Vector3(x,y,z);
 					Shapes.Types shape = blockShapes[x,y,z];
@@ -209,8 +218,11 @@ public class Chunk
 					int localVertCount = 0;
 					Quaternion rotation = Quaternion.Euler(0, (int)blockYRotation[x,y,z], 0);
 
-					localVertCount = shapes[(int)blockShapes[x,y,z]].Draw(verts, norms, tris, blockPosition,
-														 rotation, exposedFaces, vertexCount);
+					localVertCount = shapes[(int)blockShapes[x,y,z]].Draw(	verts, norms, tris,
+																			blockPosition,
+														 					rotation, 
+																			exposedFaces,
+																			vertexCount);
 
 					//	Keep count of vertices to offset triangles
 					vertexCount += localVertCount;
@@ -231,7 +243,6 @@ public class Chunk
 		mesh.SetTriangles(triangles, 0);
 		mesh.SetColors(colors);
 
-
 		mesh.RecalculateNormals();
 
 		filter = gameObject.AddComponent<MeshFilter>();
@@ -247,11 +258,6 @@ public class Chunk
 	//	Player can see through adjacent block
 	bool FaceExposed(Shapes.CubeFace face, Vector3 blockPosition, Chunk[] adjacent)
 	{	
-		if(composition == Composition.SOLID)
-		{
-			
-
-		}
 		//	Direction of neighbour
 		Vector3 faceDirection = Shapes.FaceToDirection(face);	
 		//	Neighbour position
@@ -264,30 +270,15 @@ public class Chunk
 		   neighbour.y < 0 || neighbour.y >= size ||
 		   neighbour.z < 0 || neighbour.z >= size)
 		{
-			//	TODO: this leaves unrendered faces
-			//	Check composition value of adjacent chunks using debug marker
-			//	Don't check individual blocks when the adjacent chunk is all air or solid
+			//	Get adjacent chunk on that side
 			if(neighbour.x < 0)	neighbourOwner = adjacent[(int)Shapes.CubeFace.LEFT];
 			if(neighbour.y < 0)	neighbourOwner = adjacent[(int)Shapes.CubeFace.BOTTOM];
 			if(neighbour.z < 0) neighbourOwner = adjacent[(int)Shapes.CubeFace.BACK];
 
+
 			if(neighbour.x >= size) neighbourOwner = adjacent[(int)Shapes.CubeFace.RIGHT];
 			if(neighbour.y >= size) neighbourOwner = adjacent[(int)Shapes.CubeFace.TOP];
 			if(neighbour.z >= size)	neighbourOwner = adjacent[(int)Shapes.CubeFace.FRONT];
-
-			if(neighbourOwner == null)
-			{
-				foreach(Chunk adj in adjacent)
-				{
-					Debug.Log(adj);
-				}
-				Debug.Log(neighbour);
-			}
-
-			//	Next chunk in direction of neighbour
-			Vector3 neighbourChunkPos = position + (faceDirection * World.chunkSize);
-			
-			//neighbourOwner = World.chunks[neighbourChunkPos];
 
 			//	Convert local index to neighbouring chunk
 			neighbour = BlockUtils.WrapBlockIndex(neighbour);

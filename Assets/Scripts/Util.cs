@@ -59,4 +59,10 @@ public static class Util
 			Vector3.back
 		};
 	}
+
+	public static bool InChunk(float value, float offsetIn)
+	{
+		if(value < 0 + offsetIn || value >= World.chunkSize - offsetIn) return false;
+		return true;
+	}
 }
