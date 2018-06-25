@@ -232,6 +232,7 @@ public class Chunk
 				}
 		CreateMesh(verts, norms, tris, cols);
 		status = Status.DRAWN;
+		CreateDebugMarker();
 	}
 
 	//	create a mesh with given attributes
