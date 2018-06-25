@@ -164,6 +164,14 @@ public class Chunk
 		if(status == Status.DRAWN && !redraw) return;
 		//else CreateDebugMarker();
 
+		//	Get adjacent chunks to save on dict calls in FaceExposed
+		Chunk[] adjacentChunks = new Chunk[6];
+		Vector3[] offsets = Util.CubeFaceDirections();
+		for(int i = 0; i < 6; i++)
+		{
+			adjacentChunks[i] = World.chunks[this.position + (offsets[i] * this.size)];
+		}
+
 		List<Vector3> verts = new List<Vector3>();
 		List<Vector3> norms = new List<Vector3>();
 		List<int> tris = new List<int>();
@@ -189,7 +197,7 @@ public class Chunk
 					bool blockExposed = false;
 					for(int e = 0; e < 6; e++)
 					{
-						exposedFaces[e] = FaceExposed((Shapes.CubeFace)e, blockPosition);
+						exposedFaces[e] = FaceExposed((Shapes.CubeFace)e, blockPosition, adjacentChunks);
 						
 						if(exposedFaces[e] && !blockExposed) { blockExposed = true; }
 					}
@@ -237,24 +245,49 @@ public class Chunk
 	}
 
 	//	Player can see through adjacent block
-	bool FaceExposed(Shapes.CubeFace face, Vector3 blockPosition)
+	bool FaceExposed(Shapes.CubeFace face, Vector3 blockPosition, Chunk[] adjacent)
 	{	
+		if(composition == Composition.SOLID)
+		{
+			
+
+		}
 		//	Direction of neighbour
 		Vector3 faceDirection = Shapes.FaceToDirection(face);	
 		//	Neighbour position
 		Vector3 neighbour = blockPosition + faceDirection;
 		
-		Chunk neighbourOwner;
+		Chunk neighbourOwner = null;
 
 		//	Neighbour is outside this chunk
-		if(neighbour.x < 0 || neighbour.x >= World.chunkSize || 
-		   neighbour.y < 0 || neighbour.y >= World.chunkSize ||
-		   neighbour.z < 0 || neighbour.z >= World.chunkSize)
+		if(neighbour.x < 0 || neighbour.x >= size || 
+		   neighbour.y < 0 || neighbour.y >= size ||
+		   neighbour.z < 0 || neighbour.z >= size)
 		{
+			//	TODO: this leaves unrendered faces
+			//	Check composition value of adjacent chunks using debug marker
+			//	Don't check individual blocks when the adjacent chunk is all air or solid
+			if(neighbour.x < 0)	neighbourOwner = adjacent[(int)Shapes.CubeFace.LEFT];
+			if(neighbour.y < 0)	neighbourOwner = adjacent[(int)Shapes.CubeFace.BOTTOM];
+			if(neighbour.z < 0) neighbourOwner = adjacent[(int)Shapes.CubeFace.BACK];
+
+			if(neighbour.x >= size) neighbourOwner = adjacent[(int)Shapes.CubeFace.RIGHT];
+			if(neighbour.y >= size) neighbourOwner = adjacent[(int)Shapes.CubeFace.TOP];
+			if(neighbour.z >= size)	neighbourOwner = adjacent[(int)Shapes.CubeFace.FRONT];
+
+			if(neighbourOwner == null)
+			{
+				foreach(Chunk adj in adjacent)
+				{
+					Debug.Log(adj);
+				}
+				Debug.Log(neighbour);
+			}
+
 			//	Next chunk in direction of neighbour
 			Vector3 neighbourChunkPos = position + (faceDirection * World.chunkSize);
 			
-			neighbourOwner = World.chunks[neighbourChunkPos];
+			//neighbourOwner = World.chunks[neighbourChunkPos];
 
 			//	Convert local index to neighbouring chunk
 			neighbour = BlockUtils.WrapBlockIndex(neighbour);
@@ -263,6 +296,8 @@ public class Chunk
 		else
 		{
 			neighbourOwner = this;
+			//	Block not at edge and chunk solid
+			if(composition == Composition.SOLID) return false;
 		}
 
 		if(neighbourOwner.hidden)

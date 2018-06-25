@@ -46,4 +46,17 @@ public static class Util
 			increment++;
 		}
 	}
+
+	public static Vector3[] CubeFaceDirections()
+	{
+		return new Vector3[]
+		{
+			Vector3.up,
+			Vector3.down,
+			Vector3.right,
+			Vector3.left,
+			Vector3.forward,
+			Vector3.back
+		};
+	}
 }

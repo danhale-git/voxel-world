@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Jobs;
 
 public class World : MonoBehaviour
 {
@@ -90,7 +91,7 @@ public class World : MonoBehaviour
 
 		//	DEBUG
 		currentEpoch = Util.EpochMilliseconds();
-		Debug.Log(chunkCount+" chunks GEN - "+Mathf.Round((float)(currentEpoch - epoch))+" ms");
+		//Debug.Log(chunkCount+" chunks GEN - "+Mathf.Round((float)(currentEpoch - epoch))+" ms");
 		//	DEBUG
 
 		//	Draw chunks in view distance
@@ -107,7 +108,7 @@ public class World : MonoBehaviour
 		
 		//	DEBUG
 		currentEpoch = Util.EpochMilliseconds();
-		Debug.Log(drawnChunkCount+" chunks DRAWN - "+Mathf.Round((float)(currentEpoch - epoch))+" ms");
+		//Debug.Log(drawnChunkCount+" chunks DRAWN - "+Mathf.Round((float)(currentEpoch - epoch))+" ms");
 		//	DEBUG
 	}
 
