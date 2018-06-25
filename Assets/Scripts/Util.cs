@@ -17,17 +17,17 @@ public static class Util
 	{
 		Vector3 position = new Vector3(0,50,0);
 		int increment = 1;
-		for(int i = 0; i < 10; i++)
+		for(int i = 0; i < 5; i++)
 		{
 			for(int r = 0; r < increment; r++)
 			{
 				position += Vector3.right;
-				//CreateCube(position);
+				// do stuff
 			}
 			for(int d = 0; d < increment; d++)
 			{
 				position += Vector3.back;
-				//CreateCube(position);
+				// do stuff
 			}
 
 			increment++;
@@ -35,15 +35,20 @@ public static class Util
 			for(int l = 0; l < increment; l++)
 			{
 				position += Vector3.left;
-				//CreateCube(position);
+				// do stuff
 			}
 			for(int u = 0; u < increment; u++)
 			{
 				position += Vector3.forward;
-				//CreateCube(position);
+				// do stuff
 			}
 
 			increment++;
+		}
+		for(int u = 0; u < increment - 1; u++)
+		{
+			position += Vector3.right;
+			// do stuff
 		}
 	}
 

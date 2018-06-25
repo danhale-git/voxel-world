@@ -165,6 +165,7 @@ public class Chunk
 		//else CreateDebugMarker();
 
 		//	Get adjacent chunks
+		
 		Chunk[] adjacentChunks = new Chunk[6];
 		Vector3[] offsets = Util.CubeFaceDirections();
 		int solidAdjacentChunkCount = 0;

@@ -94,9 +94,11 @@ public class World : MonoBehaviour
 		//Debug.Log(chunkCount+" chunks GEN - "+Mathf.Round((float)(currentEpoch - epoch))+" ms");
 		//	DEBUG
 
+		StartCoroutine(DrawChunksInSpiral(centerChunk, viewDistance - 1));
+
 		//	Draw chunks in view distance
 		int drawnChunkCount = 0;
-		for(int x = -radius; x < radius; x++)
+		/*for(int x = -radius; x < radius; x++)
 			for(int z = -radius; z < radius; z++)
 				for(int y = -radius; y < radius; y++)
 				{
@@ -104,7 +106,7 @@ public class World : MonoBehaviour
 					Vector3 position = centerChunk + offset;
 					
 					if(DrawChunk(position)) drawnChunkCount++;
-				}
+				}*/
 		
 		//	DEBUG
 		currentEpoch = Util.EpochMilliseconds();
@@ -204,6 +206,18 @@ public class World : MonoBehaviour
 		if(chunk.status == Chunk.Status.DRAWN || chunk.hidden) { return false; }
 		chunk.Draw();
 		return true;
+	}
+
+	bool DrawChunkColumn(Vector3 position)
+	{
+		position = new Vector3(position.x, 0, position.z);
+		bool aChunkWasDrawn = false;
+		for(int y = 0; y < (topology[position].highestPoint + chunkSize)/chunkSize; y++)
+		{
+			bool drawn = DrawChunk(new Vector3(position.x, y*chunkSize, position.z));
+			if(!aChunkWasDrawn && drawn) aChunkWasDrawn = true;
+		}
+		return aChunkWasDrawn;
 	}
 
 
@@ -313,5 +327,45 @@ public class World : MonoBehaviour
 
 	#endregion
 
+
+	IEnumerator DrawChunksInSpiral(Vector3 centre, int radius)
+	{
+		DrawChunk(centre);
+		Vector3 position = centre;
+		int increment = 1;
+		for(int i = 0; i < radius; i++)
+		{
+			for(int r = 0; r < increment; r++)
+			{
+				position += Vector3.right * chunkSize;
+				if(DrawChunkColumn(position)) yield return null;
+			}
+			for(int d = 0; d < increment; d++)
+			{
+				position += Vector3.back * chunkSize;
+				if(DrawChunkColumn(position)) yield return null;
+			}
+
+			increment++;
+
+			for(int l = 0; l < increment; l++)
+			{
+				position += Vector3.left * chunkSize;
+				if(DrawChunkColumn(position)) yield return null;
+			}
+			for(int u = 0; u < increment; u++)
+			{
+				position += Vector3.forward * chunkSize;
+				if(DrawChunkColumn(position)) yield return null;
+			}
+
+			increment++;
+		}
+		for(int u = 0; u < increment - 1; u++)
+		{
+			position += Vector3.right * chunkSize;
+			if(DrawChunkColumn(position)) yield return null;
+		}
+	}
 }
 
