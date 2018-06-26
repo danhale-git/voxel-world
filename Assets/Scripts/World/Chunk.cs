@@ -128,8 +128,6 @@ public class Chunk
 			composition = Composition.MIX;
 		
 		status = Status.GENERATED;
-		GameObject.Destroy(debugMarker);
-		CreateDebugMarker(world.chunkMarkerWhite);
 	}
 
 	//	Generate bitmask representing surrounding blocks and chose slope type
@@ -156,15 +154,30 @@ public class Chunk
 
 	public void Draw(bool redraw = false)
 	{
-		if(status == Status.DRAWN && !redraw) return;
+		if(status == Status.DRAWN && !redraw ||
+		   composition == Composition.EMPTY)
+		{
+			return;
+		}
 		
 		Chunk[] adjacentChunks = new Chunk[6];
 		Vector3[] offsets = Util.CubeFaceDirections();
 		int solidAdjacentChunkCount = 0;
 		for(int i = 0; i < 6; i++)
 		{
-			if(!World.chunks.TryGetValue(this.position + (offsets[i] * this.size), out adjacentChunks[i])) Debug.Log(this.position + (offsets[i] * this.size));
-			adjacentChunks[i] = World.chunks[this.position + (offsets[i] * this.size)];
+			//TODO: The dictionary below check may become expensive.
+			//	Find a way to spawn chunks around sudden peaks
+			//	Maybe detect acute changes in Topology.highestPointOnSpawn as chunks are generating?
+
+			Vector3 adjacentPosition = this.position + (offsets[i] * this.size);
+			if(!World.chunks.TryGetValue(adjacentPosition,
+										 out adjacentChunks[i]))
+			{
+				world.CreateChunk(adjacentPosition);
+				world.GenerateChunk(adjacentPosition);
+				adjacentChunks[i] = World.chunks[adjacentPosition];
+			}
+
 			if(adjacentChunks[i].composition == Chunk.Composition.SOLID)
 			{
 				solidAdjacentChunkCount++;
@@ -225,6 +238,10 @@ public class Chunk
 				}
 		CreateMesh(verts, norms, tris, cols);
 		status = Status.DRAWN;
+
+		GameObject.Destroy(debugMarker);
+		CreateDebugMarker(world.chunkMarkerWhite);
+
 	}
 
 	//	create a mesh with given attributes
@@ -281,13 +298,22 @@ public class Chunk
 		else
 		{
 			neighbourOwner = this;
-			//	Block not at edge and chunk solid
+
+			//	Block not at edge and chunk is solid
 			if(composition == Composition.SOLID) return false;
 		}
 
-		//	Check seeThrough in neighbour
-		Blocks.Types type = neighbourOwner.blockTypes[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z];
+		//	Neighbour has no blocks generated so this area is not exposed
+		if(neighbourOwner.status == Chunk.Status.CREATED)
+		{
+			return false;
+		}
+		else
+		{
+			//	Check if block type is see through
+			Blocks.Types type = neighbourOwner.blockTypes[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z];
 
-		return (Blocks.seeThrough[(int)type]);
+			return (Blocks.seeThrough[(int)type]);
+		}
 	}
 }

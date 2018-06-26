@@ -9,7 +9,7 @@ public static class NoiseUtils
 	public static int GroundHeight(int x, int z, int maxHeight)
 	{
 		float height;
-		height = BrownianMotion(x * 0.08f,z * 0.08f);
+		height = BrownianMotion(x * 0.05f,z * 0.05f);
 
 		return (int)Map(0, maxHeight, 0, 1, height);;
 	}
@@ -17,6 +17,7 @@ public static class NoiseUtils
     {
         return Mathf.Lerp(newmin, newmax, Mathf.InverseLerp(origmin, origmax, value));
     }
+	
 
 	//	Brownian Motion (Perlin Noise)
 	public static float BrownianMotion(float x, float z, int octaves = 2, float persistance = 0.2f)

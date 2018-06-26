@@ -212,15 +212,8 @@ public class PlayerController : MonoBehaviour {
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
-			Chunk chunk = World.chunks[World.BlockOwner(voxel)];
+			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
 			Debug.Log(chunk.position);
-
-			Vector3[] offsets = Util.CubeFaceDirections();
-			for(int i = 0; i < 6; i++)
-			{
-				Debug.Log((Shapes.CubeFace)i);
-				Debug.Log(World.chunks[chunk.position + (offsets[i] * World.chunkSize)].position);
-			}
 		}
 	}
 
@@ -233,7 +226,7 @@ public class PlayerController : MonoBehaviour {
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
-			Chunk chunk = World.chunks[World.BlockOwner(voxel)];
+			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
 		}
 	}
 

@@ -13,11 +13,11 @@ public class World : MonoBehaviour
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 5;
+	public static int viewDistance = 4;
 	//	Size of all chunks
-	public static int chunkSize = 8;
+	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
-	public static int maxGroundHeight = 80;
+	public static int maxGroundHeight = 120;
 	//	Draw edges where no more chunks exist
 	public static bool drawEdges = true;
 
@@ -32,6 +32,8 @@ public class World : MonoBehaviour
 		public int highestPoint = 0;
 		public int highestPointOnGenerate;
 		public int lowestPoint = chunkSize;
+		public int lowestPointOnGenerate;
+		public Chunk.Status spawnStatus;
 	}
 
 	void Start()
@@ -47,30 +49,30 @@ public class World : MonoBehaviour
 		centerChunk = new Vector3(centerChunk.x, 0, centerChunk.z);
 
 		//	Generate terrain in view distance + 1
-		for(int x = -radius-1; x < radius+1; x++)
-			for(int z = -radius-1; z < radius+1; z++)
+		for(int x = -radius; x < radius+1; x++)
+			for(int z = -radius; z < radius+1; z++)
 			{
 				Vector3 offset = new Vector3(x,0,z) * chunkSize;
 				Vector3 position = centerChunk + offset;
 
-				GetTopology(position);
+					GetTopology(position);
 			}
 
 		//	Create chunks in view distance + 1
-		for(int x = -radius-1; x < radius+1; x++)
-			for(int z = -radius-1; z < radius+1; z++)
+		for(int x = -radius; x < radius+1; x++)
+			for(int z = -radius; z < radius+1; z++)
 			{
 				Vector3 offset = new Vector3(x, 0, z) * chunkSize;
 				Vector3 position = centerChunk + offset;
 
-				CreateChunkColumn((int)position.x,
-								  (int)position.z);
+					CreateChunkColumn((int)position.x,
+								  	  (int)position.z);
 				
 			}
 
 		//	Generate block data in view distance +1
-		for(int x = -radius-1; x < radius+1; x++)
-			for(int z = -radius-1; z < radius+1; z++)
+		for(int x = -radius; x < radius+1; x++)
+			for(int z = -radius; z < radius+1; z++)
 				{
 					Vector3 offset = new Vector3(x, 0, z) * chunkSize;
 					Vector3 position = centerChunk + offset;
@@ -113,6 +115,7 @@ public class World : MonoBehaviour
 		top.lowestPoint = lowestPoint;
 
 		top.highestPointOnGenerate = highestPoint;
+		top.lowestPointOnGenerate = lowestPoint;
 
 		topology[position] = top;
 
@@ -121,7 +124,7 @@ public class World : MonoBehaviour
 
 
 	//	Create chunk class instances
-	bool CreateChunk(Vector3 position)
+	public bool CreateChunk(Vector3 position)
 	{
 		if(chunks.ContainsKey(position)) return false;
 
@@ -133,6 +136,7 @@ public class World : MonoBehaviour
 	bool CreateChunkColumn(int x, int z)
 	{
 		Topology top = topology[new Vector3(x, 0, z)];
+		if((int)top.spawnStatus > 0) return false;
 
 		bool aChunkWasCreated = false;
 		//	Create a +1 radius outside the bounds that will be drawn
@@ -141,12 +145,13 @@ public class World : MonoBehaviour
 			bool drawn = CreateChunk(new Vector3(x, y, z));
 			if(!aChunkWasCreated && drawn) aChunkWasCreated = true;
 		}
+		top.spawnStatus = Chunk.Status.CREATED;
 		return aChunkWasCreated;
 	}
 
 
 	//	Generate blocks in chunks
-	bool GenerateChunk(Vector3 position)
+	public bool GenerateChunk(Vector3 position)
 	{
 		Chunk chunk = chunks[position];
 		if(chunk.status == Chunk.Status.GENERATED) return false;
@@ -156,6 +161,7 @@ public class World : MonoBehaviour
 	bool GenerateChunkColumn(int x, int z)
 	{
 		Topology top = topology[new Vector3(x, 0, z)];
+		if((int)top.spawnStatus > 1) return false;
 
 		bool aChunkWasGenerated = false;
 		//	Generate a +1 radius outside the bounds that will be drawn
@@ -164,6 +170,7 @@ public class World : MonoBehaviour
 			bool drawn = GenerateChunk(new Vector3(x, y, z));
 			if(!aChunkWasGenerated && drawn) aChunkWasGenerated = true;
 		}
+		top.spawnStatus = Chunk.Status.GENERATED;
 		return aChunkWasGenerated;
 	}
 
@@ -179,6 +186,7 @@ public class World : MonoBehaviour
 	bool DrawChunkColumn(Vector3 position)
 	{
 		Topology top = topology[new Vector3(position.x, 0, position.z)];
+		if((int)top.spawnStatus > 2) return false;
 
 		bool aChunkWasDrawn = false;
 		for(int y = 0; y < top.highestPointOnGenerate + chunkSize; y+=chunkSize)
@@ -186,6 +194,7 @@ public class World : MonoBehaviour
 			bool drawn = DrawChunk(new Vector3(position.x, y, position.z));
 			if(!aChunkWasDrawn && drawn) aChunkWasDrawn = true;
 		}
+		top.spawnStatus = Chunk.Status.DRAWN;
 		return aChunkWasDrawn;
 	}
 
