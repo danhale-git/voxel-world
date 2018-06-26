@@ -6,7 +6,9 @@ using Unity.Jobs;
 public class World : MonoBehaviour
 {
 	//	DEBUG
-	public GameObject chunkMarker;
+	public GameObject chunkMarkerWhite;
+	public GameObject chunkMarkerRed;
+	public bool markChunks;
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
@@ -28,6 +30,7 @@ public class World : MonoBehaviour
 	{
 		public int[,] heightMap =  new int[chunkSize,chunkSize];
 		public int highestPoint = 0;
+		public int highestPointOnGenerate;
 		public int lowestPoint = chunkSize;
 	}
 
@@ -50,12 +53,13 @@ public class World : MonoBehaviour
 	//	Called in PlayerController
 	public void LoadChunks(Vector3 centerChunk, int radius)
 	{
+		centerChunk = new Vector3(centerChunk.x, 0, centerChunk.z);
 		//	Generate terrain in view distance + 1
 		for(int x = -radius-1; x < radius+1; x++)
 			for(int z = -radius-1; z < radius+1; z++)
 			{
 				Vector3 offset = new Vector3(x,0,z) * chunkSize;
-				Vector3 position = new Vector3(centerChunk.x, 0, centerChunk.z) + offset;
+				Vector3 position = centerChunk + offset;
 
 				GetTopology(position);
 			}
@@ -108,10 +112,14 @@ public class World : MonoBehaviour
 				if(map[_x,_z] > highestPoint)
 					highestPoint = map[_x,_z];
 			}
-		topology[position] = new Topology();
-		topology[position].heightMap = map;
-		topology[position].highestPoint = highestPoint;
-		topology[position].lowestPoint = lowestPoint;
+		Topology top = new Topology();
+		top.heightMap = map;
+		top.highestPoint = highestPoint;
+		top.lowestPoint = lowestPoint;
+
+		top.highestPointOnGenerate = highestPoint;
+
+		topology[position] = top;
 
 		return true;
 	}
@@ -132,7 +140,7 @@ public class World : MonoBehaviour
 
 		bool aChunkWasCreated = false;
 		//	Generate a +1 radius outside the bounds that will be drawn
-		for(int y = -chunkSize; y < top.highestPoint + (chunkSize*2); y+=chunkSize)
+		for(int y = -chunkSize; y < top.highestPointOnGenerate + (chunkSize*2); y+=chunkSize)
 		{
 			bool drawn = CreateChunk(new Vector3(x, y, z), top);
 			if(!aChunkWasCreated && drawn) aChunkWasCreated = true;
@@ -155,7 +163,7 @@ public class World : MonoBehaviour
 
 		bool aChunkWasGenerated = false;
 		//	Generate a +1 radius outside the bounds that will be drawn
-		for(int y = -chunkSize; y < top.highestPoint + (chunkSize*2); y+=chunkSize)
+		for(int y = -chunkSize; y < top.highestPointOnGenerate + (chunkSize*2); y+=chunkSize)
 		{
 			bool drawn = GenerateChunk(new Vector3(x, y, z));
 			if(!aChunkWasGenerated && drawn) aChunkWasGenerated = true;
@@ -176,7 +184,7 @@ public class World : MonoBehaviour
 		Topology top = topology[new Vector3(position.x, 0, position.z)];
 
 		bool aChunkWasDrawn = false;
-		for(int y = 0; y < top.highestPoint + chunkSize; y+=chunkSize)
+		for(int y = 0; y < top.highestPointOnGenerate + chunkSize; y+=chunkSize)
 		{
 			bool drawn = DrawChunk(new Vector3(position.x, y, position.z));
 			if(!aChunkWasDrawn && drawn) aChunkWasDrawn = true;
@@ -187,14 +195,14 @@ public class World : MonoBehaviour
 	void UpdateChunk(Vector3 position)
 	{
 		Chunk chunk = chunks[position];
-
+		Vector3[] offsets = Util.CubeFaceDirections();
 		//	Make sure
 		for(int i = 0; i < 6; i++)
 		{
-			Vector3 neighbourChunkPos = (Shapes.FaceToDirection((Shapes.CubeFace)i) * chunkSize) + position;
+			Vector3 neighbourChunkPos = position + (offsets[i] * chunkSize);
 
 			//	Create chunk if not already created
-			if(CreateChunk(neighbourChunkPos, topology[new Vector3(position.x, 0, position.z)])) Debug.Log("created "+chunk);//DEBUG
+			if(CreateChunk(neighbourChunkPos, topology[new Vector3(position.x, 0, position.z)])) Debug.Log("created "+chunk.position);//DEBUG
 			//	Generate blocks
 			Chunk neighbourChunk = chunks[neighbourChunkPos];
 			if(neighbourChunk.status == Chunk.Status.CREATED)

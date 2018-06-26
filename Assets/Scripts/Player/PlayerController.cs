@@ -65,7 +65,7 @@ public class PlayerController : MonoBehaviour {
 		}
 
 		//	Break block
-		if(Input.GetButtonDown("Fire2"))
+		if(Input.GetButton("Fire2"))
 		{
 			AddBlock(Ray());
 		}
@@ -234,7 +234,6 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 			Chunk chunk = World.chunks[World.BlockOwner(voxel)];
-			chunk.DebugMarkerColor(Color.red);		
 		}
 	}
 

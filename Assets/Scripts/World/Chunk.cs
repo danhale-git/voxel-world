@@ -7,17 +7,10 @@ public class Chunk
 {
 	//	DEBUG
 	public GameObject debugMarker;
-	public void DebugMarkerColor(Color color)
-	{
-		if(debugMarker == null) return;
-		MeshFilter meshFilter = debugMarker.GetComponent<MeshFilter>();
-		Color[] markerColors = Enumerable.Repeat(Color.red, meshFilter.mesh.colors.Length).ToArray();
-		meshFilter.mesh.colors = markerColors;
-	}
 
-	public void CreateDebugMarker()
+	public void CreateDebugMarker(GameObject prefab)
 	{
-		debugMarker = GameObject.Instantiate(world.chunkMarker, position,
+		debugMarker = GameObject.Instantiate(prefab, position,
 										Quaternion.identity, gameObject.transform);
 	}
 	//	DEBUG
@@ -84,6 +77,8 @@ public class Chunk
 		//	Set transform
 		gameObject.transform.parent = world.gameObject.transform;
 		gameObject.transform.position = position;
+
+		CreateDebugMarker(world.chunkMarkerRed);
 	}
 
 	//	Choose types of all blocks in the chunk based on Perlin noise
@@ -133,6 +128,8 @@ public class Chunk
 			composition = Composition.MIX;
 		
 		status = Status.GENERATED;
+		GameObject.Destroy(debugMarker);
+		CreateDebugMarker(world.chunkMarkerWhite);
 	}
 
 	//	Generate bitmask representing surrounding blocks and chose slope type
@@ -166,6 +163,7 @@ public class Chunk
 		int solidAdjacentChunkCount = 0;
 		for(int i = 0; i < 6; i++)
 		{
+			if(!World.chunks.TryGetValue(this.position + (offsets[i] * this.size), out adjacentChunks[i])) Debug.Log(this.position + (offsets[i] * this.size));
 			adjacentChunks[i] = World.chunks[this.position + (offsets[i] * this.size)];
 			if(adjacentChunks[i].composition == Chunk.Composition.SOLID)
 			{

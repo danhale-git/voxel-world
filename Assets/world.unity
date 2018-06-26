@@ -140,8 +140,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0303d9e45b9ec3a48a3b5cbcd95b3837, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chunkMarker: {fileID: 1472134897473722, guid: b7e759b739f6b4a4fa63d0dd24e7d40b,
+  chunkMarkerWhite: {fileID: 1472134897473722, guid: b7e759b739f6b4a4fa63d0dd24e7d40b,
     type: 2}
+  chunkMarkerRed: {fileID: 1472134897473722, guid: 10aeb8730e793054084761d3d2265057,
+    type: 2}
+  markChunks: 0
   defaultMaterial: {fileID: 2100000, guid: e6e3f442e423995478927bea6169cb7f, type: 2}
 --- !u!4 &293073954
 Transform:
@@ -487,7 +490,7 @@ MonoBehaviour:
   world: {fileID: 293073953}
   blockPlaceShape: 0
   blockPlaceType: 1
-  speed: 20
+  speed: 30
 --- !u!23 &1504611314
 MeshRenderer:
   m_ObjectHideFlags: 0
