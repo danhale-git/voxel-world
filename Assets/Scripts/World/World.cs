@@ -9,21 +9,21 @@ public class World : MonoBehaviour
 	public GameObject chunkMarkerWhite;
 	public GameObject chunkMarkerRed;
 	public bool markChunks;
+	public Material defaultMaterial;
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 10;
+	public static int viewDistance = 5;
 	//	Size of all chunks
-	public static int chunkSize = 16;
+	public static int chunkSize = 8;
 	//	Maximum height of non-air blocks
-	public static int maxGroundHeight = 20;
+	public static int maxGroundHeight = 80;
 	//	Draw edges where no more chunks exist
 	public static bool drawEdges = true;
-	//	All chunks in the world
+
+	//	Chunk and terrain data
 	public static Dictionary<Vector3, Chunk> chunks = new Dictionary<Vector3, Chunk>();
 	public static Dictionary<Vector3, Topology> topology = new Dictionary<Vector3, Topology>();
-																				
-	public Material defaultMaterial;
 
 	//	Terrain data
 	public class Topology
@@ -40,20 +40,12 @@ public class World : MonoBehaviour
 		LoadChunks(Vector3.zero, viewDistance);
 	}
 
-	void GetChunk(Vector3 position, bool generate)
-	{
-		Chunk chunk;
-		if(!chunks.TryGetValue(position, out chunk))
-		{
-			//CreateChunk(position);
-		}
-	}
-
 	//	Generate and draw chunks in a cube radius of veiwDistance around player
 	//	Called in PlayerController
 	public void LoadChunks(Vector3 centerChunk, int radius)
 	{
 		centerChunk = new Vector3(centerChunk.x, 0, centerChunk.z);
+
 		//	Generate terrain in view distance + 1
 		for(int x = -radius-1; x < radius+1; x++)
 			for(int z = -radius-1; z < radius+1; z++)
@@ -64,7 +56,7 @@ public class World : MonoBehaviour
 				GetTopology(position);
 			}
 
-		//	Create chunks in view distance + 1 and set hidden
+		//	Create chunks in view distance + 1
 		for(int x = -radius-1; x < radius+1; x++)
 			for(int z = -radius-1; z < radius+1; z++)
 			{
@@ -82,6 +74,7 @@ public class World : MonoBehaviour
 				{
 					Vector3 offset = new Vector3(x, 0, z) * chunkSize;
 					Vector3 position = centerChunk + offset;
+
 					GenerateChunkColumn((int)position.x,
 									 	(int)position.z);
 				}
@@ -89,6 +82,8 @@ public class World : MonoBehaviour
 		StartCoroutine(DrawChunksInSpiral(centerChunk, viewDistance - 1));
 	}
 
+
+	//	Generate terrain and store highest/lowest points
 	bool GetTopology(Vector3 position)
 	{
 		if(topology.ContainsKey(position)) return false;	
@@ -124,30 +119,33 @@ public class World : MonoBehaviour
 		return true;
 	}
 
-	bool CreateChunk(Vector3 position, Topology columnTopology)	//	TODO remove columnTopology?
+
+	//	Create chunk class instances
+	bool CreateChunk(Vector3 position)
 	{
-		if(chunks.ContainsKey(position)) { return false; }
+		if(chunks.ContainsKey(position)) return false;
 
 		Chunk chunk = new Chunk(position, this);
 		chunks.Add(position, chunk);
 
 		return true;
 	}
-
 	bool CreateChunkColumn(int x, int z)
 	{
 		Topology top = topology[new Vector3(x, 0, z)];
 
 		bool aChunkWasCreated = false;
-		//	Generate a +1 radius outside the bounds that will be drawn
+		//	Create a +1 radius outside the bounds that will be drawn
 		for(int y = -chunkSize; y < top.highestPointOnGenerate + (chunkSize*2); y+=chunkSize)
 		{
-			bool drawn = CreateChunk(new Vector3(x, y, z), top);
+			bool drawn = CreateChunk(new Vector3(x, y, z));
 			if(!aChunkWasCreated && drawn) aChunkWasCreated = true;
 		}
 		return aChunkWasCreated;
 	}
 
+
+	//	Generate blocks in chunks
 	bool GenerateChunk(Vector3 position)
 	{
 		Chunk chunk = chunks[position];
@@ -155,8 +153,6 @@ public class World : MonoBehaviour
 		chunk.GenerateBlocks();
 		return true;
 	}
-
-	//	TODO make this work
 	bool GenerateChunkColumn(int x, int z)
 	{
 		Topology top = topology[new Vector3(x, 0, z)];
@@ -171,6 +167,8 @@ public class World : MonoBehaviour
 		return aChunkWasGenerated;
 	}
 
+
+	//	Draw chunk meshes
 	bool DrawChunk(Vector3 position)
 	{
 		Chunk chunk = chunks[position];
@@ -178,7 +176,6 @@ public class World : MonoBehaviour
 		chunk.Draw();
 		return true;
 	}
-
 	bool DrawChunkColumn(Vector3 position)
 	{
 		Topology top = topology[new Vector3(position.x, 0, position.z)];
@@ -192,34 +189,40 @@ public class World : MonoBehaviour
 		return aChunkWasDrawn;
 	}
 
+
+	//	Update/create individual chunks
 	void UpdateChunk(Vector3 position)
 	{
 		Chunk chunk = chunks[position];
+
+		//	Check adjacent chunks on 6 sides
 		Vector3[] offsets = Util.CubeFaceDirections();
-		//	Make sure
 		for(int i = 0; i < 6; i++)
 		{
-			Vector3 neighbourChunkPos = position + (offsets[i] * chunkSize);
+			Vector3 adjacentChunkPos = position + (offsets[i] * chunkSize);
 
 			//	Create chunk if not already created
-			if(CreateChunk(neighbourChunkPos, topology[new Vector3(position.x, 0, position.z)])) Debug.Log("created "+chunk.position);//DEBUG
-			//	Generate blocks
-			Chunk neighbourChunk = chunks[neighbourChunkPos];
-			if(neighbourChunk.status == Chunk.Status.CREATED)
+			CreateChunk(adjacentChunkPos);
+
+			//	Generate blocks if not already generated
+			Chunk adjacentChunk = chunks[adjacentChunkPos];
+			if(adjacentChunk.status == Chunk.Status.CREATED)
 			{
-				neighbourChunk.GenerateBlocks();
+				adjacentChunk.GenerateBlocks();
 			}
 		}
-
+		//	Update target chunk
 		switch(chunk.status)
 		{
 			case Chunk.Status.CREATED:
 				GenerateChunk(position);
 				DrawChunk(position);
 				break;
+
 			case Chunk.Status.GENERATED:
 				DrawChunk(position);
 				break;
+
 			case Chunk.Status.DRAWN:
 				chunk.Redraw();
 				break;
@@ -227,12 +230,12 @@ public class World : MonoBehaviour
 	}
 
 
-	//	Change type of block at voxel
+	//	Change type of block at voxel and reload chunk(s)
 	public bool ChangeBlock(Vector3 voxel, Blocks.Types type, Shapes.Types shape = Shapes.Types.CUBE)
 	{
 		//	Find owner chunk
 		Chunk chunk;
-		if(!chunks.TryGetValue(BlockOwner(voxel), out chunk))
+		if(!chunks.TryGetValue(VoxelOwner(voxel), out chunk))
 		{
 			return false;
 		}
@@ -258,7 +261,7 @@ public class World : MonoBehaviour
 
 		List<Vector3> adjacent = new List<Vector3>();
 
-		//	add adjacent chunks to be adjacentn if block is at the edge
+		//	If the block is at edge(s) get it's adjacent chunk(s)
 		if(local.x == 0) 
 			adjacent.Add((new Vector3(chunk.position.x-chunkSize,	chunk.position.y,			chunk.position.z)));
 		if(local.x == chunkSize - 1) 
@@ -282,14 +285,13 @@ public class World : MonoBehaviour
 		if(local.x == chunkSize - 1 && local.z == 0) 
 			adjacent.Add((new Vector3(chunk.position.x+chunkSize,	chunk.position.y, chunk.position.z-chunkSize)));
 
-		//	adjacent chunks
+		//	Update adjacent
 		foreach(Vector3 chunkPosition in adjacent)
 		{
 			Chunk updateChunk = World.chunks[chunkPosition];
-			//updateChunk.SmoothBlocks();
-			//updateChunk.Redraw();
 			UpdateChunk(chunkPosition);
 		}
+		//	Update target
 		UpdateChunk(chunk.position);
 
 		return true;
@@ -297,24 +299,22 @@ public class World : MonoBehaviour
 
 	#region Utility
 
-	//	Find position of chunk that owns block
-	public static Vector3 BlockOwner(Vector3 voxel)
+	//	Find position of chunk that owns voxel
+	public static Vector3 VoxelOwner(Vector3 voxel)
 	{
 		int x = Mathf.FloorToInt(voxel.x / chunkSize);
 		int y = Mathf.FloorToInt(voxel.y / chunkSize);
 		int z = Mathf.FloorToInt(voxel.z / chunkSize);
 		return new Vector3(x*chunkSize,y*chunkSize,z*chunkSize);
 	}
-
 	//	Get type of block at voxel
 	public static Blocks.Types GetType(Vector3 voxel)
 	{
-		Chunk chunk = chunks[BlockOwner(voxel)];
+		Chunk chunk = chunks[VoxelOwner(voxel)];
 		Vector3 local = voxel - chunk.position;
 		return chunk.blockTypes[(int)local.x, (int)local.y, (int)local.z];
 	}
-
-	//	Get byte representing arrangement of blocks around voxel
+	//	Get byte representing arrangement of solid blocks around voxel
 	public static byte GetBitMask(Vector3 voxel)
 	{
 		Vector3[] neighbours = BlockUtils.HorizontalNeighbours(voxel);
@@ -331,19 +331,21 @@ public class World : MonoBehaviour
 		return (byte)total;
 	}
 
+	//	Make a horizontal grid spiral of chunks
 	IEnumerator DrawChunksInSpiral(Vector3 center, int radius)
 	{
-		DrawChunk(center);
+		DrawChunkColumn(center);
 		Vector3 position = center;
 		int increment = 1;
 		for(int i = 0; i < radius; i++)
 		{
+			//	right then back
 			for(int r = 0; r < increment; r++)
 			{
 				position += Vector3.right * chunkSize;
 				if(DrawChunkColumn(position)) yield return null;
 			}
-			for(int d = 0; d < increment; d++)
+			for(int b = 0; b < increment; b++)
 			{
 				position += Vector3.back * chunkSize;
 				if(DrawChunkColumn(position)) yield return null;
@@ -351,12 +353,13 @@ public class World : MonoBehaviour
 
 			increment++;
 
+			//	left then forward
 			for(int l = 0; l < increment; l++)
 			{
 				position += Vector3.left * chunkSize;
 				if(DrawChunkColumn(position)) yield return null;
 			}
-			for(int u = 0; u < increment; u++)
+			for(int f = 0; f < increment; f++)
 			{
 				position += Vector3.forward * chunkSize;
 				if(DrawChunkColumn(position)) yield return null;
@@ -364,7 +367,8 @@ public class World : MonoBehaviour
 
 			increment++;
 		}
-		for(int u = 0; u < increment - 1; u++)
+		//	Square made by spiral is always missing one chunk
+		for(int r = 0; r < increment - 1; r++)
 		{
 			position += Vector3.right * chunkSize;
 			if(DrawChunkColumn(position)) yield return null;
