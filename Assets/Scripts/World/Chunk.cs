@@ -128,6 +128,8 @@ public class Chunk
 			composition = Composition.MIX;
 		
 		status = Status.GENERATED;
+		GameObject.Destroy(debugMarker);
+		CreateDebugMarker(world.chunkMarkerYellow);
 	}
 
 	//	Generate bitmask representing surrounding blocks and chose slope type
@@ -170,14 +172,14 @@ public class Chunk
 			//	Maybe detect acute changes in Topology.highestPointOnSpawn as chunks are generating?
 
 			Vector3 adjacentPosition = this.position + (offsets[i] * this.size);
-			if(!World.chunks.TryGetValue(adjacentPosition,
+			/*if(!World.chunks.TryGetValue(adjacentPosition,
 										 out adjacentChunks[i]))
 			{
 				world.CreateChunk(adjacentPosition);
 				world.GenerateChunk(adjacentPosition);
 				adjacentChunks[i] = World.chunks[adjacentPosition];
-			}
-
+			}*/
+			adjacentChunks[i] = World.chunks[adjacentPosition];
 			if(adjacentChunks[i].composition == Chunk.Composition.SOLID)
 			{
 				solidAdjacentChunkCount++;
