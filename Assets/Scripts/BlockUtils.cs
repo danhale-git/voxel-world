@@ -31,19 +31,5 @@ public static class BlockUtils
 										Mathf.Round(toRound.y),
 										Mathf.Round(toRound.z));
 		return rounded;
-	}
-
-	//	Return 8 adjacent positions
-	public static Vector3[] HorizontalNeighbours(Vector3 voxel)
-	{
-		return new Vector3[] { 	Vector3.right + voxel,
-								Vector3.left + voxel,
-								Vector3.forward + voxel,
-								Vector3.back + voxel,
-								Vector3.right + Vector3.forward + voxel,
-								Vector3.right + Vector3.back + voxel,
-								Vector3.left + Vector3.forward + voxel,
-								Vector3.left + Vector3.back + voxel
-								};
 	}	
 }

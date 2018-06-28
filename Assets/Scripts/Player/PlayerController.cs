@@ -74,6 +74,12 @@ public class PlayerController : MonoBehaviour {
 		{
 			CursorOn();
 		}
+
+		if(Input.GetKeyDown(KeyCode.C))
+		{
+			Debug.Log("LOCKING CHUNK GENERATION!!!!");
+			world.disableChunkGeneration = true;
+		}
 		
 	}
 	

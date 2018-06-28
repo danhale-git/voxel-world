@@ -6,13 +6,7 @@ using System.Linq;
 public class Chunk
 {
 	//	DEBUG
-	public GameObject debugMarker;
-
-	public void CreateDebugMarker(GameObject prefab)
-	{
-		debugMarker = GameObject.Instantiate(prefab, position,
-										Quaternion.identity, gameObject.transform);
-	}
+	DebugWrapper debug;
 	//	DEBUG
 	//	Chunk local space and game components
 	public GameObject gameObject;
@@ -42,7 +36,7 @@ public class Chunk
 	public Shapes.Types[,,] blockShapes;
 	public Shapes.Rotate[,,] blockYRotation;
 
-	public List<Shapes.Shape> shapes = new List<Shapes.Shape>()
+	List<Shapes.Shape> shapes = new List<Shapes.Shape>()
 	{
 		new Shapes.Cube(),
 		new Shapes.Wedge()
@@ -67,6 +61,7 @@ public class Chunk
 		world = _world;
 		position = _position;
 		
+		debug = gameObject.AddComponent<DebugWrapper>();
 		
 		//	Apply chunk size
 		size = World.chunkSize;
@@ -77,8 +72,6 @@ public class Chunk
 		//	Set transform
 		gameObject.transform.parent = world.gameObject.transform;
 		gameObject.transform.position = position;
-
-		CreateDebugMarker(world.chunkMarkerRed);
 	}
 
 	//	Choose types of all blocks in the chunk based on Perlin noise
@@ -128,8 +121,8 @@ public class Chunk
 			composition = Composition.MIX;
 		
 		status = Status.GENERATED;
-		GameObject.Destroy(debugMarker);
-		CreateDebugMarker(world.chunkMarkerYellow);
+
+		//debug.OutlineChunk(position, Color.yellow);
 	}
 
 	//	Generate bitmask representing surrounding blocks and chose slope type
@@ -241,9 +234,7 @@ public class Chunk
 		CreateMesh(verts, norms, tris, cols);
 		status = Status.DRAWN;
 
-		GameObject.Destroy(debugMarker);
-		CreateDebugMarker(world.chunkMarkerWhite);
-
+		//debug.OutlineChunk(position, Color.white);
 	}
 
 	//	create a mesh with given attributes

@@ -8,16 +8,19 @@ public class World : MonoBehaviour
 	//	DEBUG
 	public GameObject chunkMarkerWhite;
 	public GameObject chunkMarkerRed;
+	public GameObject chunkMarkerYellow;
 	public bool markChunks;
 	public Material defaultMaterial;
+	public bool disableChunkGeneration = false;
+	DebugWrapper debug;
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 4;
+	public static int viewDistance = 8;
 	//	Size of all chunks
 	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
-	public static int maxGroundHeight = 120;
+	public static int maxGroundHeight = 60;
 	//	Draw edges where no more chunks exist
 	public static bool drawEdges = true;
 
@@ -28,16 +31,44 @@ public class World : MonoBehaviour
 	//	Terrain data
 	public class Topology
 	{
+		public bool columnSizeCalculated = false;
+
+		public static Topology Get(Vector3 position, World DEBUGworld)
+		{
+			Topology top;
+			if(!topology.TryGetValue(new Vector3(position.x, 0, position.z), out top))
+			{
+				for(int i = 0; i < 10; i++)
+				{
+					Instantiate(DEBUGworld.chunkMarkerRed, new Vector3(position.x, i * World.chunkSize, position.y), Quaternion.identity);
+					DEBUGworld.disableChunkGeneration = true;
+					DEBUGworld.StopAllCoroutines();
+				}
+				Debug.Log(position);
+				return null;
+			}
+			return top;
+			
+			
+			//return topology[new Vector3(position.x, 0, position.y)];
+		}
 		public int[,] heightMap =  new int[chunkSize,chunkSize];
+
 		public int highestPoint = 0;
 		public int highestPointOnGenerate;
+		public int topChunkInColumn;
+
 		public int lowestPoint = chunkSize;
 		public int lowestPointOnGenerate;
+		public int bottomChunkInColumn;
+
 		public Chunk.Status spawnStatus;
 	}
 
 	void Start()
 	{
+		debug = gameObject.AddComponent<DebugWrapper>();
+
 		//	Create initial chunks
 		LoadChunks(Vector3.zero, viewDistance);
 	}
@@ -46,16 +77,26 @@ public class World : MonoBehaviour
 	//	Called in PlayerController
 	public void LoadChunks(Vector3 centerChunk, int radius)
 	{
+		if(disableChunkGeneration) return;
 		centerChunk = new Vector3(centerChunk.x, 0, centerChunk.z);
 
 		//	Generate terrain in view distance + 1
-		for(int x = -radius; x < radius+1; x++)
-			for(int z = -radius; z < radius+1; z++)
+		for(int x = -radius-1; x < radius+1; x++)
+			for(int z = -radius-1; z < radius+1; z++)
 			{
 				Vector3 offset = new Vector3(x,0,z) * chunkSize;
 				Vector3 position = centerChunk + offset;
 
-					GetTopology(position);
+				GetTopology(position);
+			}
+
+		for(int x = -radius; x < radius; x++)
+			for(int z = -radius; z < radius; z++)
+			{
+				Vector3 offset = new Vector3(x,0,z) * chunkSize;
+				Vector3 position = centerChunk + offset;
+
+				GetColumnSize(position);
 			}
 
 		//	Create chunks in view distance + 1
@@ -81,15 +122,14 @@ public class World : MonoBehaviour
 									 	(int)position.z);
 				}
 
-		StartCoroutine(DrawChunksInSpiral(centerChunk, viewDistance - 1));
+		StartCoroutine(DrawChunksInSpiral(centerChunk, radius - 1));
 	}
 
 
 	//	Generate terrain and store highest/lowest points
 	bool GetTopology(Vector3 position)
 	{
-		if(topology.ContainsKey(position)) return false;	
-
+		if(topology.ContainsKey(position)) return false;
 		//	initalise lowest as high
 		int lowestPoint = 10000;
 		//	initialise heighest low
@@ -122,6 +162,40 @@ public class World : MonoBehaviour
 		return true;
 	}
 
+	//	Calculate minimum set of chunks
+	//	needed for a column's and it's
+	//	neighbouring column's blocks
+	void GetColumnSize(Vector3 position)
+	{
+		Topology top = Topology.Get(position, this);	//	DEBUG
+		if(top.columnSizeCalculated) return;
+
+
+		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position, chunkSize);
+
+		int highestVoxel = top.highestPoint;
+		int lowestVoxel = top.lowestPoint;
+
+		for(int i = 0; i < adjacent.Length; i++)
+		{
+			Topology adjacentTopology = Topology.Get(adjacent[i], this);	//	DEBUG
+			int adjacentHighestVoxel = adjacentTopology.highestPoint;
+			int adjacentLowestVoxel = adjacentTopology.highestPoint;
+
+			if(adjacentHighestVoxel > highestVoxel) highestVoxel = adjacentHighestVoxel;
+			if(adjacentLowestVoxel > lowestVoxel) lowestVoxel = adjacentLowestVoxel;
+		}
+
+		//	Get owner chunk
+		top.topChunkInColumn = Mathf.FloorToInt((highestVoxel + 1) / chunkSize);
+		top.bottomChunkInColumn = Mathf.FloorToInt((lowestVoxel - 1) / chunkSize);
+
+		debug.OutlineChunk(new Vector3(position.x, top.topChunkInColumn * chunkSize, position.z), Color.grey, false);
+		//debug.OutlineChunk(new Vector3(position.x, top.bottomChunkInColumn * chunkSize, position.z), Color.white, false);
+
+		top.columnSizeCalculated = true;
+	}
+
 
 	//	Create chunk class instances
 	public bool CreateChunk(Vector3 position)
@@ -135,17 +209,17 @@ public class World : MonoBehaviour
 	}
 	bool CreateChunkColumn(int x, int z)
 	{
-		Topology top = topology[new Vector3(x, 0, z)];
-		if((int)top.spawnStatus > 0) return false;
+		Topology topol = topology[new Vector3(x, 0, z)];
+		if((int)topol.spawnStatus > 0) return false;
 
 		bool aChunkWasCreated = false;
 		//	Create a +1 radius outside the bounds that will be drawn
-		for(int y = -chunkSize; y < top.highestPointOnGenerate + (chunkSize*2); y+=chunkSize)
+		for(int y = -chunkSize; y < topol.highestPointOnGenerate + (chunkSize*2); y+=chunkSize)
 		{
 			bool drawn = CreateChunk(new Vector3(x, y, z));
 			if(!aChunkWasCreated && drawn) aChunkWasCreated = true;
 		}
-		top.spawnStatus = Chunk.Status.CREATED;
+		topol.spawnStatus = Chunk.Status.CREATED;
 		return aChunkWasCreated;
 	}
 
@@ -326,7 +400,7 @@ public class World : MonoBehaviour
 	//	Get byte representing arrangement of solid blocks around voxel
 	public static byte GetBitMask(Vector3 voxel)
 	{
-		Vector3[] neighbours = BlockUtils.HorizontalNeighbours(voxel);
+		Vector3[] neighbours = Util.HorizontalBlockNeighbours(voxel);
 			int value = 1;
 			int total = 0;
 			for(int i = 0; i < neighbours.Length; i++)

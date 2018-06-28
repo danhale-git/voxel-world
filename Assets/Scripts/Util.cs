@@ -56,12 +56,12 @@ public static class Util
 	{
 		return new Vector3[]
 		{
-			Vector3.up,
-			Vector3.down,
-			Vector3.right,
-			Vector3.left,
-			Vector3.forward,
-			Vector3.back
+			Vector3.up,			//	0
+			Vector3.down,		//	1
+			Vector3.right,		//	2
+			Vector3.left,		//	3
+			Vector3.forward,	//	4
+			Vector3.back		//	5
 		};
 	}
 
@@ -69,5 +69,30 @@ public static class Util
 	{
 		if(value < 0 + offsetIn || value >= World.chunkSize - offsetIn) return false;
 		return true;
+	}
+
+	//	Return 8 adjacent positions
+	public static Vector3[] HorizontalBlockNeighbours(Vector3 voxel)
+	{
+		return new Vector3[] { 	Vector3.right + voxel,
+								Vector3.left + voxel,
+								Vector3.forward + voxel,
+								Vector3.back + voxel,
+								Vector3.right + Vector3.forward + voxel,
+								Vector3.right + Vector3.back + voxel,
+								Vector3.left + Vector3.forward + voxel,
+								Vector3.left + Vector3.back + voxel	};
+	}
+
+	public static Vector3[] HorizontalChunkNeighbours(Vector3 position, int chunkSize)
+	{
+		return new Vector3[] { 	(Vector3.right * chunkSize) + position,
+								(Vector3.left * chunkSize) + position,
+								(Vector3.forward * chunkSize) + position,
+								(Vector3.back * chunkSize) + position,
+								((Vector3.right + Vector3.forward) * chunkSize) + position,
+								((Vector3.right + Vector3.back) * chunkSize) + position,
+								((Vector3.left + Vector3.forward) * chunkSize) + position,
+								((Vector3.left + Vector3.back) * chunkSize) + position	};
 	}
 }
