@@ -165,13 +165,16 @@ public class Chunk
 			//	Maybe detect acute changes in Topology.highestPointOnSpawn as chunks are generating?
 
 			Vector3 adjacentPosition = this.position + (offsets[i] * this.size);
-			/*if(!World.chunks.TryGetValue(adjacentPosition,
+			if(!World.chunks.TryGetValue(adjacentPosition,
 										 out adjacentChunks[i]))
 			{
-				world.CreateChunk(adjacentPosition);
-				world.GenerateChunk(adjacentPosition);
-				adjacentChunks[i] = World.chunks[adjacentPosition];
-			}*/
+				Debug.Log("pos: "+position);
+				Debug.Log("adjacent: "+adjacentPosition);
+
+				debug.OutlineChunk(position, Color.yellow, removePrevious: false);
+
+				debug.OutlineChunk(adjacentPosition, Color.red, removePrevious: false);
+			}
 			adjacentChunks[i] = World.chunks[adjacentPosition];
 			if(adjacentChunks[i].composition == Chunk.Composition.SOLID)
 			{
