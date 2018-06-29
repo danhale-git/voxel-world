@@ -7,7 +7,9 @@ public class Chunk
 {
 	//	DEBUG
 	DebugWrapper debug;
+	//debug.OutlineChunk(position, Color.white);
 	//	DEBUG
+
 	//	Chunk local space and game components
 	public GameObject gameObject;
 
@@ -121,8 +123,6 @@ public class Chunk
 			composition = Composition.MIX;
 		
 		status = Status.GENERATED;
-
-		//debug.OutlineChunk(position, Color.yellow);
 	}
 
 	//	Generate bitmask representing surrounding blocks and chose slope type
@@ -160,21 +160,13 @@ public class Chunk
 		int solidAdjacentChunkCount = 0;
 		for(int i = 0; i < 6; i++)
 		{
-			//TODO: The dictionary below check may become expensive.
-			//	Find a way to spawn chunks around sudden peaks
-			//	Maybe detect acute changes in Topology.highestPointOnSpawn as chunks are generating?
-
 			Vector3 adjacentPosition = this.position + (offsets[i] * this.size);
-			if(!World.chunks.TryGetValue(adjacentPosition,
-										 out adjacentChunks[i]))
+			/*if(!World.chunks.TryGetValue(adjacentPosition, out adjacentChunks[i]))
 			{
-				Debug.Log("pos: "+position);
-				Debug.Log("adjacent: "+adjacentPosition);
-
-				debug.OutlineChunk(position, Color.yellow, removePrevious: false);
-
 				debug.OutlineChunk(adjacentPosition, Color.red, removePrevious: false);
-			}
+				debug.OutlineChunk(position, Color.green, removePrevious: false);
+				world.disableChunkGeneration = true;
+			}*/
 			adjacentChunks[i] = World.chunks[adjacentPosition];
 			if(adjacentChunks[i].composition == Chunk.Composition.SOLID)
 			{
@@ -236,8 +228,6 @@ public class Chunk
 				}
 		CreateMesh(verts, norms, tris, cols);
 		status = Status.DRAWN;
-
-		//debug.OutlineChunk(position, Color.white);
 	}
 
 	//	create a mesh with given attributes

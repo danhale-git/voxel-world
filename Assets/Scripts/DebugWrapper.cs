@@ -29,6 +29,7 @@ public class DebugWrapper : MonoBehaviour
 
 	public void OutlineChunk(Vector3 position, Color color, bool removePrevious = true)
 	{
+		if(!World.markChunks) return;
 		color.a = 0.5f;
 		if(removePrevious)
 		{
