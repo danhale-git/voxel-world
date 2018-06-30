@@ -73,9 +73,6 @@ public class Chunk
 		//	Set transform
 		gameObject.transform.parent = world.gameObject.transform;
 		gameObject.transform.position = position;
-
-		debug.OutlineChunk(position, Color.grey, removePrevious: false);
-
 	}
 
 	//	Choose types of all blocks in the chunk based on Perlin noise
@@ -241,7 +238,6 @@ public class Chunk
 					cols.AddRange(	Enumerable.Repeat(	(Color)Blocks.colors[(int)blockTypes[x,y,z]],
 														localVertCount));
 				}
-		debug.OutlineChunk(position, Color.white, removePrevious: false, sizeDivision: 2);
 		CreateMesh(verts, norms, tris, cols);
 		status = Status.DRAWN;
 	}

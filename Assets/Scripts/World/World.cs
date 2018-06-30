@@ -405,8 +405,6 @@ public class World : MonoBehaviour
 	{
 		Chunk chunk = chunks[position];
 
-		debug.OutlineChunk(position, Color.green, removePrevious: false, sizeDivision: 3);
-
 		//	Check adjacent chunks on 6 sides
 		Vector3[] offsets = Util.CubeFaceDirections();
 		for(int i = 0; i < 6; i++)
@@ -423,8 +421,6 @@ public class World : MonoBehaviour
 				adjacentChunk.GenerateBlocks();
 			}
 		}
-
-		Debug.Log(chunk.status);
 
 		//	Update target chunk
 		switch(chunk.status)
