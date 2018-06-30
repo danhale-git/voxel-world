@@ -7,7 +7,6 @@ public class Chunk
 {
 	//	DEBUG
 	DebugWrapper debug;
-	//debug.OutlineChunk(position, Color.white);
 	//	DEBUG
 
 	//	Chunk local space and game components
@@ -74,6 +73,9 @@ public class Chunk
 		//	Set transform
 		gameObject.transform.parent = world.gameObject.transform;
 		gameObject.transform.position = position;
+
+		debug.OutlineChunk(position, Color.grey, removePrevious: false);
+
 	}
 
 	//	Choose types of all blocks in the chunk based on Perlin noise
@@ -148,12 +150,15 @@ public class Chunk
 	}
 
 	public void Draw(bool redraw = false)
-	{
+	{	
+		//bool debugging = false;
+
 		if(status == Status.DRAWN && !redraw ||
 		   composition == Composition.EMPTY)
 		{
 			return;
 		}
+
 		
 		Chunk[] adjacentChunks = new Chunk[6];
 		Vector3[] offsets = Util.CubeFaceDirections();
@@ -161,20 +166,18 @@ public class Chunk
 		for(int i = 0; i < 6; i++)
 		{
 			Vector3 adjacentPosition = this.position + (offsets[i] * this.size);
-			bool debugging = false;
-			if(!World.chunks.TryGetValue(adjacentPosition, out adjacentChunks[i]))
+			/*if(!World.chunks.TryGetValue(adjacentPosition, out adjacentChunks[i]))
 			{
 				debugging = true;
 				debug.OutlineChunk(adjacentPosition, Color.red, removePrevious: false);
 				debug.OutlineChunk(position, Color.green, removePrevious: false);
 				world.disableChunkGeneration = true;
-				world.CreateChunk(adjacentPosition);
-				world.GenerateChunk(adjacentPosition);
-			}
-			else if(debugging)
-			{
-				debug.OutlineChunk(adjacentPosition, Color.yellow, removePrevious: false);
-			}
+
+				Debug.Log(adjacentPosition);
+
+				//world.CreateChunk(adjacentPosition);
+				//world.GenerateChunk(adjacentPosition);
+			}*/
 
 			adjacentChunks[i] = World.chunks[adjacentPosition];
 			if(adjacentChunks[i].composition == Chunk.Composition.SOLID)
@@ -191,6 +194,7 @@ public class Chunk
 
 		//	Vertex count for offsetting triangle indices
 		int vertexCount = 0;
+		int exposedBlockCount = 0;
 
 		//	Generate mesh data
 		for(int x = 0; x < World.chunkSize; x++)
@@ -217,6 +221,8 @@ public class Chunk
 						if(exposedFaces[e] && !blockExposed) { blockExposed = true; }
 					}
 
+					if(blockExposed) exposedBlockCount++;
+
 					//	Block is not visible so nothing to draw
 					if(!blockExposed && blockBytes[x,y,z] == 0) { continue; }
 
@@ -235,6 +241,7 @@ public class Chunk
 					cols.AddRange(	Enumerable.Repeat(	(Color)Blocks.colors[(int)blockTypes[x,y,z]],
 														localVertCount));
 				}
+		debug.OutlineChunk(position, Color.white, removePrevious: false, sizeDivision: 2);
 		CreateMesh(verts, norms, tris, cols);
 		status = Status.DRAWN;
 	}

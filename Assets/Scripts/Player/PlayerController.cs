@@ -65,7 +65,10 @@ public class PlayerController : MonoBehaviour {
 		}
 
 		//	Break block
-		if(Input.GetButton("Fire2"))
+		if(Input.GetButton("Fire2") && Input.GetKey(KeyCode.LeftShift))
+		{
+			AddBlock(Ray());
+		}else if(Input.GetButtonDown("Fire2"))
 		{
 			AddBlock(Ray());
 		}
