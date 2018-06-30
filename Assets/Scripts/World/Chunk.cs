@@ -14,7 +14,7 @@ public class Chunk
 	public GameObject gameObject;
 
 	//	Chunk status
-	public enum Status {CREATED, GENERATED, DRAWN}
+	public enum Status {NONE, CREATED, GENERATED, DRAWN}
 	public Status status;
 	public enum Composition {EMPTY, MIX, SOLID}
 	public Composition composition;
@@ -80,7 +80,7 @@ public class Chunk
 	public void GenerateBlocks()
 	{
 		if(status == Chunk.Status.GENERATED || status == Chunk.Status.DRAWN) return;
-		heightmap = World.topology[new Vector3(position.x, 0, position.z)].heightMap;
+		heightmap = World.columns[new Vector3(position.x, 0, position.z)].heightMap;
 
 		bool hasAir = false;
 		bool hasBlocks = false;
@@ -161,12 +161,21 @@ public class Chunk
 		for(int i = 0; i < 6; i++)
 		{
 			Vector3 adjacentPosition = this.position + (offsets[i] * this.size);
-			/*if(!World.chunks.TryGetValue(adjacentPosition, out adjacentChunks[i]))
+			bool debugging = false;
+			if(!World.chunks.TryGetValue(adjacentPosition, out adjacentChunks[i]))
 			{
+				debugging = true;
 				debug.OutlineChunk(adjacentPosition, Color.red, removePrevious: false);
 				debug.OutlineChunk(position, Color.green, removePrevious: false);
 				world.disableChunkGeneration = true;
-			}*/
+				world.CreateChunk(adjacentPosition);
+				world.GenerateChunk(adjacentPosition);
+			}
+			else if(debugging)
+			{
+				debug.OutlineChunk(adjacentPosition, Color.yellow, removePrevious: false);
+			}
+
 			adjacentChunks[i] = World.chunks[adjacentPosition];
 			if(adjacentChunks[i].composition == Chunk.Composition.SOLID)
 			{

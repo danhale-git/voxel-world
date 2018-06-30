@@ -27,10 +27,10 @@ public class DebugWrapper : MonoBehaviour
 		lineColor.Add(color);
 	}
 
-	public void OutlineChunk(Vector3 position, Color color, bool removePrevious = true)
+	public void OutlineChunk(Vector3 position, Color color, bool removePrevious = true, float sizeDivision = 2)
 	{
 		if(!World.markChunks) return;
-		color.a = 0.5f;
+		color.a = 0.3f;
 		if(removePrevious)
 		{
 			lineStart = new List<Vector3>();
@@ -47,7 +47,7 @@ public class DebugWrapper : MonoBehaviour
 
 			for(int e = 0; e < vertices.Length; e++)
 			{
-				vertices[e] = (vertices[e] * (World.chunkSize / 2)) + offset;
+				vertices[e] = (vertices[e] * (World.chunkSize / sizeDivision)) + offset;
 			}
 
 			Line(vertices[0], vertices[1], color);
