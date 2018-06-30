@@ -95,4 +95,9 @@ public static class Util
 								((Vector3.left + Vector3.forward) * chunkSize) + position,
 								((Vector3.left + Vector3.back) * chunkSize) + position	};
 	}
+
+	public static double RoundToDP(float value, int decimalPlaces)
+	{
+		return System.Math.Round(value, decimalPlaces);
+	}
 }

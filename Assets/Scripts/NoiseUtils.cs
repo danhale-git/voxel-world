@@ -4,19 +4,45 @@ using UnityEngine;
 
 public static class NoiseUtils
 {
-	//	All temporary for testing
-	//  Generate 2D noise for ground height
-	public static int GroundHeight(int x, int z, int maxHeight)
+	public static int TestGround(int x, int z)
 	{
-		float height;
-		height = BrownianMotion(x * 0.05f,z * 0.05f);
-
-		return (int)Map(0, maxHeight, 0, 1, height);;
+		return LowLands(x, z);		
 	}
-	static float Map(float newmin, float newmax, float origmin, float origmax, float value)
-    {
-        return Mathf.Lerp(newmin, newmax, Mathf.InverseLerp(origmin, origmax, value));
-    }
+
+	public static int LowLands(int x, int z)
+	{
+		int maxHeight = 50;
+		int levelHeight = 15;
+
+		float source = BrownianMotion(x * 0.01f,z * 0.01f, 5, 0.5f);
+		float microHeight = Mathf.Lerp(10, maxHeight, source);
+		float factor = Mathf.Lerp(0, 1, BrownianMotion(x * 0.01f,z * 0.01f));
+
+		int height = (int) (microHeight * factor);
+
+		return (int) LevelOutAtMin(levelHeight, 5, height, source * BrownianMotion(x * 0.001f, z * 0.001f));
+	}
+
+	static float LevelOutAtMin(int min, int preservedNoise, int height, float source)
+	{
+		if(height < min)
+		{
+			float factor = (min - height) * 0.75f;
+			return height + factor;
+		}
+
+		return height;
+	}
+
+	public static Blocks.Types Biome(int x, int z)
+	{
+		float biomeRoll = (float)Util.RoundToDP(BrownianMotion(x * 0.001f, z * 0.001f, 10), 2);
+		if(biomeRoll < .5f)
+		{
+			return Blocks.Types.STONE;
+		}
+			return Blocks.Types.DIRT;
+	}
 	
 
 	//	Brownian Motion (Perlin Noise)
@@ -39,4 +65,16 @@ public static class NoiseUtils
 
 		return total/maxValue;
 	}
+
+	public static int GroundHeight(int x, int z, int maxHeight)
+	{
+		float height;
+		height = BrownianMotion(x * 0.05f,z * 0.05f);
+
+		return (int)Map(0, maxHeight, 0, 1, height);;
+	}
+	static float Map(float newmin, float newmax, float origmin, float origmax, float value)
+    {
+        return Mathf.Lerp(newmin, newmax, Mathf.InverseLerp(origmin, origmax, value));
+    }
 }

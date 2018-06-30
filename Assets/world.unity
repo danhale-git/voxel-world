@@ -140,13 +140,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0303d9e45b9ec3a48a3b5cbcd95b3837, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chunkMarkerWhite: {fileID: 1472134897473722, guid: 10aeb8730e793054084761d3d2265057,
-    type: 2}
-  chunkMarkerRed: {fileID: 1472134897473722, guid: e8e66d669e282714eb0ee6f4167640e6,
-    type: 2}
-  chunkMarkerYellow: {fileID: 1472134897473722, guid: b7e759b739f6b4a4fa63d0dd24e7d40b,
-    type: 2}
-  markChunks: 0
   defaultMaterial: {fileID: 2100000, guid: e6e3f442e423995478927bea6169cb7f, type: 2}
   disableChunkGeneration: 0
 --- !u!4 &293073954
@@ -556,7 +549,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1504611311}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 70, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 361190254}

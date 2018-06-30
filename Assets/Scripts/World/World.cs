@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Jobs;
 
+
 public class World : MonoBehaviour
 {
 	//	DEBUG
@@ -33,6 +34,13 @@ public class World : MonoBehaviour
 
 		//	Create initial chunks
 		LoadChunks(Vector3.zero, viewDistance);
+
+		/*for(int i = 0; i < 100; i++)
+		{
+			float value = NoiseUtils.BrownianMotion(i * 0.01f, i/2 * 0.01f, 10);
+			float lerped = Mathf.Lerp(0, 1, value);
+			Debug.Log(Util.RoundToDP(NoiseUtils.BrownianMotion(i * 0.01f, i/2 * 0.01f, 10), 2));
+		}*/
 	}
 
 	#region World Generation
@@ -144,9 +152,7 @@ public class World : MonoBehaviour
 		for(int _x = 0; _x < chunkSize; _x++)
 			for(int _z = 0; _z < chunkSize; _z++)
 			{
-				map[_x,_z] = NoiseUtils.GroundHeight(_x + (int)position.x,
-													 _z + (int)position.z,
-													 World.maxGroundHeight);
+				map[_x,_z] = NoiseUtils.TestGround(_x + (int)position.x, _z + (int)position.z);
 				//	Lowest point
 				if(map[_x,_z] < lowest)
 					lowest = map[_x,_z];
