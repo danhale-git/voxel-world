@@ -6,31 +6,17 @@ using System.Linq;
 public class Chunk
 {
 	//	DEBUG
-	public GameObject debugMarker;
-	public void DebugMarkerColor(Color color)
-	{
-		if(debugMarker == null) return;
-		MeshFilter meshFilter = debugMarker.GetComponent<MeshFilter>();
-		Color[] markerColors = Enumerable.Repeat(Color.red, meshFilter.mesh.colors.Length).ToArray();
-		meshFilter.mesh.colors = markerColors;
-	}
-
-	public void CreateDebugMarker()
-	{
-		debugMarker = GameObject.Instantiate(world.chunkMarker, position,
-										Quaternion.identity, gameObject.transform);
-	}
+	DebugWrapper debug;
 	//	DEBUG
+
 	//	Chunk local space and game components
 	public GameObject gameObject;
 
 	//	Chunk status
-	public enum Status {CREATED, GENERATED, DRAWN}
+	public enum Status {NONE, CREATED, GENERATED, DRAWN}
 	public Status status;
 	public enum Composition {EMPTY, MIX, SOLID}
 	public Composition composition;
-
-	public bool hidden = false;
 
 	MeshFilter filter;
 	MeshRenderer renderer;
@@ -51,7 +37,7 @@ public class Chunk
 	public Shapes.Types[,,] blockShapes;
 	public Shapes.Rotate[,,] blockYRotation;
 
-	public List<Shapes.Shape> shapes = new List<Shapes.Shape>()
+	List<Shapes.Shape> shapes = new List<Shapes.Shape>()
 	{
 		new Shapes.Cube(),
 		new Shapes.Wedge()
@@ -76,6 +62,7 @@ public class Chunk
 		world = _world;
 		position = _position;
 		
+		debug = gameObject.AddComponent<DebugWrapper>();
 		
 		//	Apply chunk size
 		size = World.chunkSize;
@@ -86,13 +73,16 @@ public class Chunk
 		//	Set transform
 		gameObject.transform.parent = world.gameObject.transform;
 		gameObject.transform.position = position;
+
+		debug.OutlineChunk(position, Color.grey, removePrevious: false);
+
 	}
 
 	//	Choose types of all blocks in the chunk based on Perlin noise
 	public void GenerateBlocks()
 	{
 		if(status == Chunk.Status.GENERATED || status == Chunk.Status.DRAWN) return;
-		heightmap = World.topology[new Vector3(position.x, 0, position.z)].heightMap;
+		heightmap = World.columns[new Vector3(position.x, 0, position.z)].heightMap;
 
 		bool hasAir = false;
 		bool hasBlocks = false;
@@ -160,18 +150,36 @@ public class Chunk
 	}
 
 	public void Draw(bool redraw = false)
-	{
-		if(status == Status.DRAWN && !redraw) return;
-		//else CreateDebugMarker();
+	{	
+		//bool debugging = false;
 
-		//	Get adjacent chunks
+		if(status == Status.DRAWN && !redraw ||
+		   composition == Composition.EMPTY)
+		{
+			return;
+		}
+
 		
 		Chunk[] adjacentChunks = new Chunk[6];
 		Vector3[] offsets = Util.CubeFaceDirections();
 		int solidAdjacentChunkCount = 0;
 		for(int i = 0; i < 6; i++)
 		{
-			adjacentChunks[i] = World.chunks[this.position + (offsets[i] * this.size)];
+			Vector3 adjacentPosition = this.position + (offsets[i] * this.size);
+			/*if(!World.chunks.TryGetValue(adjacentPosition, out adjacentChunks[i]))
+			{
+				debugging = true;
+				debug.OutlineChunk(adjacentPosition, Color.red, removePrevious: false);
+				debug.OutlineChunk(position, Color.green, removePrevious: false);
+				world.disableChunkGeneration = true;
+
+				Debug.Log(adjacentPosition);
+
+				//world.CreateChunk(adjacentPosition);
+				//world.GenerateChunk(adjacentPosition);
+			}*/
+
+			adjacentChunks[i] = World.chunks[adjacentPosition];
 			if(adjacentChunks[i].composition == Chunk.Composition.SOLID)
 			{
 				solidAdjacentChunkCount++;
@@ -186,6 +194,7 @@ public class Chunk
 
 		//	Vertex count for offsetting triangle indices
 		int vertexCount = 0;
+		int exposedBlockCount = 0;
 
 		//	Generate mesh data
 		for(int x = 0; x < World.chunkSize; x++)
@@ -212,6 +221,8 @@ public class Chunk
 						if(exposedFaces[e] && !blockExposed) { blockExposed = true; }
 					}
 
+					if(blockExposed) exposedBlockCount++;
+
 					//	Block is not visible so nothing to draw
 					if(!blockExposed && blockBytes[x,y,z] == 0) { continue; }
 
@@ -230,6 +241,7 @@ public class Chunk
 					cols.AddRange(	Enumerable.Repeat(	(Color)Blocks.colors[(int)blockTypes[x,y,z]],
 														localVertCount));
 				}
+		debug.OutlineChunk(position, Color.white, removePrevious: false, sizeDivision: 2);
 		CreateMesh(verts, norms, tris, cols);
 		status = Status.DRAWN;
 	}
@@ -288,18 +300,22 @@ public class Chunk
 		else
 		{
 			neighbourOwner = this;
-			//	Block not at edge and chunk solid
+
+			//	Block not at edge and chunk is solid
 			if(composition == Composition.SOLID) return false;
 		}
 
-		if(neighbourOwner.hidden)
+		//	Neighbour has no blocks generated so this area is not exposed
+		if(neighbourOwner.status == Chunk.Status.CREATED)
 		{
 			return false;
 		}
-		
-		//	Check seeThrough in neighbour
-		Blocks.Types type = neighbourOwner.blockTypes[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z];
+		else
+		{
+			//	Check if block type is see through
+			Blocks.Types type = neighbourOwner.blockTypes[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z];
 
-		return (Blocks.seeThrough[(int)type]);
+			return (Blocks.seeThrough[(int)type]);
+		}
 	}
 }

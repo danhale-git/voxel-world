@@ -65,7 +65,10 @@ public class PlayerController : MonoBehaviour {
 		}
 
 		//	Break block
-		if(Input.GetButtonDown("Fire2"))
+		if(Input.GetButton("Fire2") && Input.GetKey(KeyCode.LeftShift))
+		{
+			AddBlock(Ray());
+		}else if(Input.GetButtonDown("Fire2"))
 		{
 			AddBlock(Ray());
 		}
@@ -73,6 +76,12 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetKeyDown(KeyCode.Escape))
 		{
 			CursorOn();
+		}
+
+		if(Input.GetKeyDown(KeyCode.C))
+		{
+			Debug.Log("LOCKING CHUNK GENERATION!!!!");
+			world.disableChunkGeneration = true;
 		}
 		
 	}
@@ -212,15 +221,8 @@ public class PlayerController : MonoBehaviour {
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
-			Chunk chunk = World.chunks[World.BlockOwner(voxel)];
-			Debug.Log(chunk.position + " " + chunk.hidden);
-
-			Vector3[] offsets = Util.CubeFaceDirections();
-			for(int i = 0; i < 6; i++)
-			{
-				Debug.Log((Shapes.CubeFace)i);
-				Debug.Log(World.chunks[chunk.position + (offsets[i] * World.chunkSize)].position);
-			}
+			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
+			Debug.Log(chunk.position);
 		}
 	}
 
@@ -233,8 +235,7 @@ public class PlayerController : MonoBehaviour {
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
-			Chunk chunk = World.chunks[World.BlockOwner(voxel)];
-			chunk.DebugMarkerColor(Color.red);		
+			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
 		}
 	}
 

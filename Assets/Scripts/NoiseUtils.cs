@@ -17,6 +17,7 @@ public static class NoiseUtils
     {
         return Mathf.Lerp(newmin, newmax, Mathf.InverseLerp(origmin, origmax, value));
     }
+	
 
 	//	Brownian Motion (Perlin Noise)
 	public static float BrownianMotion(float x, float z, int octaves = 2, float persistance = 0.2f)

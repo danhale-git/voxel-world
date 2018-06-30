@@ -23,11 +23,11 @@ GameObject:
   - component: {fileID: 23206485244435198}
   - component: {fileID: 65489381455249518}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: Yellow_Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 1
   m_IsActive: 1
 --- !u!4 &4285455008588026
 Transform:
@@ -36,7 +36,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1472134897473722}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -26.16726, y: 9.707304, z: 5.9076743}
+  m_LocalPosition: {x: 8.409126, y: 12.52231, z: -4.6296425}
   m_LocalScale: {x: 0.75, y: 0.75, z: 0.75}
   m_Children: []
   m_Father: {fileID: 0}
@@ -57,7 +57,7 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RenderingLayerMask: 4294967295
   m_Materials:
-  - {fileID: 2100000, guid: e6e3f442e423995478927bea6169cb7f, type: 2}
+  - {fileID: 2100000, guid: 26b4374b50c25ff4fa433846071ddca8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
