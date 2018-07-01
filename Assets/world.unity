@@ -142,6 +142,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   defaultMaterial: {fileID: 2100000, guid: e6e3f442e423995478927bea6169cb7f, type: 2}
   disableChunkGeneration: 0
+  player: {fileID: 1504611313}
+  TFrequency: 0.2
+  TAmplitude: 1
+  TFactor: 0.05
+  terrainBlockType: 1
+  maxHeight: 50
+  Boctaves: 3
+  Bpersistance: 0.2
+  BFactor: 0.01
 --- !u!4 &293073954
 Transform:
   m_ObjectHideFlags: 0
@@ -233,13 +242,13 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 361190250}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0.27563733, y: 0, z: 0, w: 0.96126175}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1504611317}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 32, y: 0, z: 0}
 --- !u!1 &460926648
 GameObject:
   m_ObjectHideFlags: 0
@@ -548,14 +557,14 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1504611311}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 70, z: 0}
+  m_LocalRotation: {x: 0, y: 0.92718387, z: 0, w: 0.37460664}
+  m_LocalPosition: {x: 725, y: 164, z: 1282}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 361190254}
   m_Father: {fileID: 0}
   m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 136, z: 0}
 --- !u!1 &1577856185
 GameObject:
   m_ObjectHideFlags: 0

@@ -49,6 +49,7 @@ public class World : MonoBehaviour
 		}
 	}
 
+	//	DEBUG
 	void RefreshWorld()
 	{
 		StopAllCoroutines();
@@ -66,7 +67,6 @@ public class World : MonoBehaviour
 	public float TAmplitude;
 	public float TFactor;
 
-
 	public Blocks.Types terrainBlockType;
 	public int maxHeight;
 	public int Boctaves;
@@ -77,6 +77,7 @@ public class World : MonoBehaviour
 		//return NoiseUtils.BrownianGround(x, z, Boctaves, Bpersistance, BFactor, maxHeight);
 		return NoiseUtils.TestGround(x, z);
 	}
+	//	DEBUG
 
 	#region World Generation
 
@@ -233,8 +234,8 @@ public class World : MonoBehaviour
 		column.topChunkGenerate = Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize;
 		column.bottomChunkGenerate = Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize;
 		
-		debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2.5f);
-		debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2.5f);
+		//debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2.5f);
+		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2.5f);
 
 		column.sizeCalculated = true;
 	}
@@ -302,8 +303,6 @@ public class World : MonoBehaviour
 	{
 		Chunk chunk = chunks[position];
 		if(chunk.status == Chunk.Status.DRAWN) { return false; }
-
-		debug.OutlineChunk(position, Color.white);
 
 		chunk.Draw();
 		return true;
