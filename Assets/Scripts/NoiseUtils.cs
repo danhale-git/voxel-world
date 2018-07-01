@@ -4,9 +4,50 @@ using UnityEngine;
 
 public static class NoiseUtils
 {
+	public static void noisetest()
+	{
+		float frequency = 1;
+		float amplitude = 1;
+
+		/*for(int x = 0; x < 10; x++)
+			for(int z = 0; z < 10; z++)
+			{	
+				float _x = x*0.01f;
+				float _z = z*0.01f;
+
+				float value = Mathf.PerlinNoise(_x * frequency, _z * frequency) * amplitude;
+				Debug.Log(value);
+			}*/
+	}
+
 	public static int TestGround(int x, int z)
 	{
-		return LowLands(x, z);		
+		float main = Mathf.Lerp(0, 50, BrownianMotion(x * 0.01f, z * 0.01f, 3, 0.2f));
+		float subtract = Mathf.Lerp(0, 50, BrownianMotion(x * 0.012f, z * 0.012f, 3, 0.25f));
+		float difference = 0;
+		if(subtract > main)
+		{
+			difference = subtract - main;
+		}
+
+		return (int)(main - difference);	
+	}
+
+	public static int BrownianGround(float x, float z, int octaves, float persistance, float factor, int maxHeight)
+	{
+		float value = BrownianMotion(x * factor, z * factor, octaves, persistance);
+
+		return (int)Mathf.Lerp(0, maxHeight, value);	
+	}
+
+	public static int PerlinGround(int x, int z, float frequency, float amplitude, float factor, int maxHeight)
+	{
+		float _x = x*factor;
+		float _z = z*factor;
+
+		float value = Mathf.PerlinNoise(_x * frequency, _z * frequency) * amplitude;
+
+		return (int)Mathf.Lerp(0, maxHeight, value);	
 	}
 
 	public static int LowLands(int x, int z)

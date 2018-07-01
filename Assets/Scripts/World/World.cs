@@ -7,14 +7,13 @@ using Unity.Jobs;
 public class World : MonoBehaviour
 {
 	//	DEBUG
-	public static bool markChunks = true;
 	public Material defaultMaterial;
 	public bool disableChunkGeneration = false;
 	DebugWrapper debug;
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 10;
+	public static int viewDistance = 20;
 	//	Size of all chunks
 	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
@@ -28,19 +27,55 @@ public class World : MonoBehaviour
 
 	Coroutine chunkDrawCoroutine;
 
+	public PlayerController player;
+
 	void Start()
 	{
 		debug = gameObject.AddComponent<DebugWrapper>();
 
 		//	Create initial chunks
-		LoadChunks(Vector3.zero, viewDistance);
+		LoadChunks(new Vector3(1000,0,1000), viewDistance);
 
-		/*for(int i = 0; i < 100; i++)
+		//	NOISE TEST
+		NoiseUtils.noisetest();
+	}
+
+	void Update()
+	{
+		if(Input.GetKeyDown(KeyCode.U))
 		{
-			float value = NoiseUtils.BrownianMotion(i * 0.01f, i/2 * 0.01f, 10);
-			float lerped = Mathf.Lerp(0, 1, value);
-			Debug.Log(Util.RoundToDP(NoiseUtils.BrownianMotion(i * 0.01f, i/2 * 0.01f, 10), 2));
-		}*/
+			RefreshWorld();
+			LoadChunks(new Vector3(1000,0,1000), viewDistance);
+		}
+	}
+
+	void RefreshWorld()
+	{
+		StopAllCoroutines();
+		
+		foreach(KeyValuePair<Vector3, Chunk> kvp in chunks)
+		{
+			//Destroy(kvp.Value.gameObject);			
+		}
+		new WaitForEndOfFrame();
+		chunks = new Dictionary<Vector3, Chunk>();
+		columns = new Dictionary<Vector3, Column>();
+	}
+
+	public float TFrequency;
+	public float TAmplitude;
+	public float TFactor;
+
+
+	public Blocks.Types terrainBlockType;
+	public int maxHeight;
+	public int Boctaves;
+	public float Bpersistance;
+	public float BFactor;
+	public int GetTerrain(int x, int z)
+	{
+		//return NoiseUtils.BrownianGround(x, z, Boctaves, Bpersistance, BFactor, maxHeight);
+		return NoiseUtils.TestGround(x, z);
 	}
 
 	#region World Generation
@@ -152,7 +187,7 @@ public class World : MonoBehaviour
 		for(int _x = 0; _x < chunkSize; _x++)
 			for(int _z = 0; _z < chunkSize; _z++)
 			{
-				map[_x,_z] = NoiseUtils.TestGround(_x + (int)position.x, _z + (int)position.z);
+				map[_x,_z] = GetTerrain(_x + (int)position.x, _z + (int)position.z);
 				//	Lowest point
 				if(map[_x,_z] < lowest)
 					lowest = map[_x,_z];
@@ -198,8 +233,8 @@ public class World : MonoBehaviour
 		column.topChunkGenerate = Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize;
 		column.bottomChunkGenerate = Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize;
 		
-		//debug.OutlineChunk(new Vector3(position.x, column.topChunk, position.z), Color.black, removePrevious: false, sizeDivision: 2.5f);
-		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunk, position.z), Color.blue, removePrevious: false, sizeDivision: 2.5f);
+		debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2.5f);
+		debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2.5f);
 
 		column.sizeCalculated = true;
 	}
@@ -267,6 +302,9 @@ public class World : MonoBehaviour
 	{
 		Chunk chunk = chunks[position];
 		if(chunk.status == Chunk.Status.DRAWN) { return false; }
+
+		debug.OutlineChunk(position, Color.white);
+
 		chunk.Draw();
 		return true;
 	}

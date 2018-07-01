@@ -103,7 +103,7 @@ public class Chunk
 					}
 					else
 					{
-						type = Blocks.Types.DIRT;
+						type = world.terrainBlockType;
 						if(!hasBlocks)
 							hasBlocks = true;
 					}
@@ -155,7 +155,6 @@ public class Chunk
 		{
 			return;
 		}
-
 		
 		Chunk[] adjacentChunks = new Chunk[6];
 		Vector3[] offsets = Util.CubeFaceDirections();

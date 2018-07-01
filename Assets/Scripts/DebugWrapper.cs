@@ -27,9 +27,8 @@ public class DebugWrapper : MonoBehaviour
 		lineColor.Add(color);
 	}
 
-	public void OutlineChunk(Vector3 position, Color color, bool removePrevious = true, float sizeDivision = 2)
+	public void OutlineChunk(Vector3 position, Color color, bool removePrevious = false, float sizeDivision = 2)
 	{
-		if(!World.markChunks) return;
 		color.a = 0.3f;
 		if(removePrevious)
 		{
