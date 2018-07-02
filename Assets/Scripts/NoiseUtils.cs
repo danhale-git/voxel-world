@@ -4,46 +4,22 @@ using UnityEngine;
 
 public static class NoiseUtils
 {
-	public static void noisetest()
-	{
-		float frequency = 1;
-		float amplitude = 1;
-
-		/*for(int x = 0; x < 10; x++)
-			for(int z = 0; z < 10; z++)
-			{	
-				float _x = x*0.01f;
-				float _z = z*0.01f;
-
-				float value = Mathf.PerlinNoise(_x * frequency, _z * frequency) * amplitude;
-				Debug.Log(value);
-			}*/
-	}
-
-	//
 	public static int TestGround(int x, int z)
 	{
-		float frequency = 0.0025f;
-		float maxHeight = 300;
-		float bigHills = LevelOutAtMin(.2f, .8f, Mathf.PerlinNoise(x * frequency, z * frequency) * 0.5f);
-
-		//Rough = 
-
 		return RidgyHills(x, z, .5f);	
 	}
-
-	
 
 	#region Terrains
 
 	public static int RidgyHills(int x, int z, float ridgyness = 0.5f)	
 	{
+		//	Simple heightmap with large rounded hills
 		float frequency = 0.0025f;
 		float maxHeight = 300;
 		float bigHillsSource = LevelOutAtMin(.2f, .8f, Mathf.PerlinNoise(x * frequency, z * frequency) * 0.5f);
 		float bigHills = Mathf.Lerp(0, maxHeight, bigHillsSource);
 
-
+		//	Secondary hightmap creates ridges when multiplied by main heightmap noise
 		float hillModifier = ridgyness * (1- bigHillsSource);
 		float roughFrequency = 0.01f * hillModifier;
 		ridgyness = BrownianMotion(x * roughFrequency, z * roughFrequency, 5, 1);
@@ -68,18 +44,36 @@ public static class NoiseUtils
 		return (int) LevelOutAtMin(levelHeight, 0.75f, height);
 	}
 	
-	public static int HillyPlateus(int x, int z)
+	public static int HillyPlateus(int x, int z, int maxHeight, bool ridgify = false)
 	{
-		int maxHeight = 70;
-		float main = Mathf.Lerp(0, maxHeight, BrownianMotion(x * 0.01f, z * 0.01f, 3, 0.2f)) + maxHeight;
-		float subtract = Mathf.Lerp(0, maxHeight, BrownianMotion(x * 0.012f, z * 0.012f, 3, 0.25f)) + maxHeight;
+		float source = BrownianMotion(x * 0.01f, z * 0.01f, 3, 0.2f);
+		float subtract = BrownianMotion(x * 0.012f, z * 0.012f, 3, 0.25f);
 		float difference = 0;
-		if(subtract > main)
+		if(subtract > source)
 		{
-			difference = subtract - main;
+			difference = subtract - source;
 		}
 
-		return (int)LevelOutAtMax(95, 0.7f, main - difference);	
+		int height = (int) ( (Mathf.Lerp(0, maxHeight, source) + maxHeight) - Mathf.Lerp(0, maxHeight, difference) );
+
+		if(!ridgify)
+		{
+			return (int)LevelOutAtMax(95, 0.7f, height);	
+		}
+		else
+		{
+			return Ridgify(x, z, source, LevelOutAtMax(95, 0.7f, height), ridgyness: 0.1f);
+		}
+	}
+
+	public static int Ridgify(int x, int z, float originalSource, float originalHeight, float ridgyness = 0.05f)
+	{
+		//	Secondary hightmap creates ridges when multiplied by main heightmap noise
+		float hillModifier = ridgyness * (1- originalSource);
+		float roughFrequency = 0.01f * hillModifier;
+		ridgyness = BrownianMotion(x * roughFrequency, z * roughFrequency, 5, 1);
+
+		return (int) (((originalHeight * ridgyness) + originalHeight) / 2);	
 	}
 
 	#endregion

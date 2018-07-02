@@ -5,11 +5,7 @@ using System.Linq;
 
 public class Chunk
 {
-	//	DEBUG
-	DebugWrapper debug;
-	//	DEBUG
-
-	//	Chunk local space and game components
+	//	Scene object with mesh/collider etc
 	public GameObject gameObject;
 
 	//	Chunk status
@@ -29,8 +25,6 @@ public class Chunk
 	int size;
 	public Vector3 position;
 
-	public int[,] heightmap;
-
 	//	block data
 	public Blocks.Types[,,] blockTypes;
 	public byte[,,] blockBytes;
@@ -45,8 +39,6 @@ public class Chunk
 
 	void InitialiseArrays()
 	{
-		heightmap = new int[size,size];
-
 		blockTypes = new Blocks.Types[size,size,size];
 		blockBytes = new byte[size,size,size];
 		blockShapes = new Shapes.Types[size,size,size];
@@ -61,8 +53,6 @@ public class Chunk
 		
 		world = _world;
 		position = _position;
-		
-		debug = gameObject.AddComponent<DebugWrapper>();
 		
 		//	Apply chunk size
 		size = World.chunkSize;
@@ -79,7 +69,11 @@ public class Chunk
 	public void GenerateBlocks()
 	{
 		if(status == Chunk.Status.GENERATED || status == Chunk.Status.DRAWN) return;
-		heightmap = World.columns[new Vector3(position.x, 0, position.z)].heightMap;
+
+		world.chunksGenerated++;
+		World.debug.Output("Chunks generated", world.chunksGenerated.ToString());
+
+		int[][,] heightMaps = World.Column.Get(position).heightMaps;
 
 		bool hasAir = false;
 		bool hasBlocks = false;
@@ -88,28 +82,33 @@ public class Chunk
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
 			{
-				int groundHeight = heightmap[x,z];
-				//	Generate column
-				for(int y = 0; y < size; y++)
+				for(int l = 0; l < heightMaps.Length; l++)
 				{
-					Blocks.Types type;
-
-					//	Set block type
-					if (y + this.position.y > groundHeight)
-					{
-						type = Blocks.Types.AIR;
-						if(!hasAir)
-							hasAir = true;
-					}
+					int previousLayerHeight;
+					int layerHeight = heightMaps[l][x,z];
+					if(l == 0)
+						previousLayerHeight = 0;
 					else
+						previousLayerHeight = heightMaps[l-1][x,z];
+					
+					//	Generate column
+					for(int y = 0; y < size; y++)
 					{
-						type = world.terrainBlockType;
-						if(!hasBlocks)
-							hasBlocks = true;
+						int voxel = (int) (y + this.position.y);
+						//	Set block type
+						if (voxel <= layerHeight && (l == 0 || voxel > previousLayerHeight) )
+						{
+							blockTypes[x,y,z] = TerrainGenerator.layerTypes[l];
+							if(!hasBlocks)
+								hasBlocks = true;	
+						}
+						else if(l == heightMaps.Length - 1 && voxel > layerHeight)
+						{
+							blockTypes[x,y,z] = Blocks.Types.AIR;
+							if(!hasAir)
+								hasAir = true;
+						}
 					}
-
-					//	Store new block in 3D array
-					blockTypes[x,y,z] = type;
 				}
 			}
 	
@@ -122,6 +121,18 @@ public class Chunk
 			composition = Composition.MIX;
 		
 		status = Status.GENERATED;
+	}
+
+	public void ClearAllBlocks()
+	{
+		//	Iterate over all blocks in chunk
+		for(int x = 0; x < size; x++)
+			for(int z = 0; z < size; z++)
+				for(int y = 0; y < size; y++)
+				{
+					blockTypes[x,y,z] = Blocks.Types.AIR;
+				}
+		composition = Composition.EMPTY;
 	}
 
 	//	Generate bitmask representing surrounding blocks and chose slope type
@@ -182,6 +193,9 @@ public class Chunk
 			}
 			if(solidAdjacentChunkCount == 6) return;
 		}
+
+		world.chunksDrawn++;
+		World.debug.Output("Chunks drawn", world.chunksDrawn.ToString());
 
 		List<Vector3> verts = new List<Vector3>();
 		List<Vector3> norms = new List<Vector3>();

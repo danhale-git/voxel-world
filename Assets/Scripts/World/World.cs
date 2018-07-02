@@ -2,24 +2,32 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Jobs;
+using UnityEngine.UI;
 
 
 public class World : MonoBehaviour
 {
 	//	DEBUG
 	public Material defaultMaterial;
-	public bool disableChunkGeneration = false;
-	DebugWrapper debug;
+	public bool disableChunkGeneration = true;
+	public static DebugWrapper debug;
+	public Text debugText;
+
+	int chunksCreated = 0;
+	public int chunksGenerated = 0;
+	public int chunksDrawn = 0;
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 20;
+	public static int viewDistance = 10;
 	//	Size of all chunks
 	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
 	public static int maxGroundHeight = 50;
 	//	Draw edges where no more chunks exist
 	public static bool drawEdges = true;
+
+	TerrainGenerator terrain;
 
 	//	Chunk and terrain data
 	public static Dictionary<Vector3, Chunk> chunks = new Dictionary<Vector3, Chunk>();
@@ -32,52 +40,13 @@ public class World : MonoBehaviour
 	void Start()
 	{
 		debug = gameObject.AddComponent<DebugWrapper>();
+		debug.world = this;
+
+		terrain = new TerrainGenerator();
 
 		//	Create initial chunks
-		LoadChunks(new Vector3(1000,0,1000), viewDistance);
-
-		//	NOISE TEST
-		NoiseUtils.noisetest();
+		LoadChunks(new Vector3(1024,0,1024), viewDistance);
 	}
-
-	void Update()
-	{
-		if(Input.GetKeyDown(KeyCode.U))
-		{
-			RefreshWorld();
-			LoadChunks(new Vector3(1000,0,1000), viewDistance);
-		}
-	}
-
-	//	DEBUG
-	void RefreshWorld()
-	{
-		StopAllCoroutines();
-		
-		foreach(KeyValuePair<Vector3, Chunk> kvp in chunks)
-		{
-			//Destroy(kvp.Value.gameObject);			
-		}
-		new WaitForEndOfFrame();
-		chunks = new Dictionary<Vector3, Chunk>();
-		columns = new Dictionary<Vector3, Column>();
-	}
-
-	public float TFrequency;
-	public float TAmplitude;
-	public float TFactor;
-
-	public Blocks.Types terrainBlockType;
-	public int maxHeight;
-	public int Boctaves;
-	public float Bpersistance;
-	public float BFactor;
-	public int GetTerrain(int x, int z)
-	{
-		//return NoiseUtils.BrownianGround(x, z, Boctaves, Bpersistance, BFactor, maxHeight);
-		return NoiseUtils.TestGround(x, z);
-	}
-	//	DEBUG
 
 	#region World Generation
 
@@ -148,7 +117,7 @@ public class World : MonoBehaviour
 		public Vector3 position;
 		public Chunk.Status spawnStatus;
 		public bool sizeCalculated = false;
-		public int[,] heightMap =  new int[chunkSize,chunkSize];
+		public int[][,] heightMaps;
 
 		public int highestPoint;
 		public int topChunkGenerate;
@@ -158,15 +127,13 @@ public class World : MonoBehaviour
 		public int bottomChunkGenerate;
 		public int bottomChunkDraw;
 		
-		public Column(Vector3 _position, int[,] _heightMap, int _highestPoint, int _lowestPoint)
+		public Column(Vector3 _position, TerrainGenerator terrain)
 		{
 			position = _position;
-			heightMap = _heightMap;
-			highestPoint = _highestPoint;
-			lowestPoint = _lowestPoint;
+			heightMaps = terrain.GetHeightmaps(this);
 		}
 
-		public static Column Get(Vector3 position, World DEBUGworld)
+		public static Column Get(Vector3 position)
 		{
 			Column column = columns[new Vector3(position.x, 0, position.z)];
 			return column;
@@ -179,26 +146,7 @@ public class World : MonoBehaviour
 		Column column;
 		if(columns.TryGetValue(position, out column)) return false;
 
-		//	initalise lowest as high
-		int lowest = 10000;
-		//	initialise heighest low
-		int highest  = 0;
-
-		int[,] map = new int[chunkSize,chunkSize];
-		for(int _x = 0; _x < chunkSize; _x++)
-			for(int _z = 0; _z < chunkSize; _z++)
-			{
-				map[_x,_z] = GetTerrain(_x + (int)position.x, _z + (int)position.z);
-				//	Lowest point
-				if(map[_x,_z] < lowest)
-					lowest = map[_x,_z];
-
-				//	Highest point
-				if(map[_x,_z] > highest)
-					highest = map[_x,_z];
-			}
-
-		column = new Column(position, map, highest, lowest);
+		column = new Column(position, terrain);
 		columns[position] = column;
 
 		return true;
@@ -207,7 +155,7 @@ public class World : MonoBehaviour
 	//	Determine which chunks should generated and drawn
 	void GetColumnSize(Vector3 position)
 	{
-		Column column = Column.Get(position, this);
+		Column column = Column.Get(position);
 		if(column.sizeCalculated) return;
 
 		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position, chunkSize);
@@ -222,7 +170,7 @@ public class World : MonoBehaviour
 		//	Find highest and lowest in 3x3 columns around chunk
 		for(int i = 0; i < adjacent.Length; i++)
 		{
-			Column adjacentColumn = Column.Get(adjacent[i], this);	//	DEBUG
+			Column adjacentColumn = Column.Get(adjacent[i]);	//	DEBUG
 			int adjacentHighestVoxel = adjacentColumn.highestPoint;
 			int adjacentLowestVoxel = adjacentColumn.lowestPoint;
 
@@ -234,8 +182,8 @@ public class World : MonoBehaviour
 		column.topChunkGenerate = Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize;
 		column.bottomChunkGenerate = Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize;
 		
-		//debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2.5f);
-		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2.5f);
+		debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2.5f);
+		debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2.5f);
 
 		column.sizeCalculated = true;
 	}
@@ -249,6 +197,9 @@ public class World : MonoBehaviour
 	public bool CreateChunk(Vector3 position, bool skipDictCheck = false)
 	{
 		if(!skipDictCheck && chunks.ContainsKey(position)) return false;
+
+		chunksCreated++;
+		debug.Output("Chunks created", chunksCreated.ToString());
 
 		Chunk chunk = new Chunk(position, this);
 		chunks.Add(position, chunk);
@@ -276,8 +227,8 @@ public class World : MonoBehaviour
 	public bool GenerateChunk(Vector3 position)
 	{
 		Chunk chunk = chunks[position];
-
 		if(chunk.status == Chunk.Status.GENERATED) return false;
+
 		chunk.GenerateBlocks();
 		return true;
 	}
@@ -376,6 +327,16 @@ public class World : MonoBehaviour
 
 	#region Update Chunk
 
+	public void RemoveChunk(Vector3 position)
+	{
+		Chunk chunk;
+		if(!chunks.TryGetValue(position, out chunk)) return;
+		
+		chunk.ClearAllBlocks();
+		UpdateChunk(position);
+		UpdateAdjacentChunks(position);
+	}
+
 	//	Change type of block at voxel and reload chunk(s)
 	public bool ChangeBlock(Vector3 voxel, Blocks.Types type, Shapes.Types shape = Shapes.Types.CUBE)
 	{
@@ -443,6 +404,17 @@ public class World : MonoBehaviour
 		return true;
 	}
 
+	void UpdateAdjacentChunks(Vector3 position)
+	{
+		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position, chunkSize);
+		for(int i = 0; i < adjacent.Length; i++)
+		{
+			UpdateChunk(adjacent[i]);
+		}
+		UpdateChunk(position + (Vector3.up * chunkSize));
+		UpdateChunk(position + (Vector3.down * chunkSize));
+	}
+
 	//	Update/create individual chunks
 	void UpdateChunk(Vector3 position)
 	{
@@ -453,7 +425,7 @@ public class World : MonoBehaviour
 		for(int i = 0; i < 6; i++)
 		{
 			Vector3 adjacentChunkPos = position + (offsets[i] * chunkSize);
-
+			Debug.Log("Creating chunk at" + adjacentChunkPos);
 			//	Create chunk if not already created
 			CreateChunk(adjacentChunkPos);
 

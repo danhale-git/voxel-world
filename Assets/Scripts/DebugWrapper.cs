@@ -8,9 +8,36 @@ public class DebugWrapper : MonoBehaviour
 	List<Vector3> lineStart = new List<Vector3>();
 	List<Vector3> lineEnd = new List<Vector3>();
 	List<Color> lineColor = new List<Color>();
-
 	Shapes.Cube cube = new Shapes.Cube();
+	public World world;
 
+	Dictionary<string, string> debugOutput = new Dictionary<string, string>();
+
+	void Update()
+	{
+		GenerateDebugOutput();
+	}
+
+	//	Output
+	void GenerateDebugOutput()
+	{
+		string completeOutput = "";
+		foreach(KeyValuePair<string, string> kvp in debugOutput)
+		{
+			completeOutput += kvp.Key + ": " + kvp.Value + "\n";
+		}
+		world.debugText.text = completeOutput;
+	}
+	public void Output(string key, string value)
+	{
+		debugOutput[key] = value;
+	}
+	public void RemoveOutput(string key)
+	{
+		debugOutput.Remove(key);
+	}
+
+	//	Lines
 	void OnDrawGizmos()
     {
 		for(int i = 0; i < lineStart.Count; i++)
@@ -19,7 +46,6 @@ public class DebugWrapper : MonoBehaviour
 			Gizmos.DrawLine(lineStart[i], lineEnd[i]);
 		}
 	}
-
 	void Line(Vector3 start, Vector3 end, Color color)
 	{
 		lineStart.Add(start);
