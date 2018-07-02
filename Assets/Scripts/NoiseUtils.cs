@@ -139,15 +139,15 @@ public static class NoiseUtils
 		return total/maxValue;
 	}
 
-	public static float BrownianMotion3D(float x, float y, float z, float sm, int oct)
+	public static float BrownianMotion3D(float x, float y, float z, float frequency, int octaves)
     {
-        float XY = BrownianMotion(x*sm,y*sm,oct,0.5f);
-        float YZ = BrownianMotion(y*sm,z*sm,oct,0.5f);
-        float XZ = BrownianMotion(x*sm,z*sm,oct,0.5f);
+        float XY = BrownianMotion(x * frequency ,y * frequency, octaves, 0.5f);
+        float YZ = BrownianMotion(y * frequency ,z * frequency, octaves, 0.5f);
+        float XZ = BrownianMotion(x * frequency ,z * frequency, octaves, 0.5f);
 
-        float YX = BrownianMotion(y*sm,x*sm,oct,0.5f);
-        float ZY = BrownianMotion(z*sm,y*sm,oct,0.5f);
-        float ZX = BrownianMotion(z*sm,x*sm,oct,0.5f);
+        float YX = BrownianMotion(y * frequency ,x * frequency, octaves, 0.5f);
+        float ZY = BrownianMotion(z * frequency ,y * frequency, octaves, 0.5f);
+        float ZX = BrownianMotion(z * frequency ,x * frequency, octaves, 0.5f);
 
         return (XY+YZ+XZ+YX+ZY+ZX)/6.0f;
     }

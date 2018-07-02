@@ -98,7 +98,7 @@ public class Chunk
 					{
 						int voxel = (int) (y + this.position.y);
 						//	Set block type
-						if(voxel > column.cuts[x,z][0] && voxel < column.cuts[x,z][1])
+						if(column.cuts != null && voxel > column.cuts[x,z][0] && voxel < column.cuts[x,z][1])
 						{
 							blockTypes[x,y,z] = Blocks.Types.AIR;
 							if(!hasAir)

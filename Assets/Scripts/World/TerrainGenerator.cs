@@ -6,13 +6,46 @@ public class TerrainGenerator
 {
 	public static Biome defaultBiome = new FarmLand();
 
+	int[] Cut(int x, int z, World.Column column, Biome biome, float frequency = 0.025f, int octaves = 1, int maxDepth = 20, float chance = 0.42f)
+	{
+		//	Start and finish heights
+		int[] cut = new int[2];
+
+		//	Got start of cut awaiting finish
+		bool cutStarted = false;
+
+		//	Current height of surface
+		int surfaceHeight = column.heightMaps[biome.layerTypes.Length - 1][x,z] + 1;
+
+		for(int y = surfaceHeight - maxDepth; y <= surfaceHeight; y++)
+		{
+			float noise = NoiseUtils.BrownianMotion3D(x + column.position.x, y, z + column.position.z, frequency, octaves);
+			if(noise < chance)
+			{
+				if(!cutStarted)
+				{
+					cut[0] = y;
+
+					//	Lowest point
+					if(y < column.lowestPoint)
+						column.lowestPoint = y;
+
+					cutStarted = true;
+				}
+				else cut[1] = y;
+
+			}
+		}
+		return cut;
+	}
+
 	public void GetHeightmaps(World.Column column, Biome biome = null)
 	{
 		if(biome == null) biome = defaultBiome;
 
 		int chunkSize = World.chunkSize;
 		int[][,] maps = new int[biome.layerTypes.Length][,];
-		int[,][] cuts = new int[chunkSize,chunkSize][];
+		int[,][] cuts;
 
 		//	initalise lowest as high
 		int lowest = 10000;
@@ -46,39 +79,28 @@ public class TerrainGenerator
 		for(int x = 0; x < chunkSize; x++)
 			for(int z = 0; z < chunkSize; z++)
 			{
-				bool cutStarted = false;
-				cuts[x,z] = new int[2];
-				int surfaceHeight = maps[biome.layerTypes.Length - 1][x,z] + 1;
-				for(int y = surfaceHeight - 20; y <= surfaceHeight; y++)
-				{
-					float noise = NoiseUtils.BrownianMotion3D(x + column.position.x, y, z + column.position.z, 0.05f, 1);
-					if(noise < 0.42f)
-					{
-						if(!cutStarted)
-						{
-							cuts[x,z][0] = y;
-
-							//	Lowest point
-							if(y < lowest)
-								lowest = y;
-							cutStarted = true;
-						}
-						else cuts[x,z][1] = y;
-
-					}
-				}
+				
 			}
-
-		column.cuts = cuts;	
 
 		column.lowestPoint = lowest;
 		column.highestPoint = highest;
 		column.heightMaps = maps;
+
+		if(!biome.cut) return;
+		column.cuts = cuts = new int[chunkSize,chunkSize][];
+
+		for(int x = 0; x < chunkSize; x++)
+			for(int z = 0; z < chunkSize; z++)
+			{
+				column.cuts[x,z] = Cut(x, z, column, biome);
+			}
+
 	}
 
 	public class Biome
 	{
 		public Blocks.Types[] layerTypes;
+		public bool cut;
 		public virtual int LayerHeight(int x, int y, int layerIndex) { return 0; }
 	}
 
@@ -87,6 +109,7 @@ public class TerrainGenerator
 		public FarmLand()
 		{
 			layerTypes = new Blocks.Types[] {Blocks.Types.STONE, Blocks.Types.DIRT};
+			cut = false;
 		}
 
 		public override int LayerHeight(int x, int y, int layerIndex)
