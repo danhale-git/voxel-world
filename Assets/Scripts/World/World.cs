@@ -45,7 +45,7 @@ public class World : MonoBehaviour
 		terrain = new TerrainGenerator();
 
 		//	Create initial chunks
-		LoadChunks(new Vector3(1024,0,1024), viewDistance);
+		LoadChunks(new Vector3(1024,0,512), viewDistance);
 	}
 
 	#region World Generation
@@ -426,7 +426,6 @@ public class World : MonoBehaviour
 		for(int i = 0; i < 6; i++)
 		{
 			Vector3 adjacentChunkPos = position + (offsets[i] * chunkSize);
-			Debug.Log("Creating chunk at" + adjacentChunkPos);
 			//	Create chunk if not already created
 			CreateChunk(adjacentChunkPos);
 

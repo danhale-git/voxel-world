@@ -4,9 +4,11 @@ using UnityEngine;
 
 public static class NoiseUtils
 {
-	public static int TestGround(int x, int z)
+	public static int TestGround(int x, int z, int maxHeight)
 	{
-		return RidgyHills(x, z, .5f);	
+		float source = BrownianMotion(x * 0.01f, z * 0.01f, 3, 0.2f);
+
+		return (int) Mathf.Lerp(0, maxHeight, source);	
 	}
 
 	#region Terrains

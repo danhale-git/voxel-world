@@ -4,25 +4,14 @@ using UnityEngine;
 
 public class TerrainGenerator
 {
-	public static Blocks.Types[] layerTypes = new Blocks.Types[] {Blocks.Types.STONE, Blocks.Types.DIRT};
+	public static Biome defaultBiome = new FarmLand();
 
-	int LayerHeight(int x, int y, int layerIndex)
+	public void GetHeightmaps(World.Column column, Biome biome = null)
 	{
-		switch(layerIndex)
-		{
-			case 0:
-				return(NoiseUtils.HillyPlateus(x,y, 70, ridgify: true));
-			case 1:
-				return(NoiseUtils.HillyPlateus(x,y, 70, ridgify: false) - 10);
-			default:
-				return 0;
-		}
-	}
+		if(biome == null) biome = defaultBiome;
 
-	public void GetHeightmaps(World.Column column)
-	{
 		int chunkSize = World.chunkSize;
-		int[][,] maps = new int[layerTypes.Length][,];
+		int[][,] maps = new int[biome.layerTypes.Length][,];
 		int[,][] cuts = new int[chunkSize,chunkSize][];
 
 		//	initalise lowest as high
@@ -36,7 +25,7 @@ public class TerrainGenerator
 			for(int x = 0; x < chunkSize; x++)
 				for(int z = 0; z < chunkSize; z++)
 				{				
-					maps[l][x,z] = LayerHeight(x + (int)column.position.x,
+					maps[l][x,z] = biome.LayerHeight(x + (int)column.position.x,
 												 z + (int)column.position.z,
 												 l);
 
@@ -59,7 +48,7 @@ public class TerrainGenerator
 			{
 				bool cutStarted = false;
 				cuts[x,z] = new int[2];
-				int surfaceHeight = maps[layerTypes.Length - 1][x,z] + 1;
+				int surfaceHeight = maps[biome.layerTypes.Length - 1][x,z] + 1;
 				for(int y = surfaceHeight - 20; y <= surfaceHeight; y++)
 				{
 					float noise = NoiseUtils.BrownianMotion3D(x + column.position.x, y, z + column.position.z, 0.05f, 1);
@@ -85,6 +74,33 @@ public class TerrainGenerator
 		column.lowestPoint = lowest;
 		column.highestPoint = highest;
 		column.heightMaps = maps;
+	}
+
+	public class Biome
+	{
+		public Blocks.Types[] layerTypes;
+		public virtual int LayerHeight(int x, int y, int layerIndex) { return 0; }
+	}
+
+	public class FarmLand : Biome
+	{
+		public FarmLand()
+		{
+			layerTypes = new Blocks.Types[] {Blocks.Types.STONE, Blocks.Types.DIRT};
+		}
+
+		public override int LayerHeight(int x, int y, int layerIndex)
+		{
+			switch(layerIndex)
+			{
+				case 0:
+					return(NoiseUtils.TestGround(x,y, 70));
+				case 1:
+					return(NoiseUtils.TestGround(x,y, 70) + 10);
+				default:
+					return 0;
+			}
+		}
 	}
 
 }

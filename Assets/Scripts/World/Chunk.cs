@@ -106,7 +106,7 @@ public class Chunk
 						}
 						else if (voxel <= layerHeight && (l == 0 || voxel > previousLayerHeight) )
 						{
-							blockTypes[x,y,z] = TerrainGenerator.layerTypes[l];
+							blockTypes[x,y,z] = TerrainGenerator.defaultBiome.layerTypes[l];
 							if(!hasBlocks)
 								hasBlocks = true;	
 						}
