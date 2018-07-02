@@ -118,6 +118,7 @@ public class World : MonoBehaviour
 		public Chunk.Status spawnStatus;
 		public bool sizeCalculated = false;
 		public int[][,] heightMaps;
+		public int[,][] cuts;
 
 		public int highestPoint;
 		public int topChunkGenerate;
@@ -130,7 +131,7 @@ public class World : MonoBehaviour
 		public Column(Vector3 _position, TerrainGenerator terrain)
 		{
 			position = _position;
-			heightMaps = terrain.GetHeightmaps(this);
+			terrain.GetHeightmaps(this);
 		}
 
 		public static Column Get(Vector3 position)

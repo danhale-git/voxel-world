@@ -73,7 +73,8 @@ public class Chunk
 		world.chunksGenerated++;
 		World.debug.Output("Chunks generated", world.chunksGenerated.ToString());
 
-		int[][,] heightMaps = World.Column.Get(position).heightMaps;
+		World.Column column = World.Column.Get(position);
+		int[][,] heightMaps = column.heightMaps;
 
 		bool hasAir = false;
 		bool hasBlocks = false;
@@ -82,6 +83,7 @@ public class Chunk
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
 			{
+				//TODO: Add convenience functions to Column for layer/cut comparisons
 				for(int l = 0; l < heightMaps.Length; l++)
 				{
 					int previousLayerHeight;
@@ -96,7 +98,13 @@ public class Chunk
 					{
 						int voxel = (int) (y + this.position.y);
 						//	Set block type
-						if (voxel <= layerHeight && (l == 0 || voxel > previousLayerHeight) )
+						if(voxel > column.cuts[x,z][0] && voxel < column.cuts[x,z][1])
+						{
+							blockTypes[x,y,z] = Blocks.Types.AIR;
+							if(!hasAir)
+								hasAir = true;
+						}
+						else if (voxel <= layerHeight && (l == 0 || voxel > previousLayerHeight) )
 						{
 							blockTypes[x,y,z] = TerrainGenerator.layerTypes[l];
 							if(!hasBlocks)

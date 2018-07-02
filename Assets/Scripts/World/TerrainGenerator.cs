@@ -13,16 +13,17 @@ public class TerrainGenerator
 			case 0:
 				return(NoiseUtils.HillyPlateus(x,y, 70, ridgify: true));
 			case 1:
-				return(NoiseUtils.HillyPlateus(x,y, 70, ridgify: false) + 20);
+				return(NoiseUtils.HillyPlateus(x,y, 70, ridgify: false) - 10);
 			default:
 				return 0;
 		}
 	}
 
-	public int[][,] GetHeightmaps(World.Column column)
+	public void GetHeightmaps(World.Column column)
 	{
 		int chunkSize = World.chunkSize;
 		int[][,] maps = new int[layerTypes.Length][,];
+		int[,][] cuts = new int[chunkSize,chunkSize][];
 
 		//	initalise lowest as high
 		int lowest = 10000;
@@ -32,30 +33,58 @@ public class TerrainGenerator
 		for(int l = 0; l < maps.Length; l++)
 		{
 			maps[l] = new int[chunkSize, chunkSize];
-			for(int _x = 0; _x < chunkSize; _x++)
-				for(int _z = 0; _z < chunkSize; _z++)
+			for(int x = 0; x < chunkSize; x++)
+				for(int z = 0; z < chunkSize; z++)
 				{				
-					maps[l][_x,_z] = LayerHeight(_x + (int)column.position.x,
-												 _z + (int)column.position.z,
+					maps[l][x,z] = LayerHeight(x + (int)column.position.x,
+												 z + (int)column.position.z,
 												 l);
 
 					//	Only get highest and lowest when drawing surface
 					if(l == maps.Length - 1)
 					{							 
 						//	Lowest point
-						if(maps[l][_x,_z] < lowest)
-							lowest = maps[l][_x,_z];
+						if(maps[l][x,z] < lowest)
+							lowest = maps[l][x,z];
 					
 						//	Highest point
-						if(maps[l][_x,_z] > highest)
-							highest = maps[l][_x,_z];
+						if(maps[l][x,z] > highest)
+							highest = maps[l][x,z];
 					}
 					
 				}
 		}
+		for(int x = 0; x < chunkSize; x++)
+			for(int z = 0; z < chunkSize; z++)
+			{
+				bool cutStarted = false;
+				cuts[x,z] = new int[2];
+				int surfaceHeight = maps[layerTypes.Length - 1][x,z] + 1;
+				for(int y = surfaceHeight - 20; y <= surfaceHeight; y++)
+				{
+					float noise = NoiseUtils.BrownianMotion3D(x + column.position.x, y, z + column.position.z, 0.05f, 1);
+					if(noise < 0.42f)
+					{
+						if(!cutStarted)
+						{
+							cuts[x,z][0] = y;
+
+							//	Lowest point
+							if(y < lowest)
+								lowest = y;
+							cutStarted = true;
+						}
+						else cuts[x,z][1] = y;
+
+					}
+				}
+			}
+
+		column.cuts = cuts;	
+
 		column.lowestPoint = lowest;
 		column.highestPoint = highest;
-		return maps;
+		column.heightMaps = maps;
 	}
 
 }

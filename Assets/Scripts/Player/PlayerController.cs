@@ -116,7 +116,7 @@ public class PlayerController : MonoBehaviour {
 					currentChunk = chunk;
 
 					//	Generate chunks around player location
-					world.LoadChunks(currentChunk.gameObject.transform.position, World.viewDistance);
+					//world.LoadChunks(currentChunk.gameObject.transform.position, World.viewDistance);
 				}
 			}
 			else
