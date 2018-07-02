@@ -120,24 +120,39 @@ public class World : MonoBehaviour
 		public int[][,] heightMaps;
 		public int[,][] cuts;
 
-		public int highestPoint;
+		public int highestPoint = 0;
 		public int topChunkGenerate;
 		public int topChunkDraw;	
 
-		public int lowestPoint;
+		public int lowestPoint = 1000;
 		public int bottomChunkGenerate;
 		public int bottomChunkDraw;
 		
 		public Column(Vector3 _position, TerrainGenerator terrain)
 		{
 			position = _position;
-			terrain.GetHeightmaps(this);
+			terrain.GetTopologyData(this);
 		}
 
 		public static Column Get(Vector3 position)
 		{
 			Column column = columns[new Vector3(position.x, 0, position.z)];
 			return column;
+		}
+
+		public void CheckLowest(int value)
+		{
+			if(value < lowestPoint)
+			{
+				lowestPoint = value;
+			}
+		}
+		public void CheckHighest(int value)
+		{
+			if(value > highestPoint)
+			{
+				highestPoint = value;
+			}
 		}
 	}
 
