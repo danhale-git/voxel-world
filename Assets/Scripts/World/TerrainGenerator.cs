@@ -10,26 +10,22 @@ public class TerrainGenerator
 
 	public static TerrainGenerator.Biome GetBiome(int x, int z)
 	{
-		float biomeRoll = (float)Util.RoundToDP(NoiseUtils.BrownianMotion(x * 0.005f, z * 0.005f, 10), 2);
+		float biomeRoll = (float)Util.RoundToDP(NoiseUtils.BrownianMotion(x * 0.005f, z * 0.005f, 10), 3);
 		if(biomeRoll < 0.5f)
 		{
 			return farmLand;
 		}
 			return lowLands;
 	}
-	public static int GetBiomeGradient(int x, int z)
+	public static float GetBiomeGradient(int x, int z)
 	{
-		float biomeRoll = (float)Util.RoundToDP(NoiseUtils.BrownianMotion(x * 0.005f, z * 0.005f, 10), 2);
-		float closeness;
+		float biomeRoll = (float)Util.RoundToDP(NoiseUtils.BrownianMotion(x * 0.005f, z * 0.005f, 10), 3);
+		if(biomeRoll < 0.45f || biomeRoll > 0.55f) return 2;
 		if(biomeRoll < 0.5f)
 		{
-			//return biomeRoll;
-			closeness = biomeRoll - 0.4f;
-			return closeness < 0 ? 0 : (int) (Util.RoundToDP(closeness, 2) * 100);
+			return Mathf.InverseLerp(0.5f, 0.45f, biomeRoll);
 		}
-			//return biomeRoll;
-			closeness = 0.1f - (biomeRoll - 0.5f);
-			return closeness < 0 ? 0 : (int) (Util.RoundToDP(closeness, 2) * 100);			
+			return Mathf.InverseLerp(0.5f, 0.55f, biomeRoll);			
 	}
 
 	public class Biome
@@ -50,6 +46,7 @@ public class TerrainGenerator
 		//	Max height of each layer
 		public virtual int LayerMaxHeight(int layerIndex) { return 50; }
 	}
+
 	public class FarmLand : Biome
 	{
 		public FarmLand()
@@ -70,10 +67,8 @@ public class TerrainGenerator
 					return 0;
 			}
 		}
-
-		public override int LayerMaxHeight(int layerIndex) { return 70; }
+		public override int LayerMaxHeight(int layerIndex) { return 100; }
 	}
-
 	public class LowLands : Biome
 	{
 		public LowLands()
@@ -121,8 +116,6 @@ public class TerrainGenerator
 				}				
 		}
 
-		//	Biome does not use cut
-
 		column.cuts = new int[chunkSize,chunkSize][];
 		
 		for(int x = 0; x < chunkSize; x++)
@@ -140,11 +133,27 @@ public class TerrainGenerator
 		int gz = (int)(z+column.position.z);
 		Biome biome = GetBiome(gx, gz);
 
-		//	Get noise for layer
+		//	Get height noise for layer
 		float heightSource = biome.LayerHeight(gx, gz, layer);
+		float otherHeightSource = 0;
+		int maxHeight = biome.LayerMaxHeight(layer);
+
+		float biomeGradient = GetBiomeGradient(gx, gz);
+
+		if(biomeGradient <= 1)
+		{
+			Biome otherBiome = biome == farmLand ? lowLands : farmLand;
+			otherHeightSource = otherBiome.LayerHeight(gx, gz, layer);
+			int otherMaxHeight = otherBiome.LayerMaxHeight(layer);
+
+			float median = (heightSource + otherHeightSource) / 2;
+			float maxHeightMedian = (maxHeight + otherMaxHeight) / 2;
+
+			heightSource = Mathf.Lerp(median, heightSource, biomeGradient);
+			maxHeight = (int) Mathf.Lerp(maxHeightMedian, maxHeight, biomeGradient);
+		}
 
 		int offset = biome.LayerOffset(layer);
-		int maxHeight = biome.LayerMaxHeight(layer);
 		int height = (int) Mathf.Lerp(offset, offset + maxHeight, heightSource);
 
 		//	Record height								
