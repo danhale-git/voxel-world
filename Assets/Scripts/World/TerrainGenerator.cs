@@ -4,8 +4,37 @@ using UnityEngine;
 
 public class TerrainGenerator
 {
+	public static Biome farmLand = new FarmLand();
+	public static Biome lowLands = new LowLands();
+
+
+	public static TerrainGenerator.Biome GetBiome(int x, int z)
+	{
+		float biomeRoll = (float)Util.RoundToDP(NoiseUtils.BrownianMotion(x * 0.005f, z * 0.005f, 10), 2);
+		if(biomeRoll < 0.5f)
+		{
+			return farmLand;
+		}
+			return lowLands;
+	}
+	public static int GetBiomeGradient(int x, int z)
+	{
+		float biomeRoll = (float)Util.RoundToDP(NoiseUtils.BrownianMotion(x * 0.005f, z * 0.005f, 10), 2);
+		float closeness;
+		if(biomeRoll < 0.5f)
+		{
+			//return biomeRoll;
+			closeness = biomeRoll - 0.4f;
+			return closeness < 0 ? 0 : (int) (Util.RoundToDP(closeness, 2) * 100);
+		}
+			//return biomeRoll;
+			closeness = 0.1f - (biomeRoll - 0.5f);
+			return closeness < 0 ? 0 : (int) (Util.RoundToDP(closeness, 2) * 100);			
+	}
+
 	public class Biome
 	{
+		public static int numberOfLayers = 2;
 		//	Surface have caves cut into it
 		public bool cut;
 
@@ -13,14 +42,40 @@ public class TerrainGenerator
 		public Blocks.Types[] layerTypes;
 
 		//	Select algorithm to generate height noise for layer
-		public virtual int LayerHeight(int x, int y, int layerIndex) { return 0; }
+		public virtual int LayerHeight(int x, int z, int layerIndex) { return 0; }
+
+		//	Height offset for each layer
+		public virtual int LayerOffset(int x, int z, int layerIndex) { return 0; }
 	}
 	public class FarmLand : Biome
 	{
 		public FarmLand()
 		{
 			layerTypes = new Blocks.Types[] {Blocks.Types.STONE, Blocks.Types.DIRT};
-			cut = true;
+			cut = false;
+		}
+
+		public override int LayerHeight(int x, int z, int layerIndex)
+		{
+			switch(layerIndex)
+			{
+				case 0:
+					return(NoiseUtils.TestGround(x,z, 70));
+				case 1:
+					return(NoiseUtils.TestGround(x,z, 70) + 10);
+				default:
+					return 0;
+			}
+		}
+
+	}
+
+	public class LowLands : Biome
+	{
+		public LowLands()
+		{
+			layerTypes = new Blocks.Types[] {Blocks.Types.STONE, Blocks.Types.STONE};
+			cut = false;
 		}
 
 		public override int LayerHeight(int x, int y, int layerIndex)
@@ -28,59 +83,62 @@ public class TerrainGenerator
 			switch(layerIndex)
 			{
 				case 0:
-					return(NoiseUtils.TestGround(x,y, 70));
+					return(NoiseUtils.LowLands(x,y));
 				case 1:
-					return(NoiseUtils.TestGround(x,y, 70) + 10);
+					return(NoiseUtils.LowLands(x,y) + 10);
 				default:
 					return 0;
 			}
 		}
 	}
 
-	public static Biome defaultBiome = new FarmLand();
-
 	//	TODO: proper biome implementation
 	//	Generate topology data maps for biome
-	public void GetTopologyData(World.Column column, Biome biome = null)
-	{
-		if(biome == null) biome = defaultBiome;
-		
+	public void GetTopologyData(World.Column column)
+	{		
 		int chunkSize = World.chunkSize;
 
 
 		//	Initialise list of height maps
-		column.heightMaps = new int[biome.layerTypes.Length][,];
+		column.heightMaps = new int[Biome.numberOfLayers][,];
 
 		//	Iterate over layers in biome
-		for(int l = 0; l < biome.layerTypes.Length; l++)
+		for(int l = 0; l < Biome.numberOfLayers; l++)
 		{
 			column.heightMaps[l] = new int[chunkSize,chunkSize];
 
 			for(int x = 0; x < chunkSize; x++)
 				for(int z = 0; z < chunkSize; z++)
 				{
-					GenerateLayerHeight(x, z, column, biome, l);
+
+					GenerateLayerHeight(x, z,
+										column,
+										l);
 				}				
 		}
 
 		//	Biome does not use cut
-		if(!biome.cut) return;
 
 		column.cuts = new int[chunkSize,chunkSize][];
 		
 		for(int x = 0; x < chunkSize; x++)
 			for(int z = 0; z < chunkSize; z++)
 			{
-				GenerateCuts(x, z, column, biome);
+				GenerateCuts(x, z,
+							 column,
+							 GetBiome((int)(x+column.position.x), (int)(z+column.position.z)));
 			}
 	}
 
-	void GenerateLayerHeight(int x, int z, World.Column column, Biome biome, int layer)
+	void GenerateLayerHeight(int x, int z, World.Column column, int layer)
 	{		
+		Biome biome = GetBiome((int)(x+column.position.x), (int)(z+column.position.z));
+
 		//	Get noise for layer
 		int height = biome.LayerHeight(x + (int)column.position.x,
 									   z + (int)column.position.z,
-									   layer);	
+									   layer);			
+
 		//	Record height								
 		column.heightMaps[layer][x,z] = height;
 
@@ -96,6 +154,7 @@ public class TerrainGenerator
 	}
 	void GenerateCuts(int x, int z, World.Column column, Biome biome, float frequency = 0.025f, int octaves = 1, int maxDepth = 20, float chance = 0.42f)
 	{
+		if(!biome.cut) return;
 		//	Start and finish heights
 		column.cuts[x,z] = new int[2];
 

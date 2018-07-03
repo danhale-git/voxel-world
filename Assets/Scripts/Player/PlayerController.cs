@@ -64,9 +64,9 @@ public class PlayerController : MonoBehaviour {
 		}
 
 		//	Break block
-		if(Input.GetButton("Fire2") && Input.GetKey(KeyCode.LeftShift))
+		if(Input.GetButtonDown("Fire2") && Input.GetKey(KeyCode.LeftShift))
 		{
-			AddBlock(Ray());
+			DebugBiomeGradient(Ray());
 		}else if(Input.GetButtonDown("Fire2"))
 		{
 			AddBlock(Ray());
@@ -116,7 +116,7 @@ public class PlayerController : MonoBehaviour {
 					currentChunk = chunk;
 
 					//	Generate chunks around player location
-					//world.LoadChunks(currentChunk.gameObject.transform.position, World.viewDistance);
+					world.LoadChunks(currentChunk.gameObject.transform.position, World.viewDistance);
 				}
 			}
 			else
@@ -237,6 +237,19 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
+		}
+	}
+
+	void DebugBiomeGradient(Ray ray)
+	{
+		RaycastHit hit;
+
+		if (Physics.Raycast(ray, out hit))
+		{
+			//	get voxel position
+			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
+			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Debug.Log(TerrainGenerator.GetBiomeGradient((int)voxel.x, (int)voxel.z));
 		}
 	}
 

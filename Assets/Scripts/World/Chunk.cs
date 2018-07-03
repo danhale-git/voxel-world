@@ -98,7 +98,7 @@ public class Chunk
 					{
 						int voxel = (int) (y + this.position.y);
 						//	Set block type
-						if(column.cuts != null && voxel > column.cuts[x,z][0] && voxel < column.cuts[x,z][1])
+						if(column.cuts[x,z] != null && voxel > column.cuts[x,z][0] && voxel < column.cuts[x,z][1])
 						{
 							blockTypes[x,y,z] = Blocks.Types.AIR;
 							if(!hasAir)
@@ -106,7 +106,7 @@ public class Chunk
 						}
 						else if (voxel <= layerHeight && (l == 0 || voxel > previousLayerHeight) )
 						{
-							blockTypes[x,y,z] = TerrainGenerator.defaultBiome.layerTypes[l];
+							blockTypes[x,y,z] = TerrainGenerator.GetBiome((int)(x+position.x), (int)(z+position.z)).layerTypes[l];
 							if(!hasBlocks)
 								hasBlocks = true;	
 						}
