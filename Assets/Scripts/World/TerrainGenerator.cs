@@ -42,10 +42,13 @@ public class TerrainGenerator
 		public Blocks.Types[] layerTypes;
 
 		//	Select algorithm to generate height noise for layer
-		public virtual int LayerHeight(int x, int z, int layerIndex) { return 0; }
+		public virtual float LayerHeight(int x, int z, int layerIndex) { return 0; }
 
 		//	Height offset for each layer
-		public virtual int LayerOffset(int x, int z, int layerIndex) { return 0; }
+		public virtual int LayerOffset(int layerIndex) { return layerIndex*10; }
+
+		//	Max height of each layer
+		public virtual int LayerMaxHeight(int layerIndex) { return 50; }
 	}
 	public class FarmLand : Biome
 	{
@@ -55,19 +58,20 @@ public class TerrainGenerator
 			cut = false;
 		}
 
-		public override int LayerHeight(int x, int z, int layerIndex)
+		public override float LayerHeight(int x, int z, int layerIndex)
 		{
 			switch(layerIndex)
 			{
 				case 0:
-					return(NoiseUtils.TestGround(x,z, 70));
+					return NoiseUtils.TestGround(x,z);
 				case 1:
-					return(NoiseUtils.TestGround(x,z, 70) + 10);
+					return NoiseUtils.TestGround(x,z);
 				default:
 					return 0;
 			}
 		}
 
+		public override int LayerMaxHeight(int layerIndex) { return 70; }
 	}
 
 	public class LowLands : Biome
@@ -78,14 +82,14 @@ public class TerrainGenerator
 			cut = false;
 		}
 
-		public override int LayerHeight(int x, int y, int layerIndex)
+		public override float LayerHeight(int x, int z, int layerIndex)
 		{
 			switch(layerIndex)
 			{
 				case 0:
-					return(NoiseUtils.LowLands(x,y));
+					return NoiseUtils.LowLandsTest(x,z);
 				case 1:
-					return(NoiseUtils.LowLands(x,y) + 10);
+					return NoiseUtils.LowLandsTest(x,z);
 				default:
 					return 0;
 			}
@@ -131,13 +135,17 @@ public class TerrainGenerator
 	}
 
 	void GenerateLayerHeight(int x, int z, World.Column column, int layer)
-	{		
-		Biome biome = GetBiome((int)(x+column.position.x), (int)(z+column.position.z));
+	{
+		int gx = (int)(x+column.position.x);
+		int gz = (int)(z+column.position.z);
+		Biome biome = GetBiome(gx, gz);
 
 		//	Get noise for layer
-		int height = biome.LayerHeight(x + (int)column.position.x,
-									   z + (int)column.position.z,
-									   layer);			
+		float heightSource = biome.LayerHeight(gx, gz, layer);
+
+		int offset = biome.LayerOffset(layer);
+		int maxHeight = biome.LayerMaxHeight(layer);
+		int height = (int) Mathf.Lerp(offset, offset + maxHeight, heightSource);
 
 		//	Record height								
 		column.heightMaps[layer][x,z] = height;

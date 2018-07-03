@@ -4,11 +4,26 @@ using UnityEngine;
 
 public static class NoiseUtils
 {
-	public static int TestGround(int x, int z, int maxHeight)
+	public static float TestGround(int x, int z)
 	{
 		float source = BrownianMotion(x * 0.01f, z * 0.01f, 3, 0.2f);
 
-		return (int) Mathf.Lerp(0, maxHeight, source);	
+		return source;	
+	}
+
+	public static float LowLandsTest(int x, int z)
+	{
+		//	Height at which ground is levelled out
+		float levelHeight = 0.3f;
+
+		//	Hilly terrain
+		float microHeight = BrownianMotion(x * 0.01f,z * 0.01f, 5, 0.5f);
+		//	More hillyness
+		float factor = BrownianMotion(x * 0.01f,z * 0.01f);
+		float height = (microHeight * factor);
+
+		//	Level out areas lower than levelHeight and return
+		return LevelOutAtMin(levelHeight, 0.75f, height);
 	}
 
 	#region Terrains
