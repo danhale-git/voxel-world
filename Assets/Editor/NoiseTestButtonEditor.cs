@@ -14,5 +14,22 @@ public class NoiseTestButtonEditor : Editor
         {
             myScript.Noise();
         }
+
+        if(GUILayout.Button("Up"))
+        {
+            myScript.Up();
+        }
+        if(GUILayout.Button("Down"))
+        {
+            myScript.Down();
+        }
+        if(GUILayout.Button("Right"))
+        {
+            myScript.Right();
+        }
+        if(GUILayout.Button("Left"))
+        {
+            myScript.Left();
+        }
     }
 }
