@@ -9,7 +9,7 @@ public class World : MonoBehaviour
 {
 	//	DEBUG
 	public Material defaultMaterial;
-	public bool disableChunkGeneration = true;
+	public bool disableChunkGeneration;
 	public static DebugWrapper debug;
 	public Text debugText;
 
