@@ -4,212 +4,91 @@ using UnityEngine;
 
 public class TerrainGenerator
 {
-	public static Biome defaultBiome = new Biome();
+	//	Temporary because there is only one biome
+	public static TerrainLibrary.Biome defaultBiome = new TerrainLibrary.Biome();
 
-	public static float GetGradient(float biomeNoise, float border = 0.5f, float margin = 0.05f, bool debug = false)
+	//	Return 2 if outside margin from border
+	//	else return 0 - 1 value representing closeness to border
+	public static float GetGradient(float biomeNoise, float border = 0.5f, float margin = 0.05f)
 	{
-		if(debug)
-		{
-			Debug.Log("margins: "+(border-margin)+" - "+(border+margin)+" : "+biomeNoise);
-		}
-
 		if(biomeNoise < border-margin || biomeNoise > border+margin) return 2;
+
 		if(biomeNoise < border)
-		{
 			return Mathf.InverseLerp(border, border-margin, biomeNoise);
-		}
-			return Mathf.InverseLerp(border, border+margin, biomeNoise);			
+		
+		return Mathf.InverseLerp(border, border+margin, biomeNoise);			
 	}
 
-	public class BiomeLayer
-	{
-		public float maxMargin = 0.05f;
-		public float min;
-		public float max;
-		public int maxHeight;
-		public Blocks.Types surfaceBlock;
-
-		public bool IsHere(float pixelNoise)
-		{
-			if( pixelNoise >= min && pixelNoise < max) return true;
-			return false;
-		}
-		public virtual float Noise(int x, int z) { return 0; } 
-	}
-
-	public class MountainPeak : BiomeLayer
-	{
-		public MountainPeak()
-		{
-			min = 0.71f;
-			maxHeight = 200;
-			surfaceBlock = Blocks.Types.STONE;
-		}
-		public override float Noise(int x, int z)
-		{
-			return NoiseUtils.BrownianMotion(x * 0.015f, z * 0.015f, 3, 0.2f);
-		} 
-
-
-	}
-	public class Mountainous : BiomeLayer
-	{
-		public Mountainous()
-		{
-			min = 0.62f;
-			maxHeight = 150;
-			surfaceBlock = Blocks.Types.DIRT;
-		}
-		public override float Noise(int x, int z)
-		{
-			return NoiseUtils.BrownianMotion(x * 0.005f, z * 0.005f, 1, 0.3f);
-		} 
-
-	}
-	public class MountainForest : BiomeLayer
-	{
-		public MountainForest()
-		{
-			min = 0.5f;
-			maxHeight = 80;
-			surfaceBlock = Blocks.Types.GRASS;
-		}
-		public override float Noise(int x, int z)
-		{
-			return NoiseUtils.HillyPlateusTest(x, z);
-		} 
-
-	}
-	public class LowLands : BiomeLayer
-	{
-		public LowLands()
-		{
-			min = 0.0f;
-			maxHeight = 50;
-			surfaceBlock = Blocks.Types.LIGHTGRASS;
-		}
-		public override float Noise(int x, int z)
-		{
-			return NoiseUtils.LowLandsTest(x, z);
-		} 
-
-	}
-
-	public class Biome
-	{
-		public BiomeLayer[] layers = new BiomeLayer[4] {new MountainPeak(), new Mountainous(), new MountainForest(), new LowLands()};
-
-		public Biome()
-		{
-			for(int i = 0; i < layers.Length; i++)
-			{
-				layers[i].max = GetMax(i);
-				//	make sure margins do not cross in thin layers
-				float margin = (layers[i].max - layers[i].min / 2);
-			}
-		}
-		public float GetMax(int index)
-		{
-			if(index == 0) return 1;
-			else return layers[index - 1].min;
-		}
-		public BiomeLayer LayerBelow(BiomeLayer layer)
-		{
-			for(int i = 0; i < layers.Length; i++)
-			{
-				if(layer == layers[i]) return layers[i+1];
-			}
-			return null;
-		}
-		public BiomeLayer LayerAbove(BiomeLayer layer)
-		{
-			for(int i = 0; i < layers.Length; i++)
-			{
-				if(layer == layers[i]) return layers[i-1];
-			}
-			return null;
-		}
-
-		public float BaseNoise(int x, int z)
-		{
-			return NoiseUtils.BrownianMotion((x*0.002f), (z*0.002f)*2, 3, 0.3f);
-		}
-
-		public BiomeLayer GetLayer(float pixelNoise)
-		{
-			for(int i = 0; i < layers.Length; i++)
-			{
-				if(layers[i].IsHere(pixelNoise))
-				{
-					return layers[i];
-				}
-			}
-			return layers[0];
-		}	
-	}
-
-	//	Generate topology data maps for biome
+	//	Generate height maps
+	// 	Smooth between biome layers
 	public void GetTopologyData(World.Column column)
 	{		
 		int chunkSize = World.chunkSize;
 
 		column.heightMap = new int[chunkSize,chunkSize];
 
-		//	Iterate over layers in biome
+		//	Iterate over height map
 		for(int x = 0; x < chunkSize; x++)
 			for(int z = 0; z < chunkSize; z++)
 			{
+				//	Global voxel column coordinates
 				int gx = (int)(x+column.position.x);
 				int gz = (int)(z+column.position.z);
 
+				//	Base noise to map biome layers and base height
 				float baseNoise = defaultBiome.BaseNoise(gx, gz);
-				BiomeLayer layer = defaultBiome.GetLayer(baseNoise);
+				TerrainLibrary.BiomeLayer layer = defaultBiome.GetLayer(baseNoise);
 
+				//	Layer detail to overlay
 				float layerNoise = layer.Noise(gx, gz);
 
-				//	Default to layer values
-				float otherNoiseMedian = 0;
-				float otherHeightMedian = 0;
-
-
-				//	Make sure gradients don't overlap
+				//	Make sure gradient margins don't overlap
 				float margin = (layer.max - layer.min) / 2;
 				margin = margin > layer.maxMargin ? layer.maxMargin : margin;
 
+				//	Returns 0 - 1 gradient if in margin else returns 2
 				float bottomGradient = GetGradient(baseNoise, layer.min, margin);
 				float topGradient = GetGradient(baseNoise, layer.max, margin);
 
-				float finalNoise;
-				float finalHeight;
+				float smoothedNoise;
+				float smoothedHeight;
 
+				//	Smooth to above layer
 				if(bottomGradient != 2 && layer.min != 0)
 				{
-					BiomeLayer adjacentLayer = defaultBiome.LayerBelow(layer);
+					TerrainLibrary.BiomeLayer adjacentLayer = defaultBiome.LayerBelow(layer);
 
-					otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
-					otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;
+					//	Find mid point between two layers
+					float otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
+					float otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;
 
-					finalNoise = Mathf.Lerp(otherNoiseMedian, layerNoise, bottomGradient);
-					finalHeight = Mathf.Lerp(otherHeightMedian, layer.maxHeight, bottomGradient);
+					//	Lerp from mid point to layer using gradient
+					smoothedNoise = Mathf.Lerp(otherNoiseMedian, layerNoise, bottomGradient);
+					smoothedHeight = Mathf.Lerp(otherHeightMedian, layer.maxHeight, bottomGradient);
 				}
+				//	Smooth to below layer
 				else if(topGradient != 2 && layer.max != 1)
 				{
-					BiomeLayer adjacentLayer = defaultBiome.LayerAbove(layer);
+					TerrainLibrary.BiomeLayer adjacentLayer = defaultBiome.LayerAbove(layer);
 
-					otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
-					otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;
+					float otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
+					float otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;
 
-					finalNoise = Mathf.Lerp(otherNoiseMedian, layerNoise, topGradient);
-					finalHeight = Mathf.Lerp(otherHeightMedian, layer.maxHeight, topGradient);
+					smoothedNoise = Mathf.Lerp(otherNoiseMedian, layerNoise, topGradient);
+					smoothedHeight = Mathf.Lerp(otherHeightMedian, layer.maxHeight, topGradient);
 				}
+				//	Not within margin distance of another layer
 				else
 				{
-					finalNoise = layerNoise;
-					finalHeight = layer.maxHeight;
+					//	Default to layer height
+					smoothedNoise = layerNoise;
+					smoothedHeight = layer.maxHeight;
 				}
 
-				column.heightMap[x,z] = (int)Mathf.Lerp(0, finalHeight, baseNoise * finalNoise);
+				//	Final height value
+				column.heightMap[x,z] = (int)Mathf.Lerp(0, smoothedHeight, baseNoise * smoothedNoise);
 
+				//	Update highest and lowest in column
 				column.CheckHighest(column.heightMap[x,z]);
 				column.CheckLowest(column.heightMap[x,z]);				
 			}				

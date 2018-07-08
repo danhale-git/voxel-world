@@ -3,10 +3,11 @@ using System.Collections;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
-
 [ExecuteInEditMode]
 public class NoiseTesting : MonoBehaviour
 {
+	//	Attach to sprite under canvas to test 2D perlin noise
+
 	private Texture2D texture;
     private SpriteRenderer spriteRenderer;
 	private RectTransform rectTrans;
@@ -29,7 +30,6 @@ public class NoiseTesting : MonoBehaviour
 		public Color color;
 	}
 
-	//[SerializeField]
 	public List<Highlight> highlights;
 
 	[Header("Brownian only")]

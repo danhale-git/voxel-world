@@ -4,6 +4,7 @@ using UnityEngine;
 
 public static class NoiseUtils
 {
+	//	Functions that return procedurally generated floats between 0 and 1 for generating height maps
 	public static float TestGround(int x, int z)
 	{
 		float source = BrownianMotion(x * 0.01f, z * 0.01f, 3, 0.2f);
@@ -41,75 +42,6 @@ public static class NoiseUtils
 		return LevelOutAtMax(0.6f, 0.7f, height);
 	}
 
-	#region Terrains
-
-	public static int RidgyHills(int x, int z, float ridgyness = 0.5f)	
-	{
-		//	Simple heightmap with large rounded hills
-		float frequency = 0.0025f;
-		float maxHeight = 300;
-		float bigHillsSource = LevelOutAtMin(.2f, .8f, Mathf.PerlinNoise(x * frequency, z * frequency) * 0.5f);
-		float bigHills = Mathf.Lerp(0, maxHeight, bigHillsSource);
-
-		//	Secondary hightmap creates ridges when multiplied by main heightmap noise
-		float hillModifier = ridgyness * (1- bigHillsSource);
-		float roughFrequency = 0.01f * hillModifier;
-		ridgyness = BrownianMotion(x * roughFrequency, z * roughFrequency, 5, 1);
-
-		return (int) (((bigHills * ridgyness) + bigHills) / 2);	
-	}
-
-	public static int LowLands(int x, int z)
-	{
-		//	Maximum ground height
-		int maxHeight = 50;
-		//	Height at which ground is levelled out
-		int levelHeight = 15;
-
-		//	Hilly terrain
-		float microHeight = Mathf.Lerp(10, maxHeight, BrownianMotion(x * 0.01f,z * 0.01f, 5, 0.5f));
-		//	More hillyness
-		float factor = Mathf.Lerp(0, 1, BrownianMotion(x * 0.01f,z * 0.01f));
-		int height = (int) (microHeight * factor);
-
-		//	Level out areas lower than levelHeight and return
-		return (int) LevelOutAtMin(levelHeight, 0.75f, height);
-	}
-	
-	public static int HillyPlateus(int x, int z, int maxHeight, bool ridgify = false)
-	{
-		float source = BrownianMotion(x * 0.01f, z * 0.01f, 3, 0.2f);
-		float subtract = BrownianMotion(x * 0.012f, z * 0.012f, 3, 0.25f);
-		float difference = 0;
-		if(subtract > source)
-		{
-			difference = subtract - source;
-		}
-
-		int height = (int) ( (Mathf.Lerp(0, maxHeight, source) + maxHeight) - Mathf.Lerp(0, maxHeight, difference) );
-
-		if(!ridgify)
-		{
-			return (int)LevelOutAtMax(95, 0.7f, height);	
-		}
-		else
-		{
-			return Ridgify(x, z, source, LevelOutAtMax(95, 0.7f, height), ridgyness: 0.1f);
-		}
-	}
-
-	public static int Ridgify(int x, int z, float originalSource, float originalHeight, float ridgyness = 0.05f)
-	{
-		//	Secondary hightmap creates ridges when multiplied by main heightmap noise
-		float hillModifier = ridgyness * (1- originalSource);
-		float roughFrequency = 0.01f * hillModifier;
-		ridgyness = BrownianMotion(x * roughFrequency, z * roughFrequency, 5, 1);
-
-		return (int) (((originalHeight * ridgyness) + originalHeight) / 2);	
-	}
-
-	#endregion
-
 	#region Utility
 
 	//	Return rough shallow noise
@@ -123,7 +55,9 @@ public static class NoiseUtils
 	}
 
 	//	Level out terrain softly at below min height
-	static float LevelOutAtMin(float min, float flatness, float height)
+	static float LevelOutAtMin(	float min,			//	Height after which terrain is levelled out
+								float flatness,		//	Flatness of levelled areas (1 for completely flat, 0 for no flattening)
+								float height)		//	Value to be checked and possibly levelled
 	{
 		if(height < min)
 		{
@@ -169,6 +103,7 @@ public static class NoiseUtils
 		return total/maxValue;
 	}
 
+	//	3D Brownian motion
 	public static float BrownianMotion3D(float x, float y, float z, float frequency, int octaves)
     {
         float XY = BrownianMotion(x * frequency ,y * frequency, octaves, 0.5f);
@@ -180,50 +115,6 @@ public static class NoiseUtils
         float ZX = BrownianMotion(z * frequency ,x * frequency, octaves, 0.5f);
 
         return (XY+YZ+XZ+YX+ZY+ZX)/6.0f;
-    }
-
-	#endregion
-
-	#region Testing
-
-	//	Raw Brownian
-	public static int BrownianGround(float x, float z, int octaves, float persistance, float factor, int maxHeight)
-	{
-		float value = BrownianMotion(x * factor, z * factor, octaves, persistance);
-
-		return (int)Mathf.Lerp(0, maxHeight, value);	
-	}
-
-	//	Raw perlin
-	public static int Perlin(int x, int z, int maxHeight, float frequency = 0.01f, float amplitude = 1)
-	{
-		float value = Mathf.PerlinNoise(x * frequency, z * frequency) * amplitude;
-
-		return (int)Mathf.Lerp(0, maxHeight, value);	
-	}
-
-	//	Draw big stone patches
-	public static Blocks.Types Biome(int x, int z)
-	{
-		float biomeRoll = (float)Util.RoundToDP(BrownianMotion(x * 0.001f, z * 0.001f, 10), 2);
-		if(biomeRoll < .5f)
-		{
-			return Blocks.Types.STONE;
-		}
-			return Blocks.Types.DIRT;
-	}
-	
-
-	public static int GroundHeight(int x, int z, int maxHeight)
-	{
-		float height;
-		height = BrownianMotion(x * 0.05f,z * 0.05f);
-
-		return (int)Map(0, maxHeight, 0, 1, height);;
-	}
-	static float Map(float newmin, float newmax, float origmin, float origmax, float value)
-    {
-        return Mathf.Lerp(newmin, newmax, Mathf.InverseLerp(origmin, origmax, value));
     }
 
 	#endregion
