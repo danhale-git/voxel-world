@@ -6,20 +6,13 @@ public class TerrainGenerator
 {
 	public static Biome defaultBiome = new Biome();
 
-
-	/*public static float GetBiomeGradient(int x, int z)
+	public static float GetGradient(float biomeNoise, float border = 0.5f, float margin = 0.05f, bool debug = false)
 	{
-		float biomeRoll = (float)Util.RoundToDP(NoiseUtils.BrownianMotion(x * 0.005f, z * 0.005f, 10), 3);
-		if(biomeRoll < 0.45f || biomeRoll > 0.55f) return 2;
-		if(biomeRoll < 0.5f)
+		if(debug)
 		{
-			return Mathf.InverseLerp(0.5f, 0.45f, biomeRoll);
+			Debug.Log("margins: "+(border-margin)+" - "+(border+margin)+" : "+biomeNoise);
 		}
-			return Mathf.InverseLerp(0.5f, 0.55f, biomeRoll);			
-	} */
 
-	public static float GetGradient(float biomeNoise, float border = 0.5f, float margin = 0.05f)
-	{
 		if(biomeNoise < border-margin || biomeNoise > border+margin) return 2;
 		if(biomeNoise < border)
 		{
@@ -30,7 +23,7 @@ public class TerrainGenerator
 
 	public class BiomeLayer
 	{
-		protected float gradientMargin = 0.5f;
+		public float maxMargin = 0.05f;
 		public float min;
 		public float max;
 		public int maxHeight;
@@ -111,6 +104,8 @@ public class TerrainGenerator
 			for(int i = 0; i < layers.Length; i++)
 			{
 				layers[i].max = GetMax(i);
+				//	make sure margins do not cross in thin layers
+				float margin = (layers[i].max - layers[i].min / 2);
 			}
 		}
 		public float GetMax(int index)
@@ -153,7 +148,6 @@ public class TerrainGenerator
 		}	
 	}
 
-	//	TODO: proper biome implementation
 	//	Generate topology data maps for biome
 	public void GetTopologyData(World.Column column)
 	{		
@@ -173,70 +167,40 @@ public class TerrainGenerator
 
 				float layerNoise = layer.Noise(gx, gz);
 
-				//column.heightMap[x,z] = (int)Mathf.Lerp(0, layer.maxHeight, baseNoise * layer.Noise(gx, gz));	//	//
-
-				
 				//	Default to layer values
-				float bottomNoiseMedian = 0;
-				float bottomHeightMedian = 0;
-				bool smoothBottom = false;
+				float otherNoiseMedian = 0;
+				float otherHeightMedian = 0;
 
-				float topNoiseMedian = 0;
-				float topHeightMedian = 0;
-				bool smoothTop = false;
 
-				float bottomGradient = GetGradient(baseNoise, layer.min);
-				float topGradient = GetGradient(baseNoise, layer.max);
+				//	Make sure gradients don't overlap
+				float margin = (layer.max - layer.min) / 2;
+				margin = margin > layer.maxMargin ? layer.maxMargin : margin;
 
-				if(bottomGradient != 2 && layer.min != 0)
-				{
-					smoothBottom = true;
-					BiomeLayer adjacentLayer = defaultBiome.LayerBelow(layer);
-					float adjacentNoise = adjacentLayer.Noise(gx, gz);
-					int adjacentHeight = adjacentLayer.maxHeight;
-
-					bottomNoiseMedian = (layer.Noise(gx, gz) + adjacentNoise) / 2;
-					bottomHeightMedian = (layer.maxHeight + adjacentHeight) / 2;
-
-					//bottomNoiseMedian = Mathf.Lerp(bottomNoiseMedian, layerNoise, bottomGradient);
-					//bottomHeightMedian = Mathf.Lerp(bottomHeightMedian, layer.maxHeight, bottomGradient);
-				}
-				
-				if(topGradient != 2 && layer.max != 1)
-				{
-					smoothTop = true;
-					BiomeLayer adjacentLayer = defaultBiome.LayerAbove(layer);
-					float adjacentNoise = adjacentLayer.Noise(gx, gz);
-					int adjacentHeight = adjacentLayer.maxHeight;
-
-					topNoiseMedian = (layer.Noise(gx, gz) + adjacentNoise) / 2;
-					topHeightMedian = (layer.maxHeight + adjacentHeight) / 2;
-
-					//topNoiseMedian = Mathf.Lerp(topNoiseMedian, layerNoise, topGradient);
-					//topHeightMedian = Mathf.Lerp(topHeightMedian, layer.maxHeight, topGradient);
-				}
+				float bottomGradient = GetGradient(baseNoise, layer.min, margin);
+				float topGradient = GetGradient(baseNoise, layer.max, margin);
 
 				float finalNoise;
 				float finalHeight;
 
-				if(smoothBottom && smoothTop)
+				if(bottomGradient != 2 && layer.min != 0)
 				{
-					float gradient = (topGradient + bottomGradient) / 2;
-					float noiseMedian = (topNoiseMedian + bottomNoiseMedian) / 2;
-					float heightMedian = (topHeightMedian + bottomHeightMedian) / 2;
+					BiomeLayer adjacentLayer = defaultBiome.LayerBelow(layer);
 
-					finalNoise = Mathf.Lerp(noiseMedian, layerNoise, gradient);
-					finalHeight = Mathf.Lerp(heightMedian, layer.maxHeight, gradient);
+					otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
+					otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;
+
+					finalNoise = Mathf.Lerp(otherNoiseMedian, layerNoise, bottomGradient);
+					finalHeight = Mathf.Lerp(otherHeightMedian, layer.maxHeight, bottomGradient);
 				}
-				else if(smoothBottom)
+				else if(topGradient != 2 && layer.max != 1)
 				{
-					finalNoise = Mathf.Lerp(bottomNoiseMedian, layerNoise, bottomGradient);
-					finalHeight = Mathf.Lerp(bottomHeightMedian, layer.maxHeight, bottomGradient);
-				}
-				else if(smoothTop)
-				{
-					finalNoise = Mathf.Lerp(topNoiseMedian, layerNoise, topGradient);
-					finalHeight = Mathf.Lerp(topHeightMedian, layer.maxHeight, topGradient);
+					BiomeLayer adjacentLayer = defaultBiome.LayerAbove(layer);
+
+					otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
+					otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;
+
+					finalNoise = Mathf.Lerp(otherNoiseMedian, layerNoise, topGradient);
+					finalHeight = Mathf.Lerp(otherHeightMedian, layer.maxHeight, topGradient);
 				}
 				else
 				{
@@ -261,49 +225,6 @@ public class TerrainGenerator
 							 GetBiome((int)(x+column.position.x), (int)(z+column.position.z)));
 			}*/
 	}
-
-	/*void GenerateLayerHeight(int x, int z, World.Column column, int layer)
-	{
-		int gx = (int)(x+column.position.x);
-		int gz = (int)(z+column.position.z);
-		Biome biome = GetBiome(gx, gz);
-
-		//	Get height noise for layer
-		float heightSource = biome.LayerHeight(gx, gz, layer);
-		float otherHeightSource = 0;
-		int maxHeight = biome.LayerMaxHeight(layer);
-
-		float biomeGradient = GetBiomeGradient(gx, gz);
-
-		if(biomeGradient <= 1)
-		{
-			Biome otherBiome = biome == farmLand ? lowLands : farmLand;
-			otherHeightSource = otherBiome.LayerHeight(gx, gz, layer);
-			int otherMaxHeight = otherBiome.LayerMaxHeight(layer);
-
-			float median = (heightSource + otherHeightSource) / 2;
-			float maxHeightMedian = (maxHeight + otherMaxHeight) / 2;
-
-			heightSource = Mathf.Lerp(median, heightSource, biomeGradient);
-			maxHeight = (int) Mathf.Lerp(maxHeightMedian, maxHeight, biomeGradient);
-		}
-
-		int offset = biome.LayerOffset(layer);
-		int height = (int) Mathf.Lerp(offset, offset + maxHeight, heightSource);
-
-		//	Record height								
-		column.heightMaps[layer][x,z] = height;
-
-		//	Only get highest and lowest when drawing surface
-		if(layer == column.heightMaps.Length - 1)
-		{							 
-			//	Lowest point
-			column.CheckLowest(height);
-		
-			//	Highest point
-			column.CheckHighest(height);
-		}
-	}*/
 
 	/*void GenerateCuts(int x, int z, World.Column column, Biome biome, float frequency = 0.025f, int octaves = 1, int maxDepth = 20, float chance = 0.42f)
 	{

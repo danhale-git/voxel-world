@@ -253,10 +253,8 @@ public class PlayerController : MonoBehaviour {
 			TerrainGenerator.Biome biome = TerrainGenerator.defaultBiome;
 			float noise = biome.BaseNoise((int)voxel.x, (int)voxel.z);
 			TerrainGenerator.BiomeLayer layer = biome.GetLayer(noise); 
-			Debug.Log(noise);
-			Debug.Log(layer + " " + layer.min + " - " + layer.max);
-			Debug.Log("max "+TerrainGenerator.GetGradient(noise, biome.GetLayer(noise).max));
-			Debug.Log("min "+TerrainGenerator.GetGradient(noise, biome.GetLayer(noise).min));
+			Debug.Log("layer: "+layer.min + " - " + layer.max);
+			Debug.Log("min/max: "+TerrainGenerator.GetGradient(noise, biome.GetLayer(noise).min, debug: true)+" : "+TerrainGenerator.GetGradient(noise, biome.GetLayer(noise).max, debug: true));
 		}
 	}
 
