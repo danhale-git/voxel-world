@@ -249,7 +249,14 @@ public class PlayerController : MonoBehaviour {
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
-			Debug.Log(TerrainGenerator.GetBiomeGradient((int)voxel.x, (int)voxel.z));
+
+			TerrainGenerator.Biome biome = TerrainGenerator.defaultBiome;
+			float noise = biome.BaseNoise((int)voxel.x, (int)voxel.z);
+			TerrainGenerator.BiomeLayer layer = biome.GetLayer(noise); 
+			Debug.Log(noise);
+			Debug.Log(layer + " " + layer.min + " - " + layer.max);
+			Debug.Log("max "+TerrainGenerator.GetGradient(noise, biome.GetLayer(noise).max));
+			Debug.Log("min "+TerrainGenerator.GetGradient(noise, biome.GetLayer(noise).min));
 		}
 	}
 

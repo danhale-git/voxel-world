@@ -24,7 +24,7 @@ public static class Blocks
 
 	//	Block type color
 	public static Color32[] colors = new Color32[]{	Color.white,					//	0	//	AIR
-													new Color32(11, 110, 35, 255),	//	1	//	DIRT
+													new Color32(138, 71, 10, 255),	//	1	//	DIRT
 													new Color32(100, 100, 100, 255),	//	2	//	STONE
 													new Color32(11, 110, 35, 255),	//	3	//	GRASS
 													new Color32(50, 110, 70, 255),	//	4	//	LIGHTGRASS

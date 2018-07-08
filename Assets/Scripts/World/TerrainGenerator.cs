@@ -4,20 +4,10 @@ using UnityEngine;
 
 public class TerrainGenerator
 {
-	public static Biome farmLand = new FarmLand();
-	public static Biome lowLands = new LowLands();
+	public static Biome defaultBiome = new Biome();
 
 
-	public static TerrainGenerator.Biome GetBiome(int x, int z)
-	{
-		float biomeRoll = (float)Util.RoundToDP(NoiseUtils.BrownianMotion(x * 0.005f, z * 0.005f, 10), 3);
-		if(biomeRoll < 0.5f)
-		{
-			return farmLand;
-		}
-			return lowLands;
-	}
-	public static float GetBiomeGradient(int x, int z)
+	/*public static float GetBiomeGradient(int x, int z)
 	{
 		float biomeRoll = (float)Util.RoundToDP(NoiseUtils.BrownianMotion(x * 0.005f, z * 0.005f, 10), 3);
 		if(biomeRoll < 0.45f || biomeRoll > 0.55f) return 2;
@@ -26,69 +16,141 @@ public class TerrainGenerator
 			return Mathf.InverseLerp(0.5f, 0.45f, biomeRoll);
 		}
 			return Mathf.InverseLerp(0.5f, 0.55f, biomeRoll);			
+	} */
+
+	public static float GetGradient(float biomeNoise, float border = 0.5f, float margin = 0.05f)
+	{
+		if(biomeNoise < border-margin || biomeNoise > border+margin) return 2;
+		if(biomeNoise < border)
+		{
+			return Mathf.InverseLerp(border, border-margin, biomeNoise);
+		}
+			return Mathf.InverseLerp(border, border+margin, biomeNoise);			
+	}
+
+	public class BiomeLayer
+	{
+		protected float gradientMargin = 0.5f;
+		public float min;
+		public float max;
+		public int maxHeight;
+		public Blocks.Types surfaceBlock;
+
+		public bool IsHere(float pixelNoise)
+		{
+			if( pixelNoise >= min && pixelNoise < max) return true;
+			return false;
+		}
+		public virtual float Noise(int x, int z) { return 0; } 
+	}
+
+	public class MountainPeak : BiomeLayer
+	{
+		public MountainPeak()
+		{
+			min = 0.71f;
+			maxHeight = 200;
+			surfaceBlock = Blocks.Types.STONE;
+		}
+		public override float Noise(int x, int z)
+		{
+			return NoiseUtils.BrownianMotion(x * 0.015f, z * 0.015f, 3, 0.2f);
+		} 
+
+
+	}
+	public class Mountainous : BiomeLayer
+	{
+		public Mountainous()
+		{
+			min = 0.62f;
+			maxHeight = 150;
+			surfaceBlock = Blocks.Types.DIRT;
+		}
+		public override float Noise(int x, int z)
+		{
+			return NoiseUtils.BrownianMotion(x * 0.005f, z * 0.005f, 1, 0.3f);
+		} 
+
+	}
+	public class MountainForest : BiomeLayer
+	{
+		public MountainForest()
+		{
+			min = 0.5f;
+			maxHeight = 80;
+			surfaceBlock = Blocks.Types.GRASS;
+		}
+		public override float Noise(int x, int z)
+		{
+			return NoiseUtils.HillyPlateusTest(x, z);
+		} 
+
+	}
+	public class LowLands : BiomeLayer
+	{
+		public LowLands()
+		{
+			min = 0.0f;
+			maxHeight = 50;
+			surfaceBlock = Blocks.Types.LIGHTGRASS;
+		}
+		public override float Noise(int x, int z)
+		{
+			return NoiseUtils.LowLandsTest(x, z);
+		} 
+
 	}
 
 	public class Biome
 	{
-		public static int numberOfLayers = 2;
-		//	Surface have caves cut into it
-		public bool cut;
+		public BiomeLayer[] layers = new BiomeLayer[4] {new MountainPeak(), new Mountainous(), new MountainForest(), new LowLands()};
 
-		//	Blocks used for each layer
-		public Blocks.Types[] layerTypes;
-
-		//	Select algorithm to generate height noise for layer
-		public virtual float LayerHeight(int x, int z, int layerIndex) { return 0; }
-
-		//	Height offset for each layer
-		public virtual int LayerOffset(int layerIndex) { return layerIndex*10; }
-
-		//	Max height of each layer
-		public virtual int LayerMaxHeight(int layerIndex) { return 50; }
-	}
-
-	public class FarmLand : Biome
-	{
-		public FarmLand()
+		public Biome()
 		{
-			layerTypes = new Blocks.Types[] {Blocks.Types.STONE, Blocks.Types.DIRT};
-			cut = false;
-		}
-
-		public override float LayerHeight(int x, int z, int layerIndex)
-		{
-			switch(layerIndex)
+			for(int i = 0; i < layers.Length; i++)
 			{
-				case 0:
-					return NoiseUtils.TestGround(x,z);
-				case 1:
-					return NoiseUtils.TestGround(x,z);
-				default:
-					return 0;
+				layers[i].max = GetMax(i);
 			}
 		}
-		public override int LayerMaxHeight(int layerIndex) { return 100; }
-	}
-	public class LowLands : Biome
-	{
-		public LowLands()
+		public float GetMax(int index)
 		{
-			layerTypes = new Blocks.Types[] {Blocks.Types.STONE, Blocks.Types.STONE};
-			cut = false;
+			if(index == 0) return 1;
+			else return layers[index - 1].min;
+		}
+		public BiomeLayer LayerBelow(BiomeLayer layer)
+		{
+			for(int i = 0; i < layers.Length; i++)
+			{
+				if(layer == layers[i]) return layers[i+1];
+			}
+			return null;
+		}
+		public BiomeLayer LayerAbove(BiomeLayer layer)
+		{
+			for(int i = 0; i < layers.Length; i++)
+			{
+				if(layer == layers[i]) return layers[i-1];
+			}
+			return null;
 		}
 
-		public override float LayerHeight(int x, int z, int layerIndex)
+		public float BaseNoise(int x, int z)
 		{
-			switch(layerIndex)
-			{
-				case 0:
-					return NoiseUtils.LowLandsTest(x,z);
-				case 1:
-					return NoiseUtils.LowLandsTest(x,z);
-				default:
-					return 0;
-			}
+			return NoiseUtils.BrownianMotion((x*0.002f), (z*0.002f)*2, 3, 0.3f);
 		}
+
+		public BiomeLayer GetLayer(float pixelNoise)
+		{
+			for(int i = 0; i < layers.Length; i++)
+			{
+				if(layers[i].IsHere(pixelNoise))
+				{
+					return layers[i];
+				}
+			}
+			return layers[0];
+		}	
 	}
 
 	//	TODO: proper biome implementation
@@ -97,37 +159,110 @@ public class TerrainGenerator
 	{		
 		int chunkSize = World.chunkSize;
 
-
-		//	Initialise list of height maps
-		column.heightMaps = new int[Biome.numberOfLayers][,];
+		column.heightMap = new int[chunkSize,chunkSize];
 
 		//	Iterate over layers in biome
-		for(int l = 0; l < Biome.numberOfLayers; l++)
-		{
-			column.heightMaps[l] = new int[chunkSize,chunkSize];
+		for(int x = 0; x < chunkSize; x++)
+			for(int z = 0; z < chunkSize; z++)
+			{
+				int gx = (int)(x+column.position.x);
+				int gz = (int)(z+column.position.z);
 
-			for(int x = 0; x < chunkSize; x++)
-				for(int z = 0; z < chunkSize; z++)
+				float baseNoise = defaultBiome.BaseNoise(gx, gz);
+				BiomeLayer layer = defaultBiome.GetLayer(baseNoise);
+
+				float layerNoise = layer.Noise(gx, gz);
+
+				//column.heightMap[x,z] = (int)Mathf.Lerp(0, layer.maxHeight, baseNoise * layer.Noise(gx, gz));	//	//
+
+				
+				//	Default to layer values
+				float bottomNoiseMedian = 0;
+				float bottomHeightMedian = 0;
+				bool smoothBottom = false;
+
+				float topNoiseMedian = 0;
+				float topHeightMedian = 0;
+				bool smoothTop = false;
+
+				float bottomGradient = GetGradient(baseNoise, layer.min);
+				float topGradient = GetGradient(baseNoise, layer.max);
+
+				if(bottomGradient != 2 && layer.min != 0)
 				{
+					smoothBottom = true;
+					BiomeLayer adjacentLayer = defaultBiome.LayerBelow(layer);
+					float adjacentNoise = adjacentLayer.Noise(gx, gz);
+					int adjacentHeight = adjacentLayer.maxHeight;
 
-					GenerateLayerHeight(x, z,
-										column,
-										l);
-				}				
-		}
+					bottomNoiseMedian = (layer.Noise(gx, gz) + adjacentNoise) / 2;
+					bottomHeightMedian = (layer.maxHeight + adjacentHeight) / 2;
+
+					//bottomNoiseMedian = Mathf.Lerp(bottomNoiseMedian, layerNoise, bottomGradient);
+					//bottomHeightMedian = Mathf.Lerp(bottomHeightMedian, layer.maxHeight, bottomGradient);
+				}
+				
+				if(topGradient != 2 && layer.max != 1)
+				{
+					smoothTop = true;
+					BiomeLayer adjacentLayer = defaultBiome.LayerAbove(layer);
+					float adjacentNoise = adjacentLayer.Noise(gx, gz);
+					int adjacentHeight = adjacentLayer.maxHeight;
+
+					topNoiseMedian = (layer.Noise(gx, gz) + adjacentNoise) / 2;
+					topHeightMedian = (layer.maxHeight + adjacentHeight) / 2;
+
+					//topNoiseMedian = Mathf.Lerp(topNoiseMedian, layerNoise, topGradient);
+					//topHeightMedian = Mathf.Lerp(topHeightMedian, layer.maxHeight, topGradient);
+				}
+
+				float finalNoise;
+				float finalHeight;
+
+				if(smoothBottom && smoothTop)
+				{
+					float gradient = (topGradient + bottomGradient) / 2;
+					float noiseMedian = (topNoiseMedian + bottomNoiseMedian) / 2;
+					float heightMedian = (topHeightMedian + bottomHeightMedian) / 2;
+
+					finalNoise = Mathf.Lerp(noiseMedian, layerNoise, gradient);
+					finalHeight = Mathf.Lerp(heightMedian, layer.maxHeight, gradient);
+				}
+				else if(smoothBottom)
+				{
+					finalNoise = Mathf.Lerp(bottomNoiseMedian, layerNoise, bottomGradient);
+					finalHeight = Mathf.Lerp(bottomHeightMedian, layer.maxHeight, bottomGradient);
+				}
+				else if(smoothTop)
+				{
+					finalNoise = Mathf.Lerp(topNoiseMedian, layerNoise, topGradient);
+					finalHeight = Mathf.Lerp(topHeightMedian, layer.maxHeight, topGradient);
+				}
+				else
+				{
+					finalNoise = layerNoise;
+					finalHeight = layer.maxHeight;
+				}
+
+				column.heightMap[x,z] = (int)Mathf.Lerp(0, finalHeight, baseNoise * finalNoise);
+
+				column.CheckHighest(column.heightMap[x,z]);
+				column.CheckLowest(column.heightMap[x,z]);				
+			}				
+		
 
 		column.cuts = new int[chunkSize,chunkSize][];
 		
-		for(int x = 0; x < chunkSize; x++)
+		/*for(int x = 0; x < chunkSize; x++)
 			for(int z = 0; z < chunkSize; z++)
 			{
 				GenerateCuts(x, z,
 							 column,
 							 GetBiome((int)(x+column.position.x), (int)(z+column.position.z)));
-			}
+			}*/
 	}
 
-	void GenerateLayerHeight(int x, int z, World.Column column, int layer)
+	/*void GenerateLayerHeight(int x, int z, World.Column column, int layer)
 	{
 		int gx = (int)(x+column.position.x);
 		int gz = (int)(z+column.position.z);
@@ -168,8 +303,9 @@ public class TerrainGenerator
 			//	Highest point
 			column.CheckHighest(height);
 		}
-	}
-	void GenerateCuts(int x, int z, World.Column column, Biome biome, float frequency = 0.025f, int octaves = 1, int maxDepth = 20, float chance = 0.42f)
+	}*/
+
+	/*void GenerateCuts(int x, int z, World.Column column, Biome biome, float frequency = 0.025f, int octaves = 1, int maxDepth = 20, float chance = 0.42f)
 	{
 		if(!biome.cut) return;
 		//	Start and finish heights
@@ -179,7 +315,7 @@ public class TerrainGenerator
 		bool cutStarted = false;
 
 		//	Current height of surface
-		int surfaceHeight = column.heightMaps[biome.layerTypes.Length - 1][x,z] + 1;
+		int surfaceHeight = column.heightMap[x,z] + 1;
 
 		//	Iterate over column of blocks from depth to surface
 		for(int y = surfaceHeight - maxDepth; y <= surfaceHeight; y++)
@@ -199,5 +335,5 @@ public class TerrainGenerator
 				else column.cuts[x,z][1] = y;
 			}
 		}			
-	}
+	}*/
 }

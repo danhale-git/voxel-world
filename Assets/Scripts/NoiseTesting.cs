@@ -25,7 +25,7 @@ public class NoiseTesting : MonoBehaviour
 	[System.Serializable]
 	public struct Highlight
 	{
-		public float max;
+		public float min;
 		public Color color;
 	}
 
@@ -111,11 +111,11 @@ public class NoiseTesting : MonoBehaviour
 					for(int i = 0; i < highlights.Count; i++)
 					{
 						Highlight hl = highlights[i];
-						float min;
-						if(i == 0) min = 0;
-						else min = highlights[i-1].max;
+						float max;
+						if(i == 0) max = 1;
+						else max = highlights[i-1].min;
 
-						if(noise < hl.max && noise > min)
+						if(noise > hl.min && noise < max)
 						{							
 							texture.SetPixel(_x, _y, hl.color * noiseColor);
 							highlighted = true;

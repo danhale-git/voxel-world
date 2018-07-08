@@ -19,7 +19,7 @@ public class World : MonoBehaviour
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 10;
+	public static int viewDistance = 8;
 	//	Size of all chunks
 	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
@@ -117,7 +117,7 @@ public class World : MonoBehaviour
 		public Vector3 position;
 		public Chunk.Status spawnStatus;
 		public bool sizeCalculated = false;
-		public int[][,] heightMaps;
+		public int[,] heightMap;
 		public int[,][] cuts;
 
 		public int highestPoint = 0;

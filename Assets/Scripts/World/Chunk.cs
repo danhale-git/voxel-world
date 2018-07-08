@@ -74,7 +74,7 @@ public class Chunk
 		World.debug.Output("Chunks generated", world.chunksGenerated.ToString());
 
 		World.Column column = World.Column.Get(position);
-		int[][,] heightMaps = column.heightMaps;
+		int[,] heightMap = column.heightMap;
 
 		bool hasAir = false;
 		bool hasBlocks = false;
@@ -82,41 +82,25 @@ public class Chunk
 		//	Iterate over all blocks in chunk
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
-			{
-				//TODO: Add convenience functions to Column for layer/cut comparisons
-				for(int l = 0; l < heightMaps.Length; l++)
+			{				
+				//	Generate column
+				for(int y = 0; y < size; y++)
 				{
-					int previousLayerHeight;
-					int layerHeight = heightMaps[l][x,z];
-					if(l == 0)
-						previousLayerHeight = 0;
-					else
-						previousLayerHeight = heightMaps[l-1][x,z];
-					
-					//	Generate column
-					for(int y = 0; y < size; y++)
+					int voxel = (int) (y + this.position.y);
+					//	Set block type
+					if (voxel <= heightMap[x,z])
 					{
-						int voxel = (int) (y + this.position.y);
-						//	Set block type
-						if(column.cuts[x,z] != null && voxel > column.cuts[x,z][0] && voxel < column.cuts[x,z][1])
-						{
-							blockTypes[x,y,z] = Blocks.Types.AIR;
-							if(!hasAir)
-								hasAir = true;
-						}
-						else if (voxel <= layerHeight && (l == 0 || voxel > previousLayerHeight) )
-						{
-							blockTypes[x,y,z] = TerrainGenerator.GetBiome((int)(x+position.x), (int)(z+position.z)).layerTypes[l];
-							if(!hasBlocks)
-								hasBlocks = true;	
-						}
-						else if(l == heightMaps.Length - 1 && voxel > layerHeight)
-						{
-							blockTypes[x,y,z] = Blocks.Types.AIR;
-							if(!hasAir)
-								hasAir = true;
-						}
+						blockTypes[x,y,z] = TerrainGenerator.defaultBiome.GetLayer(TerrainGenerator.defaultBiome.BaseNoise(x+(int)position.x,z+(int)position.z)).surfaceBlock;
+						if(!hasBlocks)
+							hasBlocks = true;	
 					}
+					else if(voxel > heightMap[x,z])
+					{
+						blockTypes[x,y,z] = Blocks.Types.AIR;
+						if(!hasAir)
+							hasAir = true;
+					}
+					
 				}
 			}
 	
@@ -127,7 +111,7 @@ public class Chunk
 			composition = Composition.SOLID;
 		else if(hasAir && hasBlocks)
 			composition = Composition.MIX;
-		
+
 		status = Status.GENERATED;
 	}
 

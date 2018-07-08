@@ -25,6 +25,21 @@ public static class NoiseUtils
 		//	Level out areas lower than levelHeight and return
 		return LevelOutAtMin(levelHeight, 0.75f, height);
 	}
+	
+	public static float HillyPlateusTest(int x, int z)
+	{	
+		float source = BrownianMotion(x * 0.01f, z * 0.01f, 3, 0.2f);
+		float subtract = BrownianMotion(x * 0.012f, z * 0.012f, 3, 0.25f);
+		float difference = 0;
+		if(subtract > source)
+		{
+			difference = subtract - source;
+		}
+
+		float height = source - difference;
+
+		return LevelOutAtMax(0.6f, 0.7f, height);
+	}
 
 	#region Terrains
 
@@ -120,7 +135,7 @@ public static class NoiseUtils
 	}
 
 	//	Level out terrain softly above max height
-	static float LevelOutAtMax(	int max,			//	Height after which terrain is levelled out
+	static float LevelOutAtMax(	float max,			//	Height after which terrain is levelled out
 								float flatness,		//	Flatness of levelled areas (1 for completely flat, 0 for no flattening)
 								float value)		//	Value to be checked and possibly levelled
 	{
