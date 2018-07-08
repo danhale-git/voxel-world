@@ -273,7 +273,6 @@ public class PlayerController : MonoBehaviour {
 				Debug.Log(World.VoxelOwner(voxel));
 			}
 			world.RemoveChunk(chunk.position);
-			Debug.Log(chunk.position);
 		}
 	}
 

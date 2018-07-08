@@ -65,6 +65,7 @@ public class TerrainLibrary
 	public class BiomeLayer
 	{
 		public float maxMargin = 0.05f;
+		public bool cut = false;
 		public float min;
 		public float max;
 		public int maxHeight;
@@ -75,7 +76,8 @@ public class TerrainLibrary
 			if( pixelNoise >= min && pixelNoise < max) return true;
 			return false;
 		}
-		public virtual float Noise(int x, int z) { return 0; } 
+		public virtual float Noise(int x, int z) { return 0; }
+		public virtual float CutNoise(int x, int y, int z) { return 0; } 
 	}
 
 	#endregion
@@ -89,11 +91,30 @@ public class TerrainLibrary
 			min = 0.71f;
 			maxHeight = 220;
 			surfaceBlock = Blocks.Types.STONE;
+			//cut = true;
 		}
 		public override float Noise(int x, int z)
 		{
-			return NoiseUtils.BrownianMotion(x * 0.015f, z * 0.015f, 3, 0.2f);
-		} 
+			float noise = NoiseUtils.BrownianMotion(x * 0.015f, z * 0.015f, 3, 0.2f);
+			noise = NoiseUtils.ReverseTroughs(noise);
+
+			float inverseNoise = NoiseUtils.BrownianMotion(x * 0.015f, z * 0.03f, 3, 0.2f);
+
+			if(inverseNoise > noise)
+			{
+				noise -= (inverseNoise - noise);
+			}
+
+			return ((noise*3) + NoiseUtils.Rough(x, z, 1)) / 4;
+			//return noise * (1 + (NoiseUtils.Rough(x, z, 1) / 2));
+		}
+
+
+
+		/*public override float CutNoise(int x, int y, int z)
+		{
+			return NoiseUtils.BrownianMotion3D(x, y, z, 0.05f, 1);
+		}*/
 	}
 	public class Mountainous : BiomeLayer
 	{

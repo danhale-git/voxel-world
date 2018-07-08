@@ -118,7 +118,8 @@ public class World : MonoBehaviour
 		public Chunk.Status spawnStatus;
 		public bool sizeCalculated = false;
 		public int[,] heightMap;
-		public int[,][] cuts;
+		public int[,][] cuts = new int[chunkSize,chunkSize][];
+		public TerrainLibrary.BiomeLayer[,] biomeLayers = new TerrainLibrary.BiomeLayer[chunkSize,chunkSize];
 
 		public int highestPoint = 0;
 		public int topChunkGenerate;

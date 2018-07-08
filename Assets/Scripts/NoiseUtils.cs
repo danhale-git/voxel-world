@@ -54,6 +54,15 @@ public static class NoiseUtils
 		return value;	
 	}
 
+	public static float ReverseTroughs(float value)
+	{
+		if(value < 0.5f)
+		{
+			return 0.5f + (0.5f - value);
+		}
+		else return value;
+	}
+
 	//	Level out terrain softly at below min height
 	static float LevelOutAtMin(	float min,			//	Height after which terrain is levelled out
 								float flatness,		//	Flatness of levelled areas (1 for completely flat, 0 for no flattening)

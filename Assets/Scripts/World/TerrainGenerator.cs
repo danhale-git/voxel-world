@@ -38,6 +38,8 @@ public class TerrainGenerator
 				//	Base noise to map biome layers and base height
 				float baseNoise = defaultBiome.BaseNoise(gx, gz);
 				TerrainLibrary.BiomeLayer layer = defaultBiome.GetLayer(baseNoise);
+				column.biomeLayers[x,z] = layer;
+				TerrainLibrary.BiomeLayer adjacentLayer = null;
 
 				//	Layer detail to overlay
 				float layerNoise = layer.Noise(gx, gz);
@@ -56,7 +58,7 @@ public class TerrainGenerator
 				//	Smooth to above layer
 				if(bottomGradient != 2 && layer.min != 0)
 				{
-					TerrainLibrary.BiomeLayer adjacentLayer = defaultBiome.LayerBelow(layer);
+					adjacentLayer = defaultBiome.LayerBelow(layer);
 
 					//	Find mid point between two layers
 					float otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
@@ -69,7 +71,7 @@ public class TerrainGenerator
 				//	Smooth to below layer
 				else if(topGradient != 2 && layer.max != 1)
 				{
-					TerrainLibrary.BiomeLayer adjacentLayer = defaultBiome.LayerAbove(layer);
+					adjacentLayer = defaultBiome.LayerAbove(layer);
 
 					float otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
 					float otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;
@@ -90,50 +92,38 @@ public class TerrainGenerator
 
 				//	Update highest and lowest in column
 				column.CheckHighest(column.heightMap[x,z]);
-				column.CheckLowest(column.heightMap[x,z]);				
-			}				
-		
+				column.CheckLowest(column.heightMap[x,z]);
 
-		column.cuts = new int[chunkSize,chunkSize][];
-		
-		/*for(int x = 0; x < chunkSize; x++)
-			for(int z = 0; z < chunkSize; z++)
-			{
-				GenerateCuts(x, z,
-							 column,
-							 GetBiome((int)(x+column.position.x), (int)(z+column.position.z)));
-			}*/
+				/* //	//	Cuts	//	//
+
+				if(!layer.cut) continue;
+
+				//	Current height of surface
+				int surfaceHeight = column.heightMap[x,z] + 1;
+
+				float chance = 0.42f;
+				int maxDepth = 20;
+
+				//	Iterate over column of blocks from depth to surface
+				for(int y = surfaceHeight - maxDepth; y <= surfaceHeight; y++)
+				{
+					//	Procedurally generated 3d 'caves'
+					float cutNoise = layer.CutNoise(gx, y, gz);
+
+					if(cutNoise < chance)
+					{
+						if(column.cuts[x,z] == null)
+						{
+							column.cuts[x,z] = new int[2];
+							//	Bottom of cut
+							column.cuts[x,z][0] = y;
+							column.CheckLowest(y);
+						}
+						//		Top of cut
+						else column.cuts[x,z][1] = y;
+					}
+				}*/
+			}				
 	}
 
-	/*void GenerateCuts(int x, int z, World.Column column, Biome biome, float frequency = 0.025f, int octaves = 1, int maxDepth = 20, float chance = 0.42f)
-	{
-		if(!biome.cut) return;
-		//	Start and finish heights
-		column.cuts[x,z] = new int[2];
-
-		//	Got start of cut awaiting finish
-		bool cutStarted = false;
-
-		//	Current height of surface
-		int surfaceHeight = column.heightMap[x,z] + 1;
-
-		//	Iterate over column of blocks from depth to surface
-		for(int y = surfaceHeight - maxDepth; y <= surfaceHeight; y++)
-		{
-			//	Procedurally generated 3d 'caves'
-			float noise = NoiseUtils.BrownianMotion3D(x + column.position.x, y, z + column.position.z, frequency, octaves);
-			if(noise < chance)
-			{
-				if(!cutStarted)
-				{
-					//	Bottom of cut
-					column.cuts[x,z][0] = y;
-					column.CheckLowest(y);
-					cutStarted = true;
-				}
-				//		Top of cut
-				else column.cuts[x,z][1] = y;
-			}
-		}			
-	}*/
 }

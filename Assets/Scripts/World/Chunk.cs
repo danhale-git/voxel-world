@@ -87,13 +87,25 @@ public class Chunk
 				for(int y = 0; y < size; y++)
 				{
 					int voxel = (int) (y + this.position.y);
+
 					//	Set block type
-					if (voxel <= heightMap[x,z])
+
+					//	Caves
+					if(	column.cuts[x,z] != null && (voxel > column.cuts[x,z][0] &&
+													 voxel < column.cuts[x,z][1]))				
+					{
+						blockTypes[x,y,z] = Blocks.Types.AIR;
+						if(!hasAir)
+							hasAir = true;
+					}
+					//	Terrain
+					else if (voxel <= heightMap[x,z])
 					{
 						blockTypes[x,y,z] = TerrainGenerator.defaultBiome.GetLayer(TerrainGenerator.defaultBiome.BaseNoise(x+(int)position.x,z+(int)position.z)).surfaceBlock;
 						if(!hasBlocks)
 							hasBlocks = true;	
 					}
+					//	Air
 					else if(voxel > heightMap[x,z])
 					{
 						blockTypes[x,y,z] = Blocks.Types.AIR;
