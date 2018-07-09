@@ -64,7 +64,7 @@ public static class NoiseUtils
 	}
 
 	//	Level out terrain softly at below min height
-	static float LevelOutAtMin(	float min,			//	Height after which terrain is levelled out
+	public static float LevelOutAtMin(	float min,			//	Height after which terrain is levelled out
 								float flatness,		//	Flatness of levelled areas (1 for completely flat, 0 for no flattening)
 								float height)		//	Value to be checked and possibly levelled
 	{
@@ -78,7 +78,7 @@ public static class NoiseUtils
 	}
 
 	//	Level out terrain softly above max height
-	static float LevelOutAtMax(	float max,			//	Height after which terrain is levelled out
+	public static float LevelOutAtMax(	float max,			//	Height after which terrain is levelled out
 								float flatness,		//	Flatness of levelled areas (1 for completely flat, 0 for no flattening)
 								float value)		//	Value to be checked and possibly levelled
 	{
@@ -89,6 +89,11 @@ public static class NoiseUtils
 		}
 
 		return value;
+	}
+
+	public static float Noise(int x, int z, int octaves = 2, float persistence = 0.2f, float frequency = 0.01f, int multiplyX = 1, int multiplyZ = 1)
+	{
+		return BrownianMotion((x*frequency)*multiplyX, (z*frequency)*multiplyZ, octaves, persistence);
 	}
 
 	//	Brownian Motion (Perlin Noise)

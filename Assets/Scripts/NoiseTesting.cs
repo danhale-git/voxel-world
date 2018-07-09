@@ -39,11 +39,6 @@ public class NoiseTesting : MonoBehaviour
 	public float multiplyX;
 	public float multiplyY;
 
-	
-
-	public float redMin;
-	public float redMax;
-
     void Start()
 	{
         spriteRenderer = GetComponent<SpriteRenderer>();

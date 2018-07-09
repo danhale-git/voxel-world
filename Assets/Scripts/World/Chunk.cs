@@ -82,7 +82,8 @@ public class Chunk
 		//	Iterate over all blocks in chunk
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
-			{				
+			{		
+				TerrainLibrary.Biome biome = TerrainGenerator.defaultBiome;	
 				//	Generate column
 				for(int y = 0; y < size; y++)
 				{
@@ -90,18 +91,10 @@ public class Chunk
 
 					//	Set block type
 
-					//	Caves
-					if(	column.cuts[x,z] != null && (voxel > column.cuts[x,z][0] &&
-													 voxel < column.cuts[x,z][1]))				
-					{
-						blockTypes[x,y,z] = Blocks.Types.AIR;
-						if(!hasAir)
-							hasAir = true;
-					}
 					//	Terrain
-					else if (voxel <= heightMap[x,z])
+					if (voxel <= heightMap[x,z])
 					{
-						blockTypes[x,y,z] = TerrainGenerator.defaultBiome.GetLayer(TerrainGenerator.defaultBiome.BaseNoise(x+(int)position.x,z+(int)position.z)).surfaceBlock;
+						blockTypes[x,y,z] = biome.GetLayer(biome.BaseNoise( x+(int)position.x, z+(int)position.z )).surfaceBlock;
 						if(!hasBlocks)
 							hasBlocks = true;	
 					}

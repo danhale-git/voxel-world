@@ -5,7 +5,7 @@ using UnityEngine;
 public class TerrainGenerator
 {
 	//	Temporary because there is only one biome
-	public static TerrainLibrary.Biome defaultBiome = new TerrainLibrary.Biome();
+	public static TerrainLibrary.Biome defaultBiome = new TerrainLibrary.TestBiome();
 
 	//	Return 2 if outside margin from border
 	//	else return 0 - 1 value representing closeness to border
@@ -93,36 +93,6 @@ public class TerrainGenerator
 				//	Update highest and lowest in column
 				column.CheckHighest(column.heightMap[x,z]);
 				column.CheckLowest(column.heightMap[x,z]);
-
-				/* //	//	Cuts	//	//
-
-				if(!layer.cut) continue;
-
-				//	Current height of surface
-				int surfaceHeight = column.heightMap[x,z] + 1;
-
-				float chance = 0.42f;
-				int maxDepth = 20;
-
-				//	Iterate over column of blocks from depth to surface
-				for(int y = surfaceHeight - maxDepth; y <= surfaceHeight; y++)
-				{
-					//	Procedurally generated 3d 'caves'
-					float cutNoise = layer.CutNoise(gx, y, gz);
-
-					if(cutNoise < chance)
-					{
-						if(column.cuts[x,z] == null)
-						{
-							column.cuts[x,z] = new int[2];
-							//	Bottom of cut
-							column.cuts[x,z][0] = y;
-							column.CheckLowest(y);
-						}
-						//		Top of cut
-						else column.cuts[x,z][1] = y;
-					}
-				}*/
 			}				
 	}
 
