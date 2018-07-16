@@ -124,7 +124,7 @@ public class TerrainLibrary
 		{
 			public MidLands()
 			{
-				min = 0.3f;
+				min = 0.5f;
 				maxHeight = 150;
 				surfaceBlock = Blocks.Types.DIRT;
 			}
@@ -139,7 +139,7 @@ public class TerrainLibrary
 		{
 			public TopLands()
 			{
-				min = 0.5f;
+				min = 0.7f;
 				maxHeight = 200;
 				surfaceBlock = Blocks.Types.STONE;
 			}

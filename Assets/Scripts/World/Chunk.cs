@@ -94,7 +94,8 @@ public class Chunk
 					//	Terrain
 					if (voxel <= heightMap[x,z])
 					{
-						blockTypes[x,y,z] = biome.GetLayer(biome.BaseNoise( x+(int)position.x, z+(int)position.z )).surfaceBlock;
+						blockTypes[x,y,z] = column.biomeLayers[x,z].surfaceBlock;
+
 						if(!hasBlocks)
 							hasBlocks = true;	
 					}

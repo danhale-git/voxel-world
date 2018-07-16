@@ -7,6 +7,8 @@ public class TerrainGenerator
 	//	Temporary because there is only one biome
 	public static TerrainLibrary.Biome defaultBiome = new TerrainLibrary.TestBiome();
 
+	int seed = 1847236;
+
 	//	Return 2 if outside margin from border
 	//	else return 0 - 1 value representing closeness to border
 	public static float GetGradient(float biomeNoise, float border = 0.5f, float margin = 0.05f)
@@ -32,8 +34,8 @@ public class TerrainGenerator
 			for(int z = 0; z < chunkSize; z++)
 			{
 				//	Global voxel column coordinates
-				int gx = (int)(x+column.position.x);
-				int gz = (int)(z+column.position.z);
+				int gx = (int)(x+column.position.x + seed);
+				int gz = (int)(z+column.position.z + seed);
 
 				//	Base noise to map biome layers and base height
 				float baseNoise = defaultBiome.BaseNoise(gx, gz);
