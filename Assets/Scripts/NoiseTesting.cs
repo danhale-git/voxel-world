@@ -12,16 +12,76 @@ public class NoiseTesting : MonoBehaviour
     private SpriteRenderer spriteRenderer;
 	private RectTransform rectTrans;
 
-	public enum Algorithm {Brownian, Perlin, Moutainous}
-
 	public Vector2 offset = new Vector2(0, 0);
 	
-	public Algorithm algorithm;
 	public int scrollSpeed;
 	public int gridSize;
-
 	public int size = 1024;
-	public float frequency;
+
+	#region FastNoise
+
+	[Header("FASTNOISE")]
+
+	// Use this to access FastNoise functions
+	public FastNoise fastNoise = new FastNoise();
+
+	public string noiseName = "Default Noise";
+
+	public int seed = 1337;
+	public float frequency = 0.01f;
+	public FastNoise.Interp interp = FastNoise.Interp.Quintic;
+	public FastNoise.NoiseType noiseType = FastNoise.NoiseType.Simplex;
+	
+	public int octaves = 3;
+	public float lacunarity = 2.0f;
+	public float gain = 0.5f;
+	public FastNoise.FractalType fractalType = FastNoise.FractalType.FBM;
+	
+	public FastNoise.CellularDistanceFunction cellularDistanceFunction = FastNoise.CellularDistanceFunction.Euclidean;
+	public FastNoise.CellularReturnType cellularReturnType = FastNoise.CellularReturnType.CellValue;
+	public FastNoiseUnity cellularNoiseLookup = null;
+	public int cellularDistanceIndex0 = 0;
+	public int cellularDistanceIndex1 = 1;
+	public float cellularJitter = 0.45f;
+
+	public float gradientPerturbAmp = 1.0f;
+
+#if UNITY_EDITOR
+	public bool generalSettingsFold = true;
+	public bool fractalSettingsFold = false;
+	public bool cellularSettingsFold = false;
+	public bool positionWarpSettingsFold = false;
+#endif
+
+	void Awake()
+	{
+		SaveSettings();
+	}
+
+	public void SaveSettings()
+	{
+		fastNoise.SetSeed(seed);
+		fastNoise.SetFrequency(frequency);
+		fastNoise.SetInterp(interp);
+		fastNoise.SetNoiseType(noiseType);
+
+		fastNoise.SetFractalOctaves(octaves);
+		fastNoise.SetFractalLacunarity(lacunarity);
+		fastNoise.SetFractalGain(gain);
+		fastNoise.SetFractalType(fractalType);
+
+		fastNoise.SetCellularDistanceFunction(cellularDistanceFunction);
+		fastNoise.SetCellularReturnType(cellularReturnType);
+		fastNoise.SetCellularJitter(cellularJitter);
+		fastNoise.SetCellularDistance2Indicies(cellularDistanceIndex0, cellularDistanceIndex1);
+
+		if (cellularNoiseLookup)
+			fastNoise.SetCellularNoiseLookup(cellularNoiseLookup.fastNoise);
+
+		fastNoise.SetGradientPerturbAmp(gradientPerturbAmp);
+	}
+
+	#endregion
 
 	[System.Serializable]
 	public struct Highlight
@@ -29,15 +89,7 @@ public class NoiseTesting : MonoBehaviour
 		public float min;
 		public Color color;
 	}
-
 	public List<Highlight> highlights;
-
-	[Header("Brownian only")]
-	public int octaves;
-	public float persistence;
-
-	public float multiplyX;
-	public float multiplyY;
 
     void Start()
 	{
@@ -70,17 +122,7 @@ public class NoiseTesting : MonoBehaviour
 
 	public float GetPixelNoise(int x, int y)
 	{
-		switch(algorithm)
-		{
-			case Algorithm.Brownian:
-				return NoiseUtils.BrownianMotion((x*frequency)*multiplyX, (y*frequency)*multiplyY, octaves, persistence);
-			case Algorithm.Perlin:
-				return Mathf.PerlinNoise((x*frequency)*multiplyX, (y*frequency)*multiplyY);
-			case Algorithm.Moutainous:
-				return NoiseUtils.BrownianMotion((x*0.002f), (y*0.002f)*2, 3, 0.3f);
-			default:
-				return 0;
-		}
+		return fastNoise.GetNoise(x, y);
 	}
     
 	public void Noise()
@@ -120,29 +162,11 @@ public class NoiseTesting : MonoBehaviour
 					if(!highlighted)
 						texture.SetPixel(_x, _y, noiseColor);
 				} 
-				
 			}
 		
 		texture.Apply();
 		Sprite mySprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector3(0.5f, 0.5f));
 		mySprite.name = "noiseImage";
 		spriteRenderer.sprite = mySprite;
-	}
-  
-	void Update()
-	{
-		if(Input.GetKeyDown(KeyCode.Space)) Noise();
-	}
-
-	class ObjectBuilderScript : MonoBehaviour 
-	{
-		public GameObject obj;
-		public Vector3 spawnPoint;
-
-		
-		public void BuildObject()
-		{
-			Instantiate(obj, spawnPoint, Quaternion.identity);
-		}
 	}
 }

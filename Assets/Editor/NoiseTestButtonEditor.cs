@@ -12,6 +12,7 @@ public class NoiseTestButtonEditor : Editor
         NoiseTesting myScript = (NoiseTesting)target;
         if(GUILayout.Button("Make noise"))
         {
+            myScript.SaveSettings();
             myScript.Noise();
         }
 
