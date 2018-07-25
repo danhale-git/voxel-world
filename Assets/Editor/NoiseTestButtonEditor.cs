@@ -13,7 +13,21 @@ public class NoiseTestButtonEditor : Editor
         if(GUILayout.Button("Make noise"))
         {
             myScript.SaveSettings();
-            myScript.Noise();
+
+            switch(myScript.noiseMode)
+            {
+                case NoiseTesting.NoiseMode.Draw:
+                    myScript.Noise();
+                    break;
+
+                case NoiseTesting.NoiseMode.Log1Noise:
+                    myScript.LogNoise();
+                    break;
+
+                case NoiseTesting.NoiseMode.LogRandomNoise:
+                    myScript.LogRandomNoise();
+                    break;
+            }
         }
 
         if(GUILayout.Button("Up"))

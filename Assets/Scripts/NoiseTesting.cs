@@ -11,20 +11,23 @@ public class NoiseTesting : MonoBehaviour
 	private Texture2D texture;
     private SpriteRenderer spriteRenderer;
 	private RectTransform rectTrans;
+	public enum NoiseMode {Draw, Log1Noise, LogRandomNoise}
 
+	public bool autoRefresh = false;
+	public bool showGrid = true;
+	public NoiseMode noiseMode;
 	public Vector2 offset = new Vector2(0, 0);
-	
 	public int scrollSpeed;
 	public int gridSize;
 	public int size = 1024;
 
 	#region FastNoise
 
-	[Header("FASTNOISE")]
 
 	// Use this to access FastNoise functions
 	public FastNoise fastNoise = new FastNoise();
 
+	[Header("FASTNOISE")]
 	public string noiseName = "Default Noise";
 
 	public int seed = 1337;
@@ -122,13 +125,32 @@ public class NoiseTesting : MonoBehaviour
 
 	public float GetPixelNoise(int x, int y)
 	{
-		return fastNoise.GetNoise(x, y);
+		return Mathf.InverseLerp(-1, 1, fastNoise.GetNoise(x, y));
+		//return fastNoise.GetNoise(x, y);
+	}
+
+	public void LogNoise()
+	{
+        Debug.Log( GetPixelNoise((int)offset.x, (int)offset.y) );
+	}
+    public void LogRandomNoise()
+	{
+        Debug.Log( GetPixelNoise(Random.Range(0, 20000), Random.Range(0, 20000)) );
+	}
+
+
+	void OnValidate()
+	{
+		if(!autoRefresh) return;
+
+		SaveSettings();
+		Noise();
 	}
     
 	public void Noise()
 	{
+		Debug.Log("Generated Noise");
 		texture = new Texture2D(size, size);
-		Debug.Log("Generating noise");
 		for(int x = 0; x < size; x++)
 			for(int y = 0; y < size; y++)
 			{
@@ -141,7 +163,7 @@ public class NoiseTesting : MonoBehaviour
 	
 				Color noiseColor = new Color(noise, noise, noise, 1);
 				
-				if(x % gridSize == 0 || y % gridSize == 0)
+				if((x % gridSize == 0 || y % gridSize == 0) && showGrid)
 					texture.SetPixel(_x, _y, new Color(0, 1, 0, 1) * noiseColor);
 				else
 				{
