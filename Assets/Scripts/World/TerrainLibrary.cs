@@ -82,6 +82,8 @@ public class TerrainLibrary
 		public float max;
 		public int maxHeight;
 		public Blocks.Types surfaceBlock;
+		protected FastNoise noiseGen = new FastNoise();
+
 
 		public bool IsHere(float pixelNoise)
 		{
@@ -112,10 +114,12 @@ public class TerrainLibrary
 				min = 0.0f;
 				maxHeight = 100;
 				surfaceBlock = Blocks.Types.LIGHTGRASS;
+
+				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
 			}
 			public override float Noise(int x, int z)
 			{
-				float noise = NoiseUtils.BrownianMotion(x * 0.015f, z * 0.015f, 3, 0.2f);
+				float noise = noiseGen.GetNoise01(x, z);
 				return NoiseUtils.LevelOutAtMax(50, 0.5f, noise);
 			}
 		}

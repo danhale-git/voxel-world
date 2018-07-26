@@ -48,14 +48,15 @@ public class TerrainGenerator
 
 				//	Make sure gradient margins don't overlap
 				float margin = (layer.max - layer.min) / 2;
+				//	Clamp margin at max
 				margin = margin > layer.maxMargin ? layer.maxMargin : margin;
 
 				//	Returns 0 - 1 gradient if in margin else returns 2
 				float bottomGradient = GetGradient(baseNoise, layer.min, margin);
 				float topGradient = GetGradient(baseNoise, layer.max, margin);
 
-				float smoothedNoise;
-				float smoothedHeight;
+				float smoothedLayerNoise;
+				float smoothedLayerHeight;
 
 				//	Smooth to above layer
 				if(bottomGradient != 2 && layer.min != 0)
@@ -67,8 +68,8 @@ public class TerrainGenerator
 					float otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;
 
 					//	Lerp from mid point to layer using gradient
-					smoothedNoise = Mathf.Lerp(otherNoiseMedian, layerNoise, bottomGradient);
-					smoothedHeight = Mathf.Lerp(otherHeightMedian, layer.maxHeight, bottomGradient);
+					smoothedLayerNoise = Mathf.Lerp(otherNoiseMedian, layerNoise, bottomGradient);
+					smoothedLayerHeight = Mathf.Lerp(otherHeightMedian, layer.maxHeight, bottomGradient);
 				}
 				//	Smooth to below layer
 				else if(topGradient != 2 && layer.max != 1)
@@ -78,19 +79,19 @@ public class TerrainGenerator
 					float otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
 					float otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;
 
-					smoothedNoise = Mathf.Lerp(otherNoiseMedian, layerNoise, topGradient);
-					smoothedHeight = Mathf.Lerp(otherHeightMedian, layer.maxHeight, topGradient);
+					smoothedLayerNoise = Mathf.Lerp(otherNoiseMedian, layerNoise, topGradient);
+					smoothedLayerHeight = Mathf.Lerp(otherHeightMedian, layer.maxHeight, topGradient);
 				}
 				//	Not within margin distance of another layer
 				else
 				{
 					//	Default to layer height
-					smoothedNoise = layerNoise;
-					smoothedHeight = layer.maxHeight;
+					smoothedLayerNoise = layerNoise;
+					smoothedLayerHeight = layer.maxHeight;
 				}
 
 				//	Final height value
-				column.heightMap[x,z] = (int)Mathf.Lerp(0, smoothedHeight, baseNoise * smoothedNoise);
+				column.heightMap[x,z] = (int)Mathf.Lerp(0, smoothedLayerHeight, baseNoise * smoothedLayerNoise);
 
 				//	Update highest and lowest in column
 				column.CheckHighest(column.heightMap[x,z]);

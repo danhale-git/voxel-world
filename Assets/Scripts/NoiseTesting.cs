@@ -149,6 +149,8 @@ public class NoiseTesting : MonoBehaviour
     
 	public void Noise()
 	{
+		if(gameObject.activeInHierarchy == false) return;
+		
 		Debug.Log("Generated Noise");
 		texture = new Texture2D(size, size);
 		for(int x = 0; x < size; x++)
