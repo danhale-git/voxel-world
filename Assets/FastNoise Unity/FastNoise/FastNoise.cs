@@ -431,6 +431,12 @@ public class FastNoise
 		return ((hash & 4) == 0 ? -a : a) + ((hash & 2) == 0 ? -b : b) + ((hash & 1) == 0 ? -c : c);
 	}
 
+	//	RETURN NOISE BETWEEN 0 & 1
+	public FN_DECIMAL GetNoise01(FN_DECIMAL x, FN_DECIMAL y)
+	{
+		return UnityEngine.Mathf.InverseLerp(-1, 1, GetNoise(x, y));
+	}
+
 	public FN_DECIMAL GetNoise(FN_DECIMAL x, FN_DECIMAL y, FN_DECIMAL z)
 	{
 		x *= m_frequency;
