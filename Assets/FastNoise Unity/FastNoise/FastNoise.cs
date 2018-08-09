@@ -512,12 +512,6 @@ public class FastNoise
 		}
 	}
 
-	//	RETURN NOISE BETWEEN 0 & 1
-	public FN_DECIMAL GetNoise01(FN_DECIMAL x, FN_DECIMAL y)
-	{
-		return UnityEngine.Mathf.InverseLerp(-1, 1, GetNoise(x, y));
-	}
-
 	public FN_DECIMAL GetNoise(FN_DECIMAL x, FN_DECIMAL y)
 	{
 		x *= m_frequency;
