@@ -5,11 +5,23 @@ using UnityEngine;
 public class TerrainLibrary
 {
 	#region Base
+
+	//	Represents the whole game world
+	//	Generates biomes areas using cellular noise
+	public class WorldBiomes
+	{
+		protected FastNoise noiseGen = new FastNoise();
+		protected List<Biome> biomes;
+
+		public virtual Biome GetBiome(int x, int z) {return null;}
+	}
+
 	//	Represents a large area of land
-	//	Contains sub-biomes with their own hieghtmaps
+	//	Contains sub-biomes with their own heightmaps
 	public class Biome
 	{
 		protected BiomeLayer[] layers;
+		protected FastNoise noiseGen = new FastNoise();
 
 		public Biome()
 		{		
@@ -28,7 +40,7 @@ public class TerrainLibrary
 		//	Default noise for biomes etc
 		public virtual float BaseNoise(int x, int z)
 		{
-			return NoiseUtils.BrownianMotion((x*0.002f), (z*0.002f)*2, 3, 0.3f);
+			return noiseGen.GetNoise01(x, z);
 		}
 
 		//	Layer has a min parameter, max is above layer's min
@@ -95,10 +107,49 @@ public class TerrainLibrary
 
 	#endregion
 
+	#region TestWorld
+
+	public class TestWorld : WorldBiomes
+	{
+		public TestWorld()
+		{
+			noiseGen.SetNoiseType(FastNoise.NoiseType.Cellular);
+			noiseGen.SetCellularReturnType(FastNoise.CellularReturnType.CellValue);
+			noiseGen.SetFrequency(0.005f);
+
+			biomes = new List<Biome>
+			{
+				new TestBiome(),
+				new TestBiome2()
+			};
+		}
+
+		public override Biome GetBiome(int x, int z)
+		{
+			float noise = noiseGen.GetNoise01(x, z);
+			if(noise < 0.5f)
+			{
+				return biomes[0];
+			}
+			else
+			{
+				return biomes[1];
+			}
+		}
+	}
+
+	#endregion
+
 	#region TestBiome
 
 	public class TestBiome : Biome
 	{
+		public TestBiome() : base()
+		{
+			noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			noiseGen.SetFrequency(0.005f);
+			noiseGen.SetSeed(26235);
+		}
 		protected override BiomeLayer[] Layers()
 		{
 			return new BiomeLayer[3] {	new TopLands(),
@@ -164,6 +215,13 @@ public class TerrainLibrary
 
 	public class TestBiome2 : Biome
 	{
+		public TestBiome2() : base()
+		{
+			noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			noiseGen.SetFrequency(0.005f);
+			noiseGen.SetSeed(67546);
+		}
+
 		protected override BiomeLayer[] Layers()
 		{
 			return new BiomeLayer[3] {	new TopLands(),

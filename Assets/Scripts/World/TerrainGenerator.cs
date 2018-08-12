@@ -6,6 +6,7 @@ public class TerrainGenerator
 {
 	//	Temporary because there is only one biome
 	public static TerrainLibrary.Biome defaultBiome = new TerrainLibrary.TestBiome();
+	public static TerrainLibrary.WorldBiomes defaultWorld = new TerrainLibrary.TestWorld();
 
 	int seed = 1847236;
 
@@ -24,7 +25,9 @@ public class TerrainGenerator
 	//	Generate height maps
 	// 	Smooth between biome layers
 	public void GetTopologyData(World.Column column)
-	{		
+	{	
+		TerrainLibrary.WorldBiomes world = defaultWorld;
+
 		int chunkSize = World.chunkSize;
 
 		column.heightMap = new int[chunkSize,chunkSize];
@@ -37,9 +40,11 @@ public class TerrainGenerator
 				int gx = (int)(x+column.position.x + seed);
 				int gz = (int)(z+column.position.z + seed);
 
+				TerrainLibrary.Biome biome = world.GetBiome(gx, gz);
+
 				//	Base noise to map biome layers and base height
-				float baseNoise = defaultBiome.BaseNoise(gx, gz);
-				TerrainLibrary.BiomeLayer layer = defaultBiome.GetLayer(baseNoise);
+				float baseNoise = biome.BaseNoise(gx, gz);
+				TerrainLibrary.BiomeLayer layer = biome.GetLayer(baseNoise);
 				column.biomeLayers[x,z] = layer;
 				TerrainLibrary.BiomeLayer adjacentLayer = null;
 
@@ -61,7 +66,7 @@ public class TerrainGenerator
 				//	Smooth to above layer
 				if(bottomGradient != 2 && layer.min != 0)
 				{
-					adjacentLayer = defaultBiome.LayerBelow(layer);
+					adjacentLayer = biome.LayerBelow(layer);
 
 					//	Find mid point between two layers
 					float otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
@@ -74,7 +79,7 @@ public class TerrainGenerator
 				//	Smooth to below layer
 				else if(topGradient != 2 && layer.max != 1)
 				{
-					adjacentLayer = defaultBiome.LayerAbove(layer);
+					adjacentLayer = biome.LayerAbove(layer);
 
 					float otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
 					float otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;
