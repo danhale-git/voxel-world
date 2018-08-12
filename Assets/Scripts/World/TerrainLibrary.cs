@@ -31,8 +31,6 @@ public class TerrainLibrary
 			for(int i = 0; i < layers.Length; i++)
 			{
 				layers[i].max = GetMax(i);
-				//	make sure margins do not cross in thin layers
-				float margin = (layers[i].max - layers[i].min / 2);
 			}
 		}
 		protected virtual BiomeLayer[] Layers() { return null; }

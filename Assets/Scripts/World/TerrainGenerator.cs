@@ -95,6 +95,10 @@ public class TerrainGenerator
 					smoothedLayerHeight = layer.maxHeight;
 				}
 
+				//	Find median between all adjacent biomes
+				//	Interpolate between smoothed noise and adjacent biome smoothed noise
+				//	Do this in separate function, using this code to find adjacent biome heights
+
 				//	Final height value
 				column.heightMap[x,z] = (int)Mathf.Lerp(0, smoothedLayerHeight, baseNoise * smoothedLayerNoise);
 
