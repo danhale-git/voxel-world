@@ -45,7 +45,8 @@ public class World : MonoBehaviour
 		terrain = new TerrainGenerator();
 
 		//	Create initial chunks
-		LoadChunks(player.transform.position, viewDistance);
+		//	Must always be multiple of ChunkSize
+		LoadChunks(VoxelOwner(player.transform.position), viewDistance);
 	}
 
 	#region World Generation
@@ -361,6 +362,7 @@ public class World : MonoBehaviour
 		Chunk chunk;
 		if(!chunks.TryGetValue(VoxelOwner(voxel), out chunk))
 		{
+			Debug.Log("can't find chunk at " + VoxelOwner(voxel));
 			return false;
 		}
 

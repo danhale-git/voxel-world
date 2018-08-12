@@ -56,7 +56,7 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetButtonDown("Fire1") && !Input.GetKeyDown(KeyCode.LeftControl))
 		{
 			if(Input.GetKey(KeyCode.LeftShift))
-				DeleteChunk(Ray());
+				DebugAdjacentCells(Ray());
 			else if(Input.GetKey(KeyCode.LeftAlt))
 				Redraw(Ray());
 			else
@@ -176,8 +176,6 @@ public class PlayerController : MonoBehaviour {
 
 		if (Physics.Raycast(ray, out hit))
 		{
-			Debug.Log(hit.collider.gameObject.transform.position);
-			Debug.Log(hit.collider.gameObject.name);
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
@@ -238,6 +236,26 @@ public class PlayerController : MonoBehaviour {
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
 		}
+	}
+
+	void DebugAdjacentCells(Ray ray)
+	{
+		RaycastHit hit;
+
+		if (Physics.Raycast(ray, out hit))
+		{
+			//	get voxel position
+			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
+			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+
+			TerrainGenerator.defaultWorld.noiseGen.TestCellular(voxel.x, voxel.z);
+			Debug.Log("get noise: " + TerrainGenerator.defaultWorld.noiseGen.GetNoise01(voxel.x, voxel.z));
+			//Debug.Log("column biome: " + TerrainGenerator.defaultWorld.GetBiome((int)voxel.x, (int)voxel.z));
+
+
+			AddBlock(ray);
+			
+		}		
 	}
 
 	void DebugBiomeGradient(Ray ray)

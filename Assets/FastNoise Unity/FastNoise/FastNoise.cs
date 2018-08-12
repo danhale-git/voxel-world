@@ -434,7 +434,11 @@ public class FastNoise
 	//	RETURN NOISE BETWEEN 0 & 1
 	public FN_DECIMAL GetNoise01(FN_DECIMAL x, FN_DECIMAL y)
 	{
-		return (GetNoise(x, y) * 0.5f) + 0.5f;
+		return To01(GetNoise(x, y));
+	}
+	private FN_DECIMAL To01(FN_DECIMAL value)
+	{
+		return (value * 0.5f) + 0.5f;
 	}
 
 	public FN_DECIMAL GetNoise(FN_DECIMAL x, FN_DECIMAL y, FN_DECIMAL z)
@@ -2037,6 +2041,37 @@ public class FastNoise
 			default:
 				return SingleCellular2Edge(x, y);
 		}
+	}
+
+	public void TestCellular(FN_DECIMAL x, FN_DECIMAL y)
+	{
+		int xr = FastRound(x);
+		int yr = FastRound(y);
+
+		FN_DECIMAL distance = 999999;
+		int xc = 0, yc = 0;
+		
+		for (int xi = xr - 1; xi <= xr + 1; xi++)
+				{
+					for (int yi = yr - 1; yi <= yr + 1; yi++)
+					{
+						Float2 vec = CELL_2D[Hash2D(m_seed, xi, yi) & 255];
+
+						FN_DECIMAL vecX = xi - x + vec.x * m_cellularJitter;
+						FN_DECIMAL vecY = yi - y + vec.y * m_cellularJitter;
+
+						FN_DECIMAL newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
+
+						if (newDistance < distance)
+						{
+							distance = newDistance;
+							xc = xi;
+							yc = yi;
+						}
+					}
+				}
+
+		UnityEngine.Debug.Log( "single: " + To01(ValCoord2D(m_seed, xc, yc)) );
 	}
 
 	private FN_DECIMAL SingleCellular(FN_DECIMAL x, FN_DECIMAL y)
