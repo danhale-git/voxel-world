@@ -5,7 +5,6 @@ using UnityEngine;
 public class TerrainLibrary
 {
 	#region Base
-
 	//	Represents a large area of land
 	//	Contains sub-biomes with their own hieghtmaps
 	public class Biome
@@ -91,10 +90,10 @@ public class TerrainLibrary
 			return false;
 		}
 		public virtual float Noise(int x, int z) { return 0; }
-		public virtual float CutNoise(int x, int y, int z) { return 0; } 
+		//public virtual float CutNoise(int x, int y, int z) { return 0; } 
 	}
 
-	#endregion	
+	#endregion
 
 	#region TestBiome
 
@@ -113,7 +112,7 @@ public class TerrainLibrary
 			{
 				min = 0.0f;
 				maxHeight = 100;
-				surfaceBlock = Blocks.Types.LIGHTGRASS;
+				surfaceBlock = Blocks.Types.STONE;
 
 				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
 			}
@@ -130,11 +129,13 @@ public class TerrainLibrary
 			{
 				min = 0.5f;
 				maxHeight = 150;
-				surfaceBlock = Blocks.Types.DIRT;
+				surfaceBlock = Blocks.Types.STONE;
+
+				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
 			}
 			public override float Noise(int x, int z)
 			{
-				float noise = NoiseUtils.BrownianMotion(x * 0.015f, z * 0.015f, 3, 0.2f);
+				float noise = noiseGen.GetNoise01(x, z);
 				return noise;
 			}
 		}
@@ -146,11 +147,78 @@ public class TerrainLibrary
 				min = 0.7f;
 				maxHeight = 200;
 				surfaceBlock = Blocks.Types.STONE;
+
+				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
 			}
 			public override float Noise(int x, int z)
 			{
-				float noise = NoiseUtils.BrownianMotion(x * 0.015f, z * 0.015f, 3, 0.2f);
+				float noise = noiseGen.GetNoise01(x, z);
 				return noise;
+			}
+		}
+	}
+
+	#endregion
+
+	#region TestBiome2
+
+	public class TestBiome2 : Biome
+	{
+		protected override BiomeLayer[] Layers()
+		{
+			return new BiomeLayer[3] {	new TopLands(),
+										new MidLands(),
+										new LowLands()};
+		}
+
+		public class LowLands : BiomeLayer
+		{
+			public LowLands()
+			{
+				min = 0.0f;
+				maxHeight = 150;
+				surfaceBlock = Blocks.Types.LIGHTGRASS;
+
+				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			}
+			public override float Noise(int x, int z)
+			{
+				float noise = noiseGen.GetNoise01(x, z);
+				return noise;
+			}
+		}
+
+		public class MidLands : BiomeLayer
+		{
+			public MidLands()
+			{
+				min = 0.5f;
+				maxHeight = 200;
+				surfaceBlock = Blocks.Types.LIGHTGRASS;
+
+				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			}
+			public override float Noise(int x, int z)
+			{
+				float noise = noiseGen.GetNoise01(x, z);
+				return NoiseUtils.LevelOutAtMax(100, 0.5f, noise);
+			}
+		}
+
+		public class TopLands : BiomeLayer
+		{
+			public TopLands()
+			{
+				min = 0.7f;
+				maxHeight = 250;
+				surfaceBlock = Blocks.Types.LIGHTGRASS;
+
+				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			}
+			public override float Noise(int x, int z)
+			{
+				float noise = noiseGen.GetNoise01(x, z);
+				return NoiseUtils.LevelOutAtMax(150, 0.5f, noise);								
 			}
 		}
 	}
@@ -159,7 +227,7 @@ public class TerrainLibrary
 
 	#region MountainLowLands
 
-	public class MountainLowLandsBiome : Biome
+	/*public class MountainLowLandsBiome : Biome
 	{
 		protected override BiomeLayer[] Layers()
 		{
@@ -245,7 +313,7 @@ public class TerrainLibrary
 				return NoiseUtils.LowLandsTest(x, z);
 			} 
 		}
-	}
+	}*/
 
 	#endregion
 	

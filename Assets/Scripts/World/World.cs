@@ -45,7 +45,7 @@ public class World : MonoBehaviour
 		terrain = new TerrainGenerator();
 
 		//	Create initial chunks
-		LoadChunks(new Vector3(1024,0,512), viewDistance);
+		LoadChunks(player.transform.position, viewDistance);
 	}
 
 	#region World Generation
