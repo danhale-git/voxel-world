@@ -84,6 +84,22 @@ public class PlayerController : MonoBehaviour {
 		}
 		
 	}
+
+	void CheckCellularNoise()
+	{
+		RaycastHit hit;
+
+		if (Physics.Raycast(Ray(), out hit))
+		{
+			//	get voxel position
+			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
+			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+
+			World.debug.Output("biome cellular: ", Mathf.InverseLerp(-1, 1, TerrainGenerator.defaultWorld.noiseGen.GetCellular((int)voxel.x, (int)voxel.z)).ToString());
+
+		}
+
+	}
 	
 	//	Raycast down to find current chunk
 	//	Generate more chunks if player has moved to a new chunk
@@ -95,6 +111,8 @@ public class PlayerController : MonoBehaviour {
 			return;
 		}
 		updateTimer = Time.fixedTime;
+
+		CheckCellularNoise();
 
 		//	Raycast to chunk below player
         RaycastHit hit;
@@ -248,10 +266,14 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			TerrainGenerator.defaultWorld.noiseGen.TestCellular(voxel.x, voxel.z);
-			Debug.Log("get noise: " + TerrainGenerator.defaultWorld.noiseGen.GetNoise01(voxel.x, voxel.z));
-			//Debug.Log("column biome: " + TerrainGenerator.defaultWorld.GetBiome((int)voxel.x, (int)voxel.z));
+			float[] noise = TerrainGenerator.defaultWorld.noiseGen.TestCellular(voxel.x, voxel.z, 1);
 
+			float[] distance = TerrainGenerator.defaultWorld.noiseGen.TestCellularDist(voxel.x, voxel.z, 1);
+
+			for(int i = 0; i < noise.Length; i++)
+			{
+				Debug.Log(distance[i] + " " + noise[i]);
+			}
 
 			AddBlock(ray);
 			

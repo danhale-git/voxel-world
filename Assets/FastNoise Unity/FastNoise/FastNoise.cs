@@ -2043,14 +2043,21 @@ public class FastNoise
 		}
 	}
 
-	public void TestCellular(FN_DECIMAL x, FN_DECIMAL y)
+	//	Getting CellValue of adjacent cells
+	public FN_DECIMAL[] TestCellular(FN_DECIMAL x, FN_DECIMAL y, float maxDistance)
 	{
+		x *= m_frequency;
+		y *= m_frequency;
+
 		int xr = FastRound(x);
 		int yr = FastRound(y);
 
-		FN_DECIMAL distance = 999999;
-		int xc = 0, yc = 0;
-		
+		FN_DECIMAL[] distance = { 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999 };
+		FN_DECIMAL[] noise = new FN_DECIMAL[9];
+
+		//	Track current index of eligible cells
+		int eligibleCount = 0;
+
 		for (int xi = xr - 1; xi <= xr + 1; xi++)
 				{
 					for (int yi = yr - 1; yi <= yr + 1; yi++)
@@ -2062,16 +2069,58 @@ public class FastNoise
 
 						FN_DECIMAL newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
 
-						if (newDistance < distance)
+						//	Check if cell is closer than maxDistance
+						//	Assign array values if so
+						if (newDistance < maxDistance)
 						{
-							distance = newDistance;
-							xc = xi;
-							yc = yi;
+							distance[eligibleCount] = newDistance;
+							noise[eligibleCount] = To01(ValCoord2D(m_seed, xi, yi));
+							eligibleCount++;
 						}
 					}
 				}
 
-		UnityEngine.Debug.Log( "single: " + To01(ValCoord2D(m_seed, xc, yc)) );
+		return noise;
+	}
+
+	//	Same but returns distance for debugging
+	public FN_DECIMAL[] TestCellularDist(FN_DECIMAL x, FN_DECIMAL y, float maxDistance)
+	{
+		x *= m_frequency;
+		y *= m_frequency;
+
+		int xr = FastRound(x);
+		int yr = FastRound(y);
+
+		FN_DECIMAL[] distance = { 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999 };
+		FN_DECIMAL[] noise = new FN_DECIMAL[9];
+
+		//	Track current index of eligible cells
+		int eligibleCount = 0;
+
+		for (int xi = xr - 1; xi <= xr + 1; xi++)
+				{
+					for (int yi = yr - 1; yi <= yr + 1; yi++)
+					{
+						Float2 vec = CELL_2D[Hash2D(m_seed, xi, yi) & 255];
+
+						FN_DECIMAL vecX = xi - x + vec.x * m_cellularJitter;
+						FN_DECIMAL vecY = yi - y + vec.y * m_cellularJitter;
+
+						FN_DECIMAL newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
+
+						//	Check if cell is closer than maxDistance
+						//	Assign array values if so
+						if (newDistance < maxDistance)
+						{
+							distance[eligibleCount] = newDistance;
+							noise[eligibleCount] = To01(ValCoord2D(m_seed, xi, yi));
+							eligibleCount++;
+						}
+					}
+				}
+
+		return distance;
 	}
 
 	private FN_DECIMAL SingleCellular(FN_DECIMAL x, FN_DECIMAL y)

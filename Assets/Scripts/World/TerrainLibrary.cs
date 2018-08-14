@@ -114,36 +114,68 @@ public class TerrainLibrary
 			noiseGen.SetNoiseType(FastNoise.NoiseType.Cellular);
 			noiseGen.SetCellularReturnType(FastNoise.CellularReturnType.CellValue);
 			noiseGen.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Natural);
-			noiseGen.SetFrequency(0.008f);
+			noiseGen.SetFrequency(0.01f);
 
 			biomes = new List<Biome>
 			{
 				new TestBiome(),
 				new TestBiome2(),
 				new TestBiome3(),
-				new TestBiome4()
+				new TestBiome4(),
+				new TestBiome5(),
+				new TestBiome6(),
+				new TestBiome7(),
+				new TestBiome8(),
+				new TestBiome9(),
+				new TestBiome10()
+
 			};
 		}
 
 		public override Biome GetBiome(int x, int z)
 		{
 			float noise = noiseGen.GetNoise01(x, z);
-			if(noise < 0.25f)
+			if(noise < 0.1f)
 			{
 				return biomes[0];
 			}
-			else if(noise < 0.5f)
+			else if(noise < 0.2f)
 			{
 				return biomes[1];
 			}
-			else if(noise < 0.75f)
+			else if(noise < 0.3f)
 			{
 				return biomes[2];
 			}
-			else
+			else if(noise < 0.4f)
 			{
 				return biomes[3];
 			}
+			else if(noise < 0.5f)
+			{
+				return biomes[4];
+			}
+			else if(noise < 0.6f)
+			{
+				return biomes[5];
+			}
+			else if(noise < 0.7f)
+			{
+				return biomes[6];
+			}
+			else if(noise < 0.8f)
+			{
+				return biomes[7];
+			}
+			else if(noise < 0.9f)
+			{
+				return biomes[8];
+			}
+			else
+			{
+				return biomes[9];
+			}
+			
 		}
 	}
 
@@ -161,9 +193,7 @@ public class TerrainLibrary
 		}
 		protected override BiomeLayer[] Layers()
 		{
-			return new BiomeLayer[3] {	new TopLands(),
-										new MidLands(),
-										new LowLands()};
+			return new BiomeLayer[1] {new LowLands()};
 		}
 
 		public class LowLands : BiomeLayer
@@ -178,49 +208,10 @@ public class TerrainLibrary
 			}
 			public override float Noise(int x, int z)
 			{
-				float noise = noiseGen.GetNoise01(x, z);
-				return NoiseUtils.LevelOutAtMax(50, 0.5f, noise);
-			}
-		}
-
-		public class MidLands : BiomeLayer
-		{
-			public MidLands()
-			{
-				min = 0.5f;
-				maxHeight = 150;
-				surfaceBlock = Blocks.Types.STONE;
-
-				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
-			}
-			public override float Noise(int x, int z)
-			{
-				float noise = noiseGen.GetNoise01(x, z);
-				return noise;
-			}
-		}
-
-		public class TopLands : BiomeLayer
-		{
-			public TopLands()
-			{
-				min = 0.7f;
-				maxHeight = 200;
-				surfaceBlock = Blocks.Types.STONE;
-
-				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
-			}
-			public override float Noise(int x, int z)
-			{
-				float noise = noiseGen.GetNoise01(x, z);
-				return noise;
+				return 1;
 			}
 		}
 	}
-
-	#endregion
-
-	#region TestBiome2
 
 	public class TestBiome2 : Biome
 	{
@@ -228,14 +219,11 @@ public class TerrainLibrary
 		{
 			noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
 			noiseGen.SetFrequency(0.005f);
-			noiseGen.SetSeed(67546);
+			noiseGen.SetSeed(26235);
 		}
-
 		protected override BiomeLayer[] Layers()
 		{
-			return new BiomeLayer[3] {	new TopLands(),
-										new MidLands(),
-										new LowLands()};
+			return new BiomeLayer[1] {new LowLands()};
 		}
 
 		public class LowLands : BiomeLayer
@@ -243,56 +231,17 @@ public class TerrainLibrary
 			public LowLands()
 			{
 				min = 0.0f;
-				maxHeight = 150;
-				surfaceBlock = Blocks.Types.LIGHTGRASS;
+				maxHeight = 80;
+				surfaceBlock = Blocks.Types.STONE;
 
 				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
 			}
 			public override float Noise(int x, int z)
 			{
-				float noise = noiseGen.GetNoise01(x, z);
-				return noise;
-			}
-		}
-
-		public class MidLands : BiomeLayer
-		{
-			public MidLands()
-			{
-				min = 0.5f;
-				maxHeight = 200;
-				surfaceBlock = Blocks.Types.LIGHTGRASS;
-
-				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
-			}
-			public override float Noise(int x, int z)
-			{
-				float noise = noiseGen.GetNoise01(x, z);
-				return NoiseUtils.LevelOutAtMax(100, 0.5f, noise);
-			}
-		}
-
-		public class TopLands : BiomeLayer
-		{
-			public TopLands()
-			{
-				min = 0.7f;
-				maxHeight = 250;
-				surfaceBlock = Blocks.Types.LIGHTGRASS;
-
-				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
-			}
-			public override float Noise(int x, int z)
-			{
-				float noise = noiseGen.GetNoise01(x, z);
-				return NoiseUtils.LevelOutAtMax(150, 0.5f, noise);								
+				return 1;
 			}
 		}
 	}
-
-	#endregion
-
-	#region TestBiome3
 
 	public class TestBiome3 : Biome
 	{
@@ -300,14 +249,11 @@ public class TerrainLibrary
 		{
 			noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
 			noiseGen.SetFrequency(0.005f);
-			noiseGen.SetSeed(67546);
+			noiseGen.SetSeed(26235);
 		}
-
 		protected override BiomeLayer[] Layers()
 		{
-			return new BiomeLayer[3] {	new TopLands(),
-										new MidLands(),
-										new LowLands()};
+			return new BiomeLayer[1] {new LowLands()};
 		}
 
 		public class LowLands : BiomeLayer
@@ -315,56 +261,17 @@ public class TerrainLibrary
 			public LowLands()
 			{
 				min = 0.0f;
-				maxHeight = 150;
-				surfaceBlock = Blocks.Types.DIRT;
+				maxHeight = 70;
+				surfaceBlock = Blocks.Types.STONE;
 
 				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
 			}
 			public override float Noise(int x, int z)
 			{
-				float noise = noiseGen.GetNoise01(x, z);
-				return noise;
-			}
-		}
-
-		public class MidLands : BiomeLayer
-		{
-			public MidLands()
-			{
-				min = 0.5f;
-				maxHeight = 200;
-				surfaceBlock = Blocks.Types.DIRT;
-
-				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
-			}
-			public override float Noise(int x, int z)
-			{
-				float noise = noiseGen.GetNoise01(x, z);
-				return NoiseUtils.LevelOutAtMax(100, 0.5f, noise);
-			}
-		}
-
-		public class TopLands : BiomeLayer
-		{
-			public TopLands()
-			{
-				min = 0.7f;
-				maxHeight = 250;
-				surfaceBlock = Blocks.Types.DIRT;
-
-				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
-			}
-			public override float Noise(int x, int z)
-			{
-				float noise = noiseGen.GetNoise01(x, z);
-				return NoiseUtils.LevelOutAtMax(150, 0.5f, noise);								
+				return 1;
 			}
 		}
 	}
-
-	#endregion
-
-	#region TestBiome4
 
 	public class TestBiome4 : Biome
 	{
@@ -372,14 +279,11 @@ public class TerrainLibrary
 		{
 			noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
 			noiseGen.SetFrequency(0.005f);
-			noiseGen.SetSeed(67546);
+			noiseGen.SetSeed(26235);
 		}
-
 		protected override BiomeLayer[] Layers()
 		{
-			return new BiomeLayer[3] {	new TopLands(),
-										new MidLands(),
-										new LowLands()};
+			return new BiomeLayer[1] {new LowLands()};
 		}
 
 		public class LowLands : BiomeLayer
@@ -387,49 +291,194 @@ public class TerrainLibrary
 			public LowLands()
 			{
 				min = 0.0f;
-				maxHeight = 150;
-				surfaceBlock = Blocks.Types.WATER;
+				maxHeight = 60;
+				surfaceBlock = Blocks.Types.STONE;
 
 				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
 			}
 			public override float Noise(int x, int z)
 			{
-				float noise = noiseGen.GetNoise01(x, z);
-				return noise;
+				return 1;
 			}
 		}
+	}
 
-		public class MidLands : BiomeLayer
+	public class TestBiome5 : Biome
+	{
+		public TestBiome5() : base()
 		{
-			public MidLands()
-			{
-				min = 0.5f;
-				maxHeight = 200;
-				surfaceBlock = Blocks.Types.WATER;
-
-				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
-			}
-			public override float Noise(int x, int z)
-			{
-				float noise = noiseGen.GetNoise01(x, z);
-				return NoiseUtils.LevelOutAtMax(100, 0.5f, noise);
-			}
+			noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			noiseGen.SetFrequency(0.005f);
+			noiseGen.SetSeed(26235);
+		}
+		protected override BiomeLayer[] Layers()
+		{
+			return new BiomeLayer[1] {new LowLands()};
 		}
 
-		public class TopLands : BiomeLayer
+		public class LowLands : BiomeLayer
 		{
-			public TopLands()
+			public LowLands()
 			{
-				min = 0.7f;
-				maxHeight = 250;
-				surfaceBlock = Blocks.Types.WATER;
+				min = 0.0f;
+				maxHeight = 50;
+				surfaceBlock = Blocks.Types.STONE;
 
 				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
 			}
 			public override float Noise(int x, int z)
 			{
-				float noise = noiseGen.GetNoise01(x, z);
-				return NoiseUtils.LevelOutAtMax(150, 0.5f, noise);								
+				return 1;
+			}
+		}
+	}
+
+	public class TestBiome6 : Biome
+	{
+		public TestBiome6() : base()
+		{
+			noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			noiseGen.SetFrequency(0.005f);
+			noiseGen.SetSeed(26235);
+		}
+		protected override BiomeLayer[] Layers()
+		{
+			return new BiomeLayer[1] {new LowLands()};
+		}
+
+		public class LowLands : BiomeLayer
+		{
+			public LowLands()
+			{
+				min = 0.0f;
+				maxHeight = 40;
+				surfaceBlock = Blocks.Types.STONE;
+
+				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			}
+			public override float Noise(int x, int z)
+			{
+				return 1;
+			}
+		}
+	}
+
+	public class TestBiome7 : Biome
+	{
+		public TestBiome7() : base()
+		{
+			noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			noiseGen.SetFrequency(0.005f);
+			noiseGen.SetSeed(26235);
+		}
+		protected override BiomeLayer[] Layers()
+		{
+			return new BiomeLayer[1] {new LowLands()};
+		}
+
+		public class LowLands : BiomeLayer
+		{
+			public LowLands()
+			{
+				min = 0.0f;
+				maxHeight = 30;
+				surfaceBlock = Blocks.Types.STONE;
+
+				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			}
+			public override float Noise(int x, int z)
+			{
+				return 1;
+			}
+		}
+	}
+
+	public class TestBiome8 : Biome
+	{
+		public TestBiome8() : base()
+		{
+			noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			noiseGen.SetFrequency(0.005f);
+			noiseGen.SetSeed(26235);
+		}
+		protected override BiomeLayer[] Layers()
+		{
+			return new BiomeLayer[1] {new LowLands()};
+		}
+
+		public class LowLands : BiomeLayer
+		{
+			public LowLands()
+			{
+				min = 0.0f;
+				maxHeight = 20;
+				surfaceBlock = Blocks.Types.STONE;
+
+				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			}
+			public override float Noise(int x, int z)
+			{
+				return 1;
+			}
+		}
+	}
+
+	public class TestBiome9 : Biome
+	{
+		public TestBiome9() : base()
+		{
+			noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			noiseGen.SetFrequency(0.005f);
+			noiseGen.SetSeed(26235);
+		}
+		protected override BiomeLayer[] Layers()
+		{
+			return new BiomeLayer[1] {new LowLands()};
+		}
+
+		public class LowLands : BiomeLayer
+		{
+			public LowLands()
+			{
+				min = 0.0f;
+				maxHeight = 10;
+				surfaceBlock = Blocks.Types.STONE;
+
+				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			}
+			public override float Noise(int x, int z)
+			{
+				return 1;
+			}
+		}
+	}
+
+	public class TestBiome10 : Biome
+	{
+		public TestBiome10() : base()
+		{
+			noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			noiseGen.SetFrequency(0.005f);
+			noiseGen.SetSeed(26235);
+		}
+		protected override BiomeLayer[] Layers()
+		{
+			return new BiomeLayer[1] {new LowLands()};
+		}
+
+		public class LowLands : BiomeLayer
+		{
+			public LowLands()
+			{
+				min = 0.0f;
+				maxHeight = 5;
+				surfaceBlock = Blocks.Types.STONE;
+
+				noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+			}
+			public override float Noise(int x, int z)
+			{
+				return 1;
 			}
 		}
 	}
