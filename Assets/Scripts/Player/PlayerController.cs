@@ -266,13 +266,16 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
+			Debug.Log(TerrainGenerator.defaultWorld.noiseGen.AdjacentCellValue(voxel.x, voxel.z));
+
 			float[] noise = TerrainGenerator.defaultWorld.noiseGen.TestCellular(voxel.x, voxel.z, 1);
 
 			float[] distance = TerrainGenerator.defaultWorld.noiseGen.TestCellularDist(voxel.x, voxel.z, 1);
 
 			for(int i = 0; i < noise.Length; i++)
 			{
-				Debug.Log(distance[i] + " " + noise[i]);
+				if(noise[i] == 0) continue;
+				//Debug.Log(distance[i] + " " + noise[i]);
 			}
 
 			AddBlock(ray);

@@ -2043,6 +2043,48 @@ public class FastNoise
 		}
 	}
 
+	//	Get CellValue of adjacent cell
+	public FN_DECIMAL AdjacentCellValue(FN_DECIMAL x, FN_DECIMAL y)
+	{
+		x *= m_frequency;
+		y *= m_frequency;
+
+		int xr = FastRound(x);
+		int yr = FastRound(y);
+
+		FN_DECIMAL[] distance = { 999999, 999999, 999999, 999999 };
+
+		int xc = 0, yc = 0;
+
+		for (int xi = xr - 1; xi <= xr + 1; xi++)
+				{
+					for (int yi = yr - 1; yi <= yr + 1; yi++)
+					{
+						Float2 vec = CELL_2D[Hash2D(m_seed, xi, yi) & 255];
+
+						FN_DECIMAL vecX = xi - x + vec.x * m_cellularJitter;
+						FN_DECIMAL vecY = yi - y + vec.y * m_cellularJitter;
+
+						FN_DECIMAL newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
+
+						for (int i = m_cellularDistanceIndex1; i > 0; i--)
+						{
+							distance[i] = Math.Max(Math.Min(distance[i], newDistance), distance[i - 1]);
+						}
+
+						if(newDistance <= distance[1] && newDistance > distance[0])
+						{
+							xc = xi;
+							yc = yi;
+						}
+
+						distance[0] = Math.Min(distance[0], newDistance);
+					}
+				}
+
+		return To01(ValCoord2D(m_seed, xc, yc));
+	}
+
 	//	Getting CellValue of adjacent cells
 	public FN_DECIMAL[] TestCellular(FN_DECIMAL x, FN_DECIMAL y, float maxDistance)
 	{
@@ -2065,6 +2107,7 @@ public class FastNoise
 						Float2 vec = CELL_2D[Hash2D(m_seed, xi, yi) & 255];
 
 						FN_DECIMAL vecX = xi - x + vec.x * m_cellularJitter;
+
 						FN_DECIMAL vecY = yi - y + vec.y * m_cellularJitter;
 
 						FN_DECIMAL newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
