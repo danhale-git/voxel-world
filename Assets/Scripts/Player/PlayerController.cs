@@ -95,7 +95,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			World.debug.Output("biome cellular: ", Mathf.InverseLerp(-1, 1, TerrainGenerator.defaultWorld.noiseGen.GetCellular((int)voxel.x, (int)voxel.z)).ToString());
+			World.debug.Output("biome cellular: ", Mathf.InverseLerp(-1, 1, TerrainGenerator.defaultWorld.biomeNoiseGen.GetCellular((int)voxel.x, (int)voxel.z)).ToString());
 
 		}
 
@@ -266,18 +266,10 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			Debug.Log(TerrainGenerator.defaultWorld.noiseGen.AdjacentCellValue(voxel.x, voxel.z));
+			Debug.Log("biome: "+TerrainGenerator.defaultWorld.biomeNoiseGen.AdjacentCellValue(voxel.x, voxel.z));
 
-			float[] noise = TerrainGenerator.defaultWorld.noiseGen.TestCellular(voxel.x, voxel.z, 1);
-
-			float[] distance = TerrainGenerator.defaultWorld.noiseGen.TestCellularDist(voxel.x, voxel.z, 1);
-
-			for(int i = 0; i < noise.Length; i++)
-			{
-				if(noise[i] == 0) continue;
-				//Debug.Log(distance[i] + " " + noise[i]);
-			}
-
+			Debug.Log("edge: "+TerrainGenerator.defaultWorld.edgeNoiseGen.GetNoise(voxel.x, voxel.z));
+			
 			AddBlock(ray);
 			
 		}		
@@ -293,7 +285,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			TerrainLibrary.Biome biome = TerrainGenerator.defaultBiome;
+			TerrainLibrary.Biome biome = TerrainGenerator.defaultWorld.GetBiome((int)voxel.x, (int)voxel.z);
 			float noise = biome.BaseNoise((int)voxel.x, (int)voxel.z);
 			TerrainLibrary.BiomeLayer layer = biome.GetLayer(noise); 
 			Debug.Log("layer: "+layer.min + " - " + layer.max);

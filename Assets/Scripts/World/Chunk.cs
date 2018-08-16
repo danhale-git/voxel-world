@@ -83,7 +83,7 @@ public class Chunk
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
 			{		
-				TerrainLibrary.Biome biome = TerrainGenerator.defaultBiome;	
+				TerrainLibrary.Biome biome = TerrainGenerator.defaultWorld.GetBiome(x,z);	
 				//	Generate column
 				for(int y = 0; y < size; y++)
 				{

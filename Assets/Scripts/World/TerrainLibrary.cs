@@ -10,7 +10,9 @@ public class TerrainLibrary
 	//	Generates biomes areas using cellular noise
 	public class WorldBiomes
 	{
-		public FastNoise noiseGen = new FastNoise();
+		public FastNoise biomeNoiseGen = new FastNoise();
+		public FastNoise edgeNoiseGen = new FastNoise();
+
 		protected List<Biome> biomes;
 
 		public virtual Biome GetBiome(int x, int z) {return null;}
@@ -111,10 +113,15 @@ public class TerrainLibrary
 	{
 		public TestWorld()
 		{
-			noiseGen.SetNoiseType(FastNoise.NoiseType.Cellular);
-			noiseGen.SetCellularReturnType(FastNoise.CellularReturnType.CellValue);
-			noiseGen.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Natural);
-			noiseGen.SetFrequency(0.01f);
+			biomeNoiseGen.SetNoiseType(FastNoise.NoiseType.Cellular);
+			biomeNoiseGen.SetCellularReturnType(FastNoise.CellularReturnType.CellValue);
+			biomeNoiseGen.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Natural);
+			biomeNoiseGen.SetFrequency(0.01f);
+
+			edgeNoiseGen.SetNoiseType(FastNoise.NoiseType.Cellular);
+			edgeNoiseGen.SetCellularReturnType(FastNoise.CellularReturnType.Distance2Sub);
+			edgeNoiseGen.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Natural);
+			edgeNoiseGen.SetFrequency(0.01f);
 
 			biomes = new List<Biome>
 			{
@@ -134,7 +141,7 @@ public class TerrainLibrary
 
 		public override Biome GetBiome(int x, int z)
 		{
-			float noise = noiseGen.GetNoise01(x, z);
+			float noise = biomeNoiseGen.GetNoise01(x, z);
 			if(noise < 0.1f)
 			{
 				return biomes[0];
@@ -176,6 +183,33 @@ public class TerrainLibrary
 				return biomes[9];
 			}
 			
+		}
+	}
+
+	public class TestWorld2 : WorldBiomes
+	{
+		public TestWorld2()
+		{
+			biomeNoiseGen.SetNoiseType(FastNoise.NoiseType.Cellular);
+			biomeNoiseGen.SetCellularReturnType(FastNoise.CellularReturnType.CellValue);
+			biomeNoiseGen.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Natural);
+			biomeNoiseGen.SetFrequency(0.01f);
+
+			edgeNoiseGen.SetNoiseType(FastNoise.NoiseType.Cellular);
+			edgeNoiseGen.SetCellularReturnType(FastNoise.CellularReturnType.Distance2Sub);
+			edgeNoiseGen.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Natural);
+			edgeNoiseGen.SetFrequency(0.01f);
+
+			biomes = new List<Biome>
+			{
+				new MountainLowLandsBiome()
+			};
+		}
+
+		public override Biome GetBiome(int x, int z)
+		{
+			float noise = biomeNoiseGen.GetNoise01(x, z);
+			return biomes[0];		
 		}
 	}
 
@@ -487,7 +521,7 @@ public class TerrainLibrary
 
 	#region MountainLowLands
 
-	/*public class MountainLowLandsBiome : Biome
+	public class MountainLowLandsBiome : Biome
 	{
 		protected override BiomeLayer[] Layers()
 		{
@@ -573,7 +607,7 @@ public class TerrainLibrary
 				return NoiseUtils.LowLandsTest(x, z);
 			} 
 		}
-	}*/
+	}
 
 	#endregion
 	

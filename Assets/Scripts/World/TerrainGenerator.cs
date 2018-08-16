@@ -5,8 +5,7 @@ using UnityEngine;
 public class TerrainGenerator
 {
 	//	Temporary because there is only one biome
-	public static TerrainLibrary.Biome defaultBiome = new TerrainLibrary.TestBiome();
-	public static TerrainLibrary.WorldBiomes defaultWorld = new TerrainLibrary.TestWorld();
+	public static TerrainLibrary.WorldBiomes defaultWorld = new TerrainLibrary.TestWorld2();
 
 	//	Return 2 if outside margin from border
 	//	else return 0 - 1 value representing closeness to border
