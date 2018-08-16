@@ -2044,7 +2044,7 @@ public class FastNoise
 	}
 
 	//	Get CellValue of adjacent cell
-	public FN_DECIMAL AdjacentCellValue(FN_DECIMAL x, FN_DECIMAL y)
+	public FN_DECIMAL AdjacentCellValue(FN_DECIMAL x, FN_DECIMAL y, bool debug = false)
 	{
 		x *= m_frequency;
 		y *= m_frequency;
@@ -2055,6 +2055,10 @@ public class FastNoise
 		FN_DECIMAL[] distance = { 999999, 999999, 999999, 999999 };
 
 		int xc = 0, yc = 0;
+
+		int xc0 = 0, yc0 = 0;
+
+		float debugDistance = 0;
 
 		for (int xi = xr - 1; xi <= xr + 1; xi++)
 				{
@@ -2068,19 +2072,39 @@ public class FastNoise
 						FN_DECIMAL newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
 
 						for (int i = m_cellularDistanceIndex1; i > 0; i--)
-						{
 							distance[i] = Math.Max(Math.Min(distance[i], newDistance), distance[i - 1]);
+						
+						if(newDistance <= distance[1])
+						{
+							if(newDistance >= distance[0])
+							{
+								debugDistance = newDistance;
+								xc = xi;
+								yc = yi;
+							}
+							else
+							{
+								debugDistance = distance[0];
+								xc = xc0;
+								yc = yc0;
+							}
+							
 						}
 
-						if(newDistance <= distance[1] && newDistance > distance[0])
+						if(newDistance <= distance[0])
 						{
-							xc = xi;
-							yc = yi;
+							xc0 = xi;
+							yc0 = yi;
 						}
 
 						distance[0] = Math.Min(distance[0], newDistance);
 					}
 				}
+
+		if(debug)
+		{
+			UnityEngine.Debug.Log(distance[1] + "    " + debugDistance);
+		}
 
 		return To01(ValCoord2D(m_seed, xc, yc));
 	}

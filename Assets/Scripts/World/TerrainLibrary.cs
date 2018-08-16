@@ -15,7 +15,8 @@ public class TerrainLibrary
 
 		protected List<Biome> biomes;
 
-		public virtual Biome GetBiome(int x, int z) {return null;}
+		public virtual Biome GetBiome(int x, int z) { return null; }
+		public virtual Biome GetBiome(float noise) { return null; }
 	}
 
 	//	Represents a large area of land
@@ -113,15 +114,16 @@ public class TerrainLibrary
 	{
 		public TestWorld()
 		{
+			float frequency = 0.01f;
 			biomeNoiseGen.SetNoiseType(FastNoise.NoiseType.Cellular);
 			biomeNoiseGen.SetCellularReturnType(FastNoise.CellularReturnType.CellValue);
 			biomeNoiseGen.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Natural);
-			biomeNoiseGen.SetFrequency(0.01f);
+			biomeNoiseGen.SetFrequency(frequency);
 
 			edgeNoiseGen.SetNoiseType(FastNoise.NoiseType.Cellular);
 			edgeNoiseGen.SetCellularReturnType(FastNoise.CellularReturnType.Distance2Sub);
 			edgeNoiseGen.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Natural);
-			edgeNoiseGen.SetFrequency(0.01f);
+			edgeNoiseGen.SetFrequency(frequency);
 
 			biomes = new List<Biome>
 			{
@@ -139,9 +141,8 @@ public class TerrainLibrary
 			};
 		}
 
-		public override Biome GetBiome(int x, int z)
+		public override Biome GetBiome(float noise)
 		{
-			float noise = biomeNoiseGen.GetNoise01(x, z);
 			if(noise < 0.1f)
 			{
 				return biomes[0];
@@ -182,7 +183,11 @@ public class TerrainLibrary
 			{
 				return biomes[9];
 			}
-			
+		}
+
+		public override Biome GetBiome(int x, int z)
+		{
+			return GetBiome(biomeNoiseGen.GetNoise01(x, z));		
 		}
 	}
 
@@ -209,6 +214,11 @@ public class TerrainLibrary
 		public override Biome GetBiome(int x, int z)
 		{
 			float noise = biomeNoiseGen.GetNoise01(x, z);
+			return biomes[0];		
+		}
+
+		public override Biome GetBiome(float noise)
+		{
 			return biomes[0];		
 		}
 	}
