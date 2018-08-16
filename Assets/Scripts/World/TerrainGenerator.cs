@@ -121,7 +121,7 @@ public class TerrainGenerator
 				//	Get biome edge gradient and adjacent biome type
 				float edgeNoise = defaultWorld.edgeNoiseGen.GetNoise(gx, gz);
 
-				if(edgeNoise < 0.2f)	//	DEBUG
+				if(edgeNoise < 0.2f)
 				{
 					edgeNoise = Mathf.InverseLerp(0, 0.2f, edgeNoise);
 
@@ -145,8 +145,6 @@ public class TerrainGenerator
 					baseNoise = currentBiome.baseNoise;
 				}
 
-				baseNoise = 1;	//	DEBUG
-				
 				//	Final height value
 				column.heightMap[x,z] = (int)Mathf.Lerp(0, height, baseNoise * noise);
 
