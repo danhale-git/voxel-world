@@ -4,22 +4,14 @@ using UnityEngine;
 
 public class TerrainGenerator
 {
-	FastNoise roughNoiseGen = new FastNoise(); 
-	//	Temporary because there is only one biome
-	public static TerrainLibrary.WorldBiomes defaultWorld = new TerrainLibrary.Temperate();
+	//	Temporary static reference for debugging
+	public static TerrainLibrary.WorldBiomes defaultWorld = new TerrainLibrary.ExampleWorld();
 
-	public TerrainGenerator()
-	{
-		roughNoiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
-		roughNoiseGen.SetFractalOctaves(2);
-		roughNoiseGen.SetFrequency(0.1f);
-	}
-
-	//	TODO: use this class to unify lerp/smoothing process for layers and biomes
-	private struct SmoothedTopology
+	//	Hold value used in topology smoothing
+	private struct Topology
 	{
 		public readonly float noise, height, baseNoise;
-		public SmoothedTopology(float noise, float height, float baseNoise)
+		public Topology(float noise, float height, float baseNoise)
 		{
 			this.noise = noise;
 			this.height = height;
@@ -27,7 +19,19 @@ public class TerrainGenerator
 		}
 	}
 
-	//	Return 2 if outside margin from border
+	//	Interpolate between one topology and it's median with another
+	private Topology SmoothTopologys(Topology current, Topology other, float interpValue)
+	{
+		float noiseMedian = (current.noise + other.noise) / 2;
+		float heightMedian = (current.height + other.height) / 2;
+		float baseNoiseMedian = (current.baseNoise + other.baseNoise) / 2;
+
+		return new Topology(	Mathf.Lerp(noiseMedian, current.noise, interpValue),
+								Mathf.Lerp(heightMedian, current.height, interpValue),
+								Mathf.Lerp(baseNoiseMedian, current.baseNoise, interpValue));
+	}
+
+	//	Return 2 if outside margin
 	//	else return 0 - 1 value representing closeness to border
 	public static float GetGradient(float biomeNoise, float border = 0.5f, float margin = 0.05f)
 	{
@@ -39,10 +43,9 @@ public class TerrainGenerator
 		return Mathf.InverseLerp(border, border+margin, biomeNoise);			
 	}
 
-	private SmoothedTopology GetBiomeTopology(int x, int z, World.Column column, TerrainLibrary.Biome biome)
+	//	Get biome layer topology and smooth between layers at edges using Perlin or Simplex noise
+	private Topology GetBiomeTopology(int x, int z, World.Column column, TerrainLibrary.Biome biome)
 	{
-		SmoothedTopology topology;
-	
 		//	Global voxel column coordinates
 		int gx = (int)(x+column.position.x);
 		int gz = (int)(z+column.position.z);
@@ -53,62 +56,49 @@ public class TerrainGenerator
 
 		//	If statement prevents biome type from bein overwritten when getting adjacent biome topology
 		if(column.biomeLayers[x,z] == null) column.biomeLayers[x,z] = layer;
-		TerrainLibrary.BiomeLayer adjacentLayer = null;
-
-		//	Layer detail to overlay
-		float layerNoise = layer.Noise(gx, gz);
 
 		//	Make sure gradient margins don't overlap
 		float margin = (layer.max - layer.min) / 2;
 		//	Clamp margin at max
 		margin = margin > layer.maxMargin ? layer.maxMargin : margin;
 
-		//	Returns 0 - 1 gradient if in margin else returns 2
+		Topology currentTopology = new Topology(layer.Noise(gx, gz),
+												layer.maxHeight,
+												baseNoise);
+
 		float bottomGradient = GetGradient(baseNoise, layer.min, margin);
 		float topGradient = GetGradient(baseNoise, layer.max, margin);
-
-		float smoothedLayerNoise;
-		float smoothedLayerHeight;
+		
+		TerrainLibrary.BiomeLayer adjacentLayer = null;
+		float interpValue;
 
 		//	Smooth to above layer
 		if(bottomGradient != 2 && layer.min != 0)
 		{
 			adjacentLayer = biome.layers[layer.index - 1];
-
-			//	Find mid point between two layers
-			float otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
-			float otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;
-
-			//	Lerp from mid point to layer using gradient
-			smoothedLayerNoise = Mathf.Lerp(otherNoiseMedian, layerNoise, bottomGradient);
-			smoothedLayerHeight = Mathf.Lerp(otherHeightMedian, layer.maxHeight, bottomGradient);
+			interpValue = bottomGradient;
 		}
 		//	Smooth to below layer
 		else if(topGradient != 2 && layer.max != 1)
 		{
 			adjacentLayer = biome.layers[layer.index + 1];
-
-			float otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
-			float otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;
-
-			smoothedLayerNoise = Mathf.Lerp(otherNoiseMedian, layerNoise, topGradient);
-			smoothedLayerHeight = Mathf.Lerp(otherHeightMedian, layer.maxHeight, topGradient);
+			interpValue = topGradient;
 		}
 		//	Not within margin distance of another layer
 		else
 		{
-			//	Default to layer height
-			smoothedLayerNoise = layerNoise;
-			smoothedLayerHeight = layer.maxHeight;
+			return new Topology(currentTopology.noise, currentTopology.height, baseNoise);
 		}
 
-		topology = new SmoothedTopology(smoothedLayerNoise, smoothedLayerHeight, baseNoise);
+		Topology adjacentTopology = new Topology(	adjacentLayer.Noise(gx, gz),
+													adjacentLayer.maxHeight,
+													baseNoise);
 
-		return topology;
+		return SmoothTopologys(currentTopology, adjacentTopology, interpValue);
 	}
 
-	//	Generate height maps
-	// 	Smooth between biome layers
+	//	Get biome topology and smooth between biomes if necessary
+	//	using Cellular value and distance-to-edge noise respectively
 	public void GetTopologyData(World.Column column)
 	{	
 		int chunkSize = World.chunkSize;
@@ -122,52 +112,42 @@ public class TerrainGenerator
 				int gx = (int)(x+column.position.x);
 				int gz = (int)(z+column.position.z);
 
-				float noise;
-				float height;
-				float baseNoise;
+				//	Get current biome type
+				TerrainLibrary.Biome currentBiome = defaultWorld.GetBiome(gx, gz);
 
-				TerrainLibrary.Biome biome = defaultWorld.GetBiome(gx, gz);
-
-				//	Get topology for this block column
-				SmoothedTopology currentBiome = GetBiomeTopology(x, z, column, biome);
+				//	Get topology for this pixel
+				Topology currentTolopogy = GetBiomeTopology(x, z, column, currentBiome);
 
 				//	Get biome edge gradient and adjacent biome type
 				float edgeNoise = defaultWorld.edgeNoiseGen.GetNoise(gx, gz);
+				TerrainLibrary.Biome adjacentBiome = defaultWorld.GetBiome(defaultWorld.edgeNoiseGen.AdjacentCellValue(gx, gz));
 
-				TerrainLibrary.Biome adjacent = defaultWorld.GetBiome(defaultWorld.edgeNoiseGen.AdjacentCellValue(gx, gz));
+				Topology finalTopology;
 
-				if(edgeNoise < defaultWorld.smoothRadius && biome != adjacent)
+				//	Within smoothing radius and adjacent biome is different
+				if(edgeNoise < defaultWorld.smoothRadius && currentBiome != adjacentBiome)
 				{
-					edgeNoise = Mathf.InverseLerp(0, defaultWorld.smoothRadius, edgeNoise);
+					float InterpValue = Mathf.InverseLerp(0, defaultWorld.smoothRadius, edgeNoise);
 
-					//	Get topology for this block column if adjacent biome type
-					SmoothedTopology adjacentBiome = GetBiomeTopology(x, z, column, adjacent);
+					//	Get topology for this pixel if adjacent biome type
+					Topology adjacentTopology = GetBiomeTopology(x, z, column, adjacentBiome);
 
-					float noiseMedian = (currentBiome.noise + adjacentBiome.noise) / 2;
-					float heightMedian = (currentBiome.height + adjacentBiome.height) / 2;
-					float baseNoiseMedian = (currentBiome.baseNoise + adjacentBiome.baseNoise) / 2;
-
-					//noise = Mathf.Lerp(noiseMedian, (currentBiome.noise + roughNoiseGen.GetNoise01(gx, gz)) / 2, edgeNoise);
-					noise = Mathf.Lerp(noiseMedian, currentBiome.noise, edgeNoise);
-					height = Mathf.Lerp(heightMedian, currentBiome.height, edgeNoise);
-					baseNoise = Mathf.Lerp(baseNoiseMedian, currentBiome.baseNoise, edgeNoise);
+					finalTopology = SmoothTopologys(currentTolopogy, adjacentTopology, InterpValue);
 				}
 				else
 				{
-					noise = currentBiome.noise;
-					height = currentBiome.height;
-					baseNoise = currentBiome.baseNoise;
+					finalTopology = currentTolopogy;
 				}
 
-				//baseNoise = 1;	//	DEBUG
+				//	Generate final height value for chunk data
+				column.heightMap[x,z] = (int)Mathf.Lerp(0, finalTopology.height, finalTopology.baseNoise * finalTopology.noise);
 
-				//	Final height value
-				column.heightMap[x,z] = (int)Mathf.Lerp(0, height, baseNoise * noise);
-
-				//	Update highest and lowest in column
+				//	Update highest and lowest in chunk column
 				column.CheckHighest(column.heightMap[x,z]);
 				column.CheckLowest(column.heightMap[x,z]);
 
 			}					
 	}
+
+	
 }

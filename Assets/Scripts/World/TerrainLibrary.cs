@@ -9,7 +9,7 @@ public class TerrainLibrary
 	//	Generates biomes areas using cellular noise
 	public class WorldBiomes
 	{
-		//	Distance (FastNoise.NoiseType.Distance2EdgeSub) from the cell edge at which biomes are smoothed
+		//	Distance (FastNoise.NoiseType.Distance2EdgeSub) at which biomes begin smoothing
 		public float smoothRadius = 0.2f;
 
 		public WorldBiomes()
@@ -25,6 +25,8 @@ public class TerrainLibrary
 			edgeNoiseGen.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Natural);
 			edgeNoiseGen.SetFrequency(0.01f);
 		}
+
+		//	Assign next biome's min as max
 		protected void InitialiseBiomes()
 		{
 			for(int i = 0; i < biomes.Length; i++)
@@ -47,6 +49,7 @@ public class TerrainLibrary
 
 		protected Biome[] biomes;
 
+		//	Get biome using position or noise
 		public Biome GetBiome(int x, int z) { return GetBiome( biomeNoiseGen.GetNoise01(x, z) ); }
 		public virtual Biome GetBiome(float noise)
 		{
@@ -139,9 +142,9 @@ public class TerrainLibrary
 
 	#region Derived
 
-	public class Temperate : WorldBiomes
+	public class ExampleWorld : WorldBiomes
 	{
-		public Temperate() : base()
+		public ExampleWorld() : base()
 		{
 			smoothRadius = 0.2f;
 			SetBiomeFrequency(0.01f);
@@ -154,15 +157,6 @@ public class TerrainLibrary
 
 			InitialiseBiomes();
 		}
-
-		//	TODO: have this work like biome noise
-		/*public override Biome GetBiome(float noise)
-		{
-			if(noise > 0.5)
-				return biomes[1];
-			else
-				return biomes[0];		
-		}*/
 	}
 
 	//	Simple hills with flat valleys
