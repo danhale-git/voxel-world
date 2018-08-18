@@ -2103,9 +2103,9 @@ public class FastNoise
 
 		if(debug)
 		{
-			UnityEngine.Debug.Log(distance[1] + "    " + debugDistance);
+			UnityEngine.Debug.Log(distance[1] + " " + debugDistance);
 		}
-
+				
 		return To01(ValCoord2D(m_seed, xc, yc));
 	}
 

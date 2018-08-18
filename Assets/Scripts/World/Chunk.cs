@@ -248,6 +248,13 @@ public class Chunk
 					vertexCount += localVertCount;
 					cols.AddRange(	Enumerable.Repeat(	(Color)Blocks.colors[(int)blockTypes[x,y,z]],
 														localVertCount));
+
+					//	Color blocks to show cellular distance2edge sub noise
+					/*float edgeNoise = TerrainGenerator.defaultWorld.edgeNoiseGen.GetNoise(x + position.x, z + position.z);
+					Color edgeNoiseColor = new Color(edgeNoise, edgeNoise, edgeNoise) * (Color)Blocks.colors[(int)blockTypes[x,y,z]];
+
+					cols.AddRange(	Enumerable.Repeat(	edgeNoiseColor,
+														localVertCount));*/
 				}
 		CreateMesh(verts, norms, tris, cols);
 		status = Status.DRAWN;

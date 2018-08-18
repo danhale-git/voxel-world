@@ -4,8 +4,16 @@ using UnityEngine;
 
 public class TerrainGenerator
 {
+	FastNoise roughNoiseGen = new FastNoise(); 
 	//	Temporary because there is only one biome
-	public static TerrainLibrary.WorldBiomes defaultWorld = new TerrainLibrary.TestWorld();
+	public static TerrainLibrary.WorldBiomes defaultWorld = new TerrainLibrary.Temperate();
+
+	public TerrainGenerator()
+	{
+		roughNoiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+		roughNoiseGen.SetFractalOctaves(2);
+		roughNoiseGen.SetFrequency(0.1f);
+	}
 
 	private struct SmoothedTopology
 	{
@@ -41,7 +49,9 @@ public class TerrainGenerator
 		//	Base noise to map biome layers and base height
 		float baseNoise = biome.BaseNoise(gx, gz);
 		TerrainLibrary.BiomeLayer layer = biome.GetLayer(baseNoise);
-		column.biomeLayers[x,z] = layer;
+
+		//	If statement prevents biome type from bein overwritten when getting adjacent biome topology
+		if(column.biomeLayers[x,z] == null) column.biomeLayers[x,z] = layer;
 		TerrainLibrary.BiomeLayer adjacentLayer = null;
 
 		//	Layer detail to overlay
@@ -115,25 +125,28 @@ public class TerrainGenerator
 				float height;
 				float baseNoise;
 
+				TerrainLibrary.Biome biome = defaultWorld.GetBiome(gx, gz);
+
 				//	Get topology for this block column
-				SmoothedTopology currentBiome = GetBiomeTopology(x, z, column, defaultWorld.GetBiome(gx, gz));
+				SmoothedTopology currentBiome = GetBiomeTopology(x, z, column, biome);
 
 				//	Get biome edge gradient and adjacent biome type
 				float edgeNoise = defaultWorld.edgeNoiseGen.GetNoise(gx, gz);
 
-				if(edgeNoise < 0.2f)
-				{
-					edgeNoise = Mathf.InverseLerp(0, 0.2f, edgeNoise);
+				TerrainLibrary.Biome adjacent = defaultWorld.GetBiome(defaultWorld.edgeNoiseGen.AdjacentCellValue(gx, gz));
 
-					TerrainLibrary.Biome adjacentBiomeType = defaultWorld.GetBiome(defaultWorld.edgeNoiseGen.AdjacentCellValue(gx, gz));
+				if(edgeNoise < defaultWorld.smoothRadius && biome != adjacent)
+				{
+					edgeNoise = Mathf.InverseLerp(0, defaultWorld.smoothRadius, edgeNoise);
 
 					//	Get topology for this block column if adjacent biome type
-					SmoothedTopology adjacentBiome = GetBiomeTopology(x, z, column, adjacentBiomeType);
+					SmoothedTopology adjacentBiome = GetBiomeTopology(x, z, column, adjacent);
 
 					float noiseMedian = (currentBiome.noise + adjacentBiome.noise) / 2;
 					float heightMedian = (currentBiome.height + adjacentBiome.height) / 2;
 					float baseNoiseMedian = (currentBiome.baseNoise + adjacentBiome.baseNoise) / 2;
 
+					//noise = Mathf.Lerp(noiseMedian, (currentBiome.noise + roughNoiseGen.GetNoise01(gx, gz)) / 2, edgeNoise);
 					noise = Mathf.Lerp(noiseMedian, currentBiome.noise, edgeNoise);
 					height = Mathf.Lerp(heightMedian, currentBiome.height, edgeNoise);
 					baseNoise = Mathf.Lerp(baseNoiseMedian, currentBiome.baseNoise, edgeNoise);
@@ -145,6 +158,8 @@ public class TerrainGenerator
 					baseNoise = currentBiome.baseNoise;
 				}
 
+				//baseNoise = 1;	//	DEBUG
+
 				//	Final height value
 				column.heightMap[x,z] = (int)Mathf.Lerp(0, height, baseNoise * noise);
 
@@ -152,8 +167,6 @@ public class TerrainGenerator
 				column.CheckHighest(column.heightMap[x,z]);
 				column.CheckLowest(column.heightMap[x,z]);
 
-			}
-							
+			}					
 	}
-
 }
