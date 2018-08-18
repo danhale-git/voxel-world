@@ -15,6 +15,7 @@ public class TerrainGenerator
 		roughNoiseGen.SetFrequency(0.1f);
 	}
 
+	//	TODO: use this class to unify lerp/smoothing process for layers and biomes
 	private struct SmoothedTopology
 	{
 		public readonly float noise, height, baseNoise;
@@ -72,7 +73,7 @@ public class TerrainGenerator
 		//	Smooth to above layer
 		if(bottomGradient != 2 && layer.min != 0)
 		{
-			adjacentLayer = biome.LayerBelow(layer);
+			adjacentLayer = biome.layers[layer.index - 1];
 
 			//	Find mid point between two layers
 			float otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
@@ -85,7 +86,7 @@ public class TerrainGenerator
 		//	Smooth to below layer
 		else if(topGradient != 2 && layer.max != 1)
 		{
-			adjacentLayer = biome.LayerAbove(layer);
+			adjacentLayer = biome.layers[layer.index + 1];
 
 			float otherNoiseMedian = (layer.Noise(gx, gz) + adjacentLayer.Noise(gx, gz)) / 2;
 			float otherHeightMedian = (layer.maxHeight + adjacentLayer.maxHeight) / 2;

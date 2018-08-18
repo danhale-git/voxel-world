@@ -250,8 +250,9 @@ public class Chunk
 														localVertCount));
 
 					//	Color blocks to show cellular distance2edge sub noise
-					/*float edgeNoise = TerrainGenerator.defaultWorld.edgeNoiseGen.GetNoise(x + position.x, z + position.z);
-					Color edgeNoiseColor = new Color(edgeNoise, edgeNoise, edgeNoise) * (Color)Blocks.colors[(int)blockTypes[x,y,z]];
+					/*//float cellNoise = TerrainGenerator.defaultWorld.edgeNoiseGen.GetNoise(x + position.x, z + position.z);
+					float cellNoise = TerrainGenerator.defaultWorld.biomeNoiseGen.GetNoise(x + position.x, z + position.z);
+					Color edgeNoiseColor = new Color(1 - cellNoise, 1 - cellNoise, 1 - cellNoise);
 
 					cols.AddRange(	Enumerable.Repeat(	edgeNoiseColor,
 														localVertCount));*/
