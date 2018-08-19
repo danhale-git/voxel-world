@@ -2054,10 +2054,13 @@ public class FastNoise
 
 		FN_DECIMAL[] distance = { 999999, 999999, 999999, 999999 };
 
+		//	Store distance[1] index
 		int xc = 0, yc = 0;
 
+		//	Store distance[0] index in case it is assigned to distance[1] later
 		int xc0 = 0, yc0 = 0;
 
+		//	For checking that the store index's corresponding distance matches the distance used for distance2edge
 		float debugDistance = 0;
 
 		for (int xi = xr - 1; xi <= xr + 1; xi++)
@@ -2071,18 +2074,19 @@ public class FastNoise
 
 						FN_DECIMAL newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
 
+						//	TODO: Assign this in the if statement below
 						for (int i = m_cellularDistanceIndex1; i > 0; i--)
 							distance[i] = Math.Max(Math.Min(distance[i], newDistance), distance[i - 1]);
 						
-						if(newDistance <= distance[1])
+						if(newDistance <= distance[1])	//	Math.Min(distance[i], newDistance)
 						{
-							if(newDistance >= distance[0])
+							if(newDistance >= distance[0])	//	Math.Max((newDistance)), distance[i - 1]) true ~20% of the time
 							{
 								debugDistance = newDistance;
 								xc = xi;
 								yc = yi;
 							}
-							else
+							else	//	true ~40% of the time
 							{
 								debugDistance = distance[0];
 								xc = xc0;
@@ -2091,13 +2095,15 @@ public class FastNoise
 							
 						}
 
-						if(newDistance <= distance[0])
+						//	TODO: Assign this in the if statement below
+						distance[0] = Math.Min(distance[0], newDistance);
+
+						if(newDistance <= distance[0])	//	Math.Min(distance[0], newDistance) true ~40% of the time
 						{
+							debugDistance = distance[0];
 							xc0 = xi;
 							yc0 = yi;
 						}
-
-						distance[0] = Math.Min(distance[0], newDistance);
 					}
 				}
 
@@ -2105,89 +2111,8 @@ public class FastNoise
 		{
 			UnityEngine.Debug.Log(distance[1] + " " + debugDistance);
 		}
-				
+			
 		return To01(ValCoord2D(m_seed, xc, yc));
-	}
-
-	//	Getting CellValue of adjacent cells
-	public FN_DECIMAL[] TestCellular(FN_DECIMAL x, FN_DECIMAL y, float maxDistance)
-	{
-		x *= m_frequency;
-		y *= m_frequency;
-
-		int xr = FastRound(x);
-		int yr = FastRound(y);
-
-		FN_DECIMAL[] distance = { 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999 };
-		FN_DECIMAL[] noise = new FN_DECIMAL[9];
-
-		//	Track current index of eligible cells
-		int eligibleCount = 0;
-
-		for (int xi = xr - 1; xi <= xr + 1; xi++)
-				{
-					for (int yi = yr - 1; yi <= yr + 1; yi++)
-					{
-						Float2 vec = CELL_2D[Hash2D(m_seed, xi, yi) & 255];
-
-						FN_DECIMAL vecX = xi - x + vec.x * m_cellularJitter;
-
-						FN_DECIMAL vecY = yi - y + vec.y * m_cellularJitter;
-
-						FN_DECIMAL newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
-
-						//	Check if cell is closer than maxDistance
-						//	Assign array values if so
-						if (newDistance < maxDistance)
-						{
-							distance[eligibleCount] = newDistance;
-							noise[eligibleCount] = To01(ValCoord2D(m_seed, xi, yi));
-							eligibleCount++;
-						}
-					}
-				}
-
-		return noise;
-	}
-
-	//	Same but returns distance for debugging
-	public FN_DECIMAL[] TestCellularDist(FN_DECIMAL x, FN_DECIMAL y, float maxDistance)
-	{
-		x *= m_frequency;
-		y *= m_frequency;
-
-		int xr = FastRound(x);
-		int yr = FastRound(y);
-
-		FN_DECIMAL[] distance = { 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999 };
-		FN_DECIMAL[] noise = new FN_DECIMAL[9];
-
-		//	Track current index of eligible cells
-		int eligibleCount = 0;
-
-		for (int xi = xr - 1; xi <= xr + 1; xi++)
-				{
-					for (int yi = yr - 1; yi <= yr + 1; yi++)
-					{
-						Float2 vec = CELL_2D[Hash2D(m_seed, xi, yi) & 255];
-
-						FN_DECIMAL vecX = xi - x + vec.x * m_cellularJitter;
-						FN_DECIMAL vecY = yi - y + vec.y * m_cellularJitter;
-
-						FN_DECIMAL newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
-
-						//	Check if cell is closer than maxDistance
-						//	Assign array values if so
-						if (newDistance < maxDistance)
-						{
-							distance[eligibleCount] = newDistance;
-							noise[eligibleCount] = To01(ValCoord2D(m_seed, xi, yi));
-							eligibleCount++;
-						}
-					}
-				}
-
-		return distance;
 	}
 
 	private FN_DECIMAL SingleCellular(FN_DECIMAL x, FN_DECIMAL y)
