@@ -268,7 +268,7 @@ public class PlayerController : MonoBehaviour {
 
 			Vector3 chunkPos = World.VoxelOwner(voxel);
 
-			TerrainGenerator.defaultWorld.biomeNoiseGen.AdjacentCellValue(voxel.x, voxel.z, true);
+			TerrainGenerator.defaultWorld.biomeNoiseGen.GetEdgeData(voxel.x, voxel.z, TerrainGenerator.defaultWorld, true);
 
 			/*Debug.Log("biome: "+TerrainGenerator.defaultWorld.biomeNoiseGen.GetNoise01(voxel.x, voxel.z));
 

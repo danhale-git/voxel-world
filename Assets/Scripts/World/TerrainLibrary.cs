@@ -11,6 +11,7 @@ public class TerrainLibrary
 	{
 		//	Distance (FastNoise.NoiseType.Distance2EdgeSub) at which biomes begin smoothing
 		public float smoothRadius = 0.2f;
+		public bool handleSmoothOverlap = false;
 
 		public WorldBiomes()
 		{
@@ -148,6 +149,7 @@ public class TerrainLibrary
 		{
 			smoothRadius = 0.2f;
 			SetBiomeFrequency(0.001f);
+			handleSmoothOverlap = true;
 
 			biomes = new Biome[2]
 			{

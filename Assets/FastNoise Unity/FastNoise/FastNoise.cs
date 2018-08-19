@@ -2043,8 +2043,22 @@ public class FastNoise
 		}
 	}
 
-	//	Get CellValue of adjacent cell
-	public FN_DECIMAL AdjacentCellValue(FN_DECIMAL x, FN_DECIMAL y, bool debug = false)
+	public struct EdgeData
+	{
+		public readonly FN_DECIMAL currentCellValue, distance2Edge, adjacentCellValue, maxSmoothRadius;
+		public readonly bool overlap;
+		public EdgeData(FN_DECIMAL currentCellValue, FN_DECIMAL distance2Edge, FN_DECIMAL adjacentCellValue, FN_DECIMAL maxSmoothRadius, bool overlap)
+		{
+			this.currentCellValue = currentCellValue;
+			this.distance2Edge = distance2Edge;
+			this.adjacentCellValue = adjacentCellValue;
+			this.maxSmoothRadius = maxSmoothRadius;
+			this.overlap = overlap;
+		}
+	}
+
+	//	Get all cellular noise data for pixel
+	public EdgeData GetEdgeData(FN_DECIMAL x, FN_DECIMAL y, TerrainLibrary.WorldBiomes world, bool debug = false)
 	{
 		x *= m_frequency;
 		y *= m_frequency;
@@ -2052,7 +2066,7 @@ public class FastNoise
 		int xr = FastRound(x);
 		int yr = FastRound(y);
 
-		FN_DECIMAL[] distance = { 999999, 999999, 999999, 999999 };
+		FN_DECIMAL[] distance = { 999999, 999999 };
 
 		//	Store distance[1] index
 		int xc1 = 0, yc1 = 0;
@@ -2060,11 +2074,9 @@ public class FastNoise
 		//	Store distance[0] index in case it is assigned to distance[1] later
 		int xc0 = 0, yc0 = 0;
 
-		//	For checking that the store index's corresponding distance matches the distance used for distance2edge
-		float[] debugDistance = { 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999 };
-		int[] debugX = {0,0,0,0,0};
-		int[] debugY = {0,0,0,0,0};
-		int inRangeCount = 0;
+		float distA = 0;
+		float distB = 0;
+		bool overlap = false;
 
 		for (int xi = xr - 1; xi <= xr + 1; xi++)
 				{
@@ -2076,97 +2088,74 @@ public class FastNoise
 						FN_DECIMAL vecY = yi - y + vec.y * m_cellularJitter;
 
 						FN_DECIMAL newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
-
-						//	TODO: Assign this in the if statement below
-						for (int i = m_cellularDistanceIndex1; i > 0; i--)
-							distance[i] = Math.Max(Math.Min(distance[i], newDistance), distance[i - 1]);
 						
 						if(newDistance <= distance[1])	//	Math.Min(distance[i], newDistance)
 						{
-							if(newDistance >= distance[0])	//	Math.Max((newDistance)), distance[i - 1]) true ~20% of the time
+							if(newDistance >= distance[0])	//	Math.Max((newDistance)), distance[i - 1])
 							{
-								//debugDistance = newDistance;
+								distance[1] = newDistance;
 								xc1 = xi;
 								yc1 = yi;
 							}
-							else	//	true ~40% of the time
+							else
 							{
-								//debugDistance = distance[0];
+								distance[1] = distance[0];
 								xc1 = xc0;
 								yc1 = yc0;
 							}
-							
 						}
 
-						//	TODO: Assign this in the if statement below
-						distance[0] = Math.Min(distance[0], newDistance);
-
-						if(newDistance <= distance[0])	//	Math.Min(distance[0], newDistance) true ~40% of the time
+						if(newDistance <= distance[0])	//	Math.Min(distance[0], newDistance)
 						{
-							//debugDistance = distance[0];
+							distance[0] = newDistance;
 							xc0 = xi;
 							yc0 = yi;
 						}
 
-						if(DistanceSub(distance[0], distance[1]) < TerrainGenerator.defaultWorld.smoothRadius)
+						//	Overlap already detected
+						if(overlap || !world.handleSmoothOverlap) continue;
+
+						//	Current distance to edge sub
+						float distanceSub = distance[1] - distance[0];
+
+						//	Distance is within smooth radius
+						if(distanceSub < world.smoothRadius)
 						{
-							debugDistance[inRangeCount] = DistanceSub(distance[0], distance[1]);
-							debugX[inRangeCount] = xc1;
-							debugY[inRangeCount] = yc1;
-							inRangeCount++;
+							//	Store unique distances (unique edges within smooth radius)
+							if(distanceSub != distA && distA == 0)
+							{
+								distA = distanceSub;
+							}
+							else if(distanceSub != distB && distanceSub != distA && distB == 0)
+							{
+								distB = distanceSub;
+							}
+						}
+
+						//	Two different edges are within smoothing radius, this overlap will cause artefacts
+						if(distA != 0 && distB != 0)
+						{
+							overlap = true;
+							break;
 						}
 					}
 				}
 
-
+		EdgeData data = new EdgeData(	To01(ValCoord2D(m_seed, xc0, yc0)),	//	Current cell value
+										distance[1] - distance[0],			//	Distance to edge
+										To01(ValCoord2D(m_seed, xc1, yc1)),	//	Adjacent cell value
+										(distA + distB) / 2,				//	Dynamic smooth radius, used if overlap
+										overlap);							//	Overlap detected
 
 		if(debug)
 		{
-			float a = 0;
-			float b = 0;
-
-			string astr = "";
-			string bstr = "";
-
-
-			for(int i = 0; i < debugDistance.Length; i++)
-			{		
-				if(debugDistance[i] != 999999)
-				{
-					float cellValue = To01(ValCoord2D(m_seed, debugX[i], debugY[i]));
-
-					if(cellValue != a && a == 0)
-					{
-						a = cellValue;
-						bstr = debugDistance[i].ToString();
-					}
-					else if(cellValue != b && cellValue != a && b == 0)
-					{
-						b = cellValue;
-						astr = debugDistance[i].ToString();
-					}
-				}
-			}
-
-			if(a > b)
-			{
-				UnityEngine.Debug.Log(a + " " +astr);
-				UnityEngine.Debug.Log(b + " " + bstr);
-			}
-			else
-			{
-				UnityEngine.Debug.Log(b + " " + bstr);
-				UnityEngine.Debug.Log(a + " " + astr);
-			}
-			//UnityEngine.Debug.Log("adjacent: " + To01(ValCoord2D(m_seed, xc1, yc1)));
+			UnityEngine.Debug.Log("distance2edge: " + data.distance2Edge);
+			UnityEngine.Debug.Log("adjCellValue: " + data.adjacentCellValue);
+			UnityEngine.Debug.Log("maxSmoothDist: " + data.maxSmoothRadius);
+			UnityEngine.Debug.Log("overlap: " + data.overlap);
 		}
-			
-		return To01(ValCoord2D(m_seed, xc1, yc1));
-	}
-
-	float DistanceSub(float distanceA, float distanceB)
-	{
-		return (distanceB - distanceA);
+				
+		return data;
 	}
 
 	private FN_DECIMAL SingleCellular(FN_DECIMAL x, FN_DECIMAL y)
