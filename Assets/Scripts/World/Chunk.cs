@@ -246,16 +246,16 @@ public class Chunk
 
 					//	Keep count of vertices to offset triangles
 					vertexCount += localVertCount;
-					cols.AddRange(	Enumerable.Repeat(	(Color)Blocks.colors[(int)blockTypes[x,y,z]],
-														localVertCount));
+					//cols.AddRange(	Enumerable.Repeat(	(Color)Blocks.colors[(int)blockTypes[x,y,z]],
+					//									localVertCount));
 
 					//	Color blocks to show cellular distance2edge sub noise
-					/*//float cellNoise = TerrainGenerator.defaultWorld.edgeNoiseGen.GetNoise(x + position.x, z + position.z);
+					//float cellNoise = TerrainGenerator.defaultWorld.edgeNoiseGen.GetNoise(x + position.x, z + position.z);
 					float cellNoise = TerrainGenerator.defaultWorld.biomeNoiseGen.GetNoise(x + position.x, z + position.z);
 					Color edgeNoiseColor = new Color(1 - cellNoise, 1 - cellNoise, 1 - cellNoise);
 
 					cols.AddRange(	Enumerable.Repeat(	edgeNoiseColor,
-														localVertCount));*/
+														localVertCount));
 				}
 		CreateMesh(verts, norms, tris, cols);
 		status = Status.DRAWN;

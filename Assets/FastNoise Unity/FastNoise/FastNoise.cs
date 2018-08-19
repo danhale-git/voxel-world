@@ -2055,13 +2055,16 @@ public class FastNoise
 		FN_DECIMAL[] distance = { 999999, 999999, 999999, 999999 };
 
 		//	Store distance[1] index
-		int xc = 0, yc = 0;
+		int xc1 = 0, yc1 = 0;
 
 		//	Store distance[0] index in case it is assigned to distance[1] later
 		int xc0 = 0, yc0 = 0;
 
 		//	For checking that the store index's corresponding distance matches the distance used for distance2edge
-		float debugDistance = 0;
+		float[] debugDistance = { 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999 };
+		int[] debugX = {0,0,0,0,0};
+		int[] debugY = {0,0,0,0,0};
+		int inRangeCount = 0;
 
 		for (int xi = xr - 1; xi <= xr + 1; xi++)
 				{
@@ -2082,15 +2085,15 @@ public class FastNoise
 						{
 							if(newDistance >= distance[0])	//	Math.Max((newDistance)), distance[i - 1]) true ~20% of the time
 							{
-								debugDistance = newDistance;
-								xc = xi;
-								yc = yi;
+								//debugDistance = newDistance;
+								xc1 = xi;
+								yc1 = yi;
 							}
 							else	//	true ~40% of the time
 							{
-								debugDistance = distance[0];
-								xc = xc0;
-								yc = yc0;
+								//debugDistance = distance[0];
+								xc1 = xc0;
+								yc1 = yc0;
 							}
 							
 						}
@@ -2100,19 +2103,70 @@ public class FastNoise
 
 						if(newDistance <= distance[0])	//	Math.Min(distance[0], newDistance) true ~40% of the time
 						{
-							debugDistance = distance[0];
+							//debugDistance = distance[0];
 							xc0 = xi;
 							yc0 = yi;
+						}
+
+						if(DistanceSub(distance[0], distance[1]) < TerrainGenerator.defaultWorld.smoothRadius)
+						{
+							debugDistance[inRangeCount] = DistanceSub(distance[0], distance[1]);
+							debugX[inRangeCount] = xc1;
+							debugY[inRangeCount] = yc1;
+							inRangeCount++;
 						}
 					}
 				}
 
+
+
 		if(debug)
 		{
-			UnityEngine.Debug.Log(distance[1] + " " + debugDistance);
+			float a = 0;
+			float b = 0;
+
+			string astr = "";
+			string bstr = "";
+
+
+			for(int i = 0; i < debugDistance.Length; i++)
+			{		
+				if(debugDistance[i] != 999999)
+				{
+					float cellValue = To01(ValCoord2D(m_seed, debugX[i], debugY[i]));
+
+					if(cellValue != a && a == 0)
+					{
+						a = cellValue;
+						bstr = debugDistance[i].ToString();
+					}
+					else if(cellValue != b && cellValue != a && b == 0)
+					{
+						b = cellValue;
+						astr = debugDistance[i].ToString();
+					}
+				}
+			}
+
+			if(a > b)
+			{
+				UnityEngine.Debug.Log(a + " " +astr);
+				UnityEngine.Debug.Log(b + " " + bstr);
+			}
+			else
+			{
+				UnityEngine.Debug.Log(b + " " + bstr);
+				UnityEngine.Debug.Log(a + " " + astr);
+			}
+			//UnityEngine.Debug.Log("adjacent: " + To01(ValCoord2D(m_seed, xc1, yc1)));
 		}
 			
-		return To01(ValCoord2D(m_seed, xc, yc));
+		return To01(ValCoord2D(m_seed, xc1, yc1));
+	}
+
+	float DistanceSub(float distanceA, float distanceB)
+	{
+		return (distanceB - distanceA);
 	}
 
 	private FN_DECIMAL SingleCellular(FN_DECIMAL x, FN_DECIMAL y)

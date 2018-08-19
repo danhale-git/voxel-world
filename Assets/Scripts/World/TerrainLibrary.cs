@@ -147,7 +147,7 @@ public class TerrainLibrary
 		public ExampleWorld() : base()
 		{
 			smoothRadius = 0.2f;
-			SetBiomeFrequency(0.01f);
+			SetBiomeFrequency(0.001f);
 
 			biomes = new Biome[2]
 			{
