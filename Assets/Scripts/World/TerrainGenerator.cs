@@ -114,7 +114,7 @@ public class TerrainGenerator
 				int gz = (int)(z+column.position.z);
 
 				//	Get cellular noise data
-				FastNoise.EdgeData edgeData = defaultWorld.edgeNoiseGen.GetEdgeData(gx, gz, defaultWorld);
+				FastNoise.EdgeData edgeData = defaultWorld.edgeNoiseGen.GetEdgeData(gx, gz);
 				column.edgeMap[x,z] = edgeData;
 
 				//	Get current biome type
@@ -123,27 +123,16 @@ public class TerrainGenerator
 				//	Get adjacent biome type
 				TerrainLibrary.Biome adjacentBiome = defaultWorld.GetBiome(edgeData.adjacentCellValue);
 
-				TerrainLibrary.Biome overlapBiome = defaultWorld.GetBiome(edgeData.overlapCellValue);
 
 				//	Get topology for this pixel
 				Topology currentTolopogy = GetBiomeTopology(x, z, column, currentBiome);
 
 				Topology finalTopology;
 
-				//	Use dynamic smooth radius if two edges overlap, prevents artefacts where cell width is less than smoothRadius*2
-				float smooth;
-				if(edgeData.overlap && adjacentBiome != overlapBiome)
-				{
-					float maxSmoothRadius = (edgeData.distance2Edge + edgeData.overlapDistance) / 2;
-					smooth = Mathf.Min(maxSmoothRadius, defaultWorld.smoothRadius);
-				}
-				else
-					smooth = defaultWorld.smoothRadius;
-
 				//	Within smoothing radius and adjacent biome is different
-				if(edgeData.distance2Edge < smooth && currentBiome != adjacentBiome)
+				if(edgeData.distance2Edge < defaultWorld.smoothRadius && currentBiome != adjacentBiome)
 				{
-					float InterpValue = Mathf.InverseLerp(0, smooth, edgeData.distance2Edge);
+					float InterpValue = Mathf.InverseLerp(0, defaultWorld.smoothRadius, edgeData.distance2Edge);
 
 					//	Get topology for this pixel if adjacent biome type
 					Topology adjacentTopology = GetBiomeTopology(x, z, column, adjacentBiome);

@@ -217,10 +217,6 @@ public class Chunk
 				{
 					color = Color.black;
 				}
-				else if(edge.overlap)
-				{
-					color = Color.green;
-				}
 				else
 				{
 					if(edge.currentCellValue >= 0.5f)
@@ -231,9 +227,7 @@ public class Chunk
 
 				color -= color * (float)(Mathf.InverseLerp(0, 0.1f, edge.distance2Edge) / 1.5);
 
-				float smoothRadius = edge.overlap ? (edge.distance2Edge + edge.overlapDistance) / 2 : TerrainGenerator.defaultWorld.smoothRadius;
-
-				if(edge.distance2Edge < smoothRadius) color -= new Color(0.25f,0.25f,0.1f);
+				if(edge.distance2Edge < TerrainGenerator.defaultWorld.smoothRadius) color -= new Color(0.25f,0.25f,0.1f);
 
 				for(int y = 0; y < World.chunkSize; y++)
 				{
