@@ -2045,15 +2045,16 @@ public class FastNoise
 
 	public struct EdgeData
 	{
-		public readonly FN_DECIMAL currentCellValue, distance2Edge, adjacentCellValue, maxSmoothRadius;
+		public readonly FN_DECIMAL currentCellValue, distance2Edge, adjacentCellValue, overlapCellValue, overlapDistance;
 		public readonly bool overlap;
-		public EdgeData(FN_DECIMAL currentCellValue, FN_DECIMAL distance2Edge, FN_DECIMAL adjacentCellValue, FN_DECIMAL maxSmoothRadius, bool overlap)
+		public EdgeData(FN_DECIMAL currentCellValue, FN_DECIMAL distance2Edge, FN_DECIMAL adjacentCellValue, bool overlap, FN_DECIMAL overlapCellValue, FN_DECIMAL overlapDistance)
 		{
 			this.currentCellValue = currentCellValue;
 			this.distance2Edge = distance2Edge;
 			this.adjacentCellValue = adjacentCellValue;
-			this.maxSmoothRadius = maxSmoothRadius;
 			this.overlap = overlap;
+			this.overlapCellValue = overlapCellValue;
+			this.overlapDistance = overlapDistance;
 		}
 	}
 
@@ -2075,7 +2076,9 @@ public class FastNoise
 		int xc0 = 0, yc0 = 0;
 
 		float distA = 0;
+		float adjA = 0;
 		float distB = 0;
+		float adjB = 0;
 		bool overlap = false;
 
 		for (int xi = xr - 1; xi <= xr + 1; xi++)
@@ -2113,7 +2116,7 @@ public class FastNoise
 						}
 
 						//	Overlap already detected
-						if(overlap || !world.handleSmoothOverlap) continue;
+						if(overlap || (!world.handleSmoothOverlap && !debug)) continue;
 
 						//	Current distance to edge sub
 						float distanceSub = distance[1] - distance[0];
@@ -2125,34 +2128,63 @@ public class FastNoise
 							if(distanceSub != distA && distA == 0)
 							{
 								distA = distanceSub;
+								adjA = To01(ValCoord2D(m_seed, xc1, yc1));
+								
 							}
 							else if(distanceSub != distB && distanceSub != distA && distB == 0)
 							{
 								distB = distanceSub;
+								adjB = To01(ValCoord2D(m_seed, xc1, yc1));
 							}
-						}
+							//	Two different edges are within smoothing radius, this overlap will cause artefacts
+							if(distA != 0 && distB != 0)
+							{
+								overlap = true;
 
-						//	Two different edges are within smoothing radius, this overlap will cause artefacts
-						if(distA != 0 && distB != 0)
-						{
-							overlap = true;
-							break;
-						}
+							}
+						}						
 					}
 				}
+		
+		float currentCellValue = To01(ValCoord2D(m_seed, xc0, yc0));
+		float adjacentCellValue = To01(ValCoord2D(m_seed, xc1, yc1));
+		float overlapCellValue = adjacentCellValue == adjA ? adjB : adjA;
+		float overlapDistance = adjacentCellValue == adjA ? distB : distA;
 
+		/*if(overlap && currentCellValue == adjacentCellValue)
+		{
+			adjacentCellValue = overlapCellValue;
+		}*/
+
+
+		EdgeData data = new EdgeData(	currentCellValue,	//	Current cell value
+										distance[1] - distance[0],			//	Distance to edge
+										adjacentCellValue,					//	Adjacent cell value
+										overlap,							//	Overlap detected
+										overlapCellValue,					//	Overlapping cell value
+										overlapDistance);					//  Distance to edge overlapping cell
+
+
+		/*if(overlapCellValue == 0) overlapCellValue = adjacentCellValue;
 		EdgeData data = new EdgeData(	To01(ValCoord2D(m_seed, xc0, yc0)),	//	Current cell value
 										distance[1] - distance[0],			//	Distance to edge
-										To01(ValCoord2D(m_seed, xc1, yc1)),	//	Adjacent cell value
+										overlapCellValue,					//	Adjacent cell value
 										(distA + distB) / 2,				//	Dynamic smooth radius, used if overlap
-										overlap);							//	Overlap detected
+										overlap,							//	Overlap detected
+										adjacentCellValue);					//	Overlapping cell value*/
 
 		if(debug)
 		{
+			//float overlapDistance  = adjacentCellValue == adjA ? distB : distA;
+			float correctedAdjacent = adjacentCellValue;
+			//if(data.currentCellValue >= 0.5f && data.adjacentCellValue >= 0.5f || data.currentCellValue < 0.5f && data.adjacentCellValue < 0.5f)
+			//	correctedAdjacent = overlapCellValue;
+
+			UnityEngine.Debug.Log("adjCellValue: " + correctedAdjacent);
 			UnityEngine.Debug.Log("distance2edge: " + data.distance2Edge);
-			UnityEngine.Debug.Log("adjCellValue: " + data.adjacentCellValue);
-			UnityEngine.Debug.Log("maxSmoothDist: " + data.maxSmoothRadius);
-			UnityEngine.Debug.Log("overlap: " + data.overlap);
+			//UnityEngine.Debug.Log("overlap: " + data.overlap);
+			UnityEngine.Debug.Log("overlapCell: " + data.overlapCellValue);
+			UnityEngine.Debug.Log("overlapDistance: " + overlapDistance);
 		}
 				
 		return data;

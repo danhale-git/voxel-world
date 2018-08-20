@@ -25,6 +25,8 @@ public class Chunk
 	int size;
 	public Vector3 position;
 
+	World.Column column;
+
 	//	block data
 	public Blocks.Types[,,] blockTypes;
 	public byte[,,] blockBytes;
@@ -73,7 +75,7 @@ public class Chunk
 		world.chunksGenerated++;
 		World.debug.Output("Chunks generated", world.chunksGenerated.ToString());
 
-		World.Column column = World.Column.Get(position);
+		column = World.Column.Get(position);
 		int[,] heightMap = column.heightMap;
 
 		bool hasAir = false;
@@ -207,6 +209,32 @@ public class Chunk
 		//	Generate mesh data
 		for(int x = 0; x < World.chunkSize; x++)
 			for(int z = 0; z < World.chunkSize; z++)
+			{
+				Color color;
+				FastNoise.EdgeData edge = column.edgeMap[x,z];
+
+				if(edge.distance2Edge < 0.002f)
+				{
+					color = Color.black;
+				}
+				else if(edge.overlap)
+				{
+					color = Color.green;
+				}
+				else
+				{
+					if(edge.currentCellValue >= 0.5f)
+						color = Color.red;
+					else
+						color = Color.cyan;
+				}
+
+				color -= color * (float)(Mathf.InverseLerp(0, 0.1f, edge.distance2Edge) / 1.5);
+
+				float smoothRadius = edge.overlap ? (edge.distance2Edge + edge.overlapDistance) / 2 : TerrainGenerator.defaultWorld.smoothRadius;
+
+				if(edge.distance2Edge < smoothRadius) color -= new Color(0.25f,0.25f,0.1f);
+
 				for(int y = 0; y < World.chunkSize; y++)
 				{
 					//	Check block type, skip drawing if air
@@ -249,14 +277,10 @@ public class Chunk
 					//cols.AddRange(	Enumerable.Repeat(	(Color)Blocks.colors[(int)blockTypes[x,y,z]],
 					//									localVertCount));
 
-					//	Color blocks to show cellular distance2edge sub noise
-					//float cellNoise = TerrainGenerator.defaultWorld.edgeNoiseGen.GetNoise(x + position.x, z + position.z);
-					float cellNoise = TerrainGenerator.defaultWorld.biomeNoiseGen.GetNoise(x + position.x, z + position.z);
-					Color edgeNoiseColor = new Color(1 - cellNoise, 1 - cellNoise, 1 - cellNoise);
-
-					cols.AddRange(	Enumerable.Repeat(	edgeNoiseColor,
+					cols.AddRange(	Enumerable.Repeat(	color,
 														localVertCount));
 				}
+			}
 		CreateMesh(verts, norms, tris, cols);
 		status = Status.DRAWN;
 	}

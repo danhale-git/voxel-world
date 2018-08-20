@@ -149,7 +149,7 @@ public class TerrainLibrary
 		{
 			smoothRadius = 0.2f;
 			SetBiomeFrequency(0.001f);
-			handleSmoothOverlap = true;
+			handleSmoothOverlap = false;
 
 			biomes = new Biome[2]
 			{

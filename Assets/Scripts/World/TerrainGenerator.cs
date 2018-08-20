@@ -103,6 +103,7 @@ public class TerrainGenerator
 	{	
 		int chunkSize = World.chunkSize;
 		column.heightMap = new int[chunkSize,chunkSize];
+		column.edgeMap = new FastNoise.EdgeData[chunkSize,chunkSize];
 
 		//	Iterate over height map
 		for(int x = 0; x < chunkSize; x++)
@@ -114,12 +115,15 @@ public class TerrainGenerator
 
 				//	Get cellular noise data
 				FastNoise.EdgeData edgeData = defaultWorld.edgeNoiseGen.GetEdgeData(gx, gz, defaultWorld);
+				column.edgeMap[x,z] = edgeData;
 
 				//	Get current biome type
 				TerrainLibrary.Biome currentBiome = defaultWorld.GetBiome(edgeData.currentCellValue);
 
-				//	Get biome edge gradient and adjacent biome type
+				//	Get adjacent biome type
 				TerrainLibrary.Biome adjacentBiome = defaultWorld.GetBiome(edgeData.adjacentCellValue);
+
+				TerrainLibrary.Biome overlapBiome = defaultWorld.GetBiome(edgeData.overlapCellValue);
 
 				//	Get topology for this pixel
 				Topology currentTolopogy = GetBiomeTopology(x, z, column, currentBiome);
@@ -127,7 +131,14 @@ public class TerrainGenerator
 				Topology finalTopology;
 
 				//	Use dynamic smooth radius if two edges overlap, prevents artefacts where cell width is less than smoothRadius*2
-				float smooth = edgeData.overlap ? Mathf.Min(edgeData.maxSmoothRadius, defaultWorld.smoothRadius) : defaultWorld.smoothRadius;
+				float smooth;
+				if(edgeData.overlap && adjacentBiome != overlapBiome)
+				{
+					float maxSmoothRadius = (edgeData.distance2Edge + edgeData.overlapDistance) / 2;
+					smooth = Mathf.Min(maxSmoothRadius, defaultWorld.smoothRadius);
+				}
+				else
+					smooth = defaultWorld.smoothRadius;
 
 				//	Within smoothing radius and adjacent biome is different
 				if(edgeData.distance2Edge < smooth && currentBiome != adjacentBiome)
@@ -137,6 +148,7 @@ public class TerrainGenerator
 					//	Get topology for this pixel if adjacent biome type
 					Topology adjacentTopology = GetBiomeTopology(x, z, column, adjacentBiome);
 
+					//	Smooth between topologys
 					finalTopology = SmoothTopologys(currentTolopogy, adjacentTopology, InterpValue);
 				}
 				else

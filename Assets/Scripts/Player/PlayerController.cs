@@ -272,9 +272,9 @@ public class PlayerController : MonoBehaviour {
 
 			/*Debug.Log("biome: "+TerrainGenerator.defaultWorld.biomeNoiseGen.GetNoise01(voxel.x, voxel.z));
 
-			Debug.Log("adjacent: "+TerrainGenerator.defaultWorld.biomeNoiseGen.AdjacentCellValue(voxel.x, voxel.z, true));
+			Debug.Log("adjacent: "+TerrainGenerator.defaultWorld.biomeNoiseGen.AdjacentCellValue(voxel.x, voxel.z, true));*/
 
-			Debug.Log("edge: "+TerrainGenerator.defaultWorld.edgeNoiseGen.GetNoise(voxel.x, voxel.z));*/
+			//Debug.Log("edge test: "+TerrainGenerator.defaultWorld.edgeNoiseGen.GetNoise(voxel.x, voxel.z));
 			
 			AddBlock(ray);
 			
