@@ -212,7 +212,6 @@ public class Chunk
 			{
 				Color color;
 				FastNoise.EdgeData edge = column.edgeMap[x,z];
-
 				if(edge.distance2Edge < 0.002f)
 				{
 					color = Color.black;
@@ -224,9 +223,7 @@ public class Chunk
 					else
 						color = Color.cyan;
 				}
-
 				color -= color * (float)(Mathf.InverseLerp(0, 0.1f, edge.distance2Edge) / 1.5);
-
 				if(edge.distance2Edge < TerrainGenerator.defaultWorld.smoothRadius) color -= new Color(0.25f,0.25f,0.1f);
 
 				for(int y = 0; y < World.chunkSize; y++)

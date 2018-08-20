@@ -2071,6 +2071,13 @@ public class FastNoise
 		//	Store distance[0] index in case it is assigned to distance[1] later
 		int xc0 = 0, yc0 = 0;
 
+		TerrainLibrary.WorldBiomes biomes = TerrainGenerator.defaultWorld;
+
+		FN_DECIMAL[] otherCells = { 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999 };
+		FN_DECIMAL[] otherDist = { 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999 };
+
+		int indexCount = 0;
+
 		for (int xi = xr - 1; xi <= xr + 1; xi++)
 				{
 					for (int yi = yr - 1; yi <= yr + 1; yi++)
@@ -2103,19 +2110,47 @@ public class FastNoise
 							distance[0] = newDistance;
 							xc0 = xi;
 							yc0 = yi;
-						}	
+						}
 
-						//	TODO: If adjacent cell is same biome find next closest adjacent until different biome					
+						otherCells[indexCount] = To01(ValCoord2D(m_seed, xi, yi));
+						otherDist[indexCount] = newDistance;
+						indexCount++;			
 					}
 				}
+
+		float finalDistance = 999999;
+		float finalCellValue = 0;
+
+		float currentCellValue = To01(ValCoord2D(m_seed, xc0, yc0));
+		TerrainLibrary.Biome currentBiome = biomes.GetBiome(currentCellValue);
+
+		for(int i = 0; i < otherCells.Length; i++)
+		{
+			if(otherCells[i] == 999999) continue;
+			
+			float dist2Edge = otherDist[i] - distance[0];
+			if(dist2Edge < finalDistance)
+			{
+				TerrainLibrary.Biome otherBiome = biomes.GetBiome(otherCells[i]);
+				if(otherBiome != currentBiome)
+				{
+					finalDistance = dist2Edge;
+					finalCellValue = otherCells[i];
+				}
+			}
+		}
 		
-		EdgeData data = new EdgeData(	To01(ValCoord2D(m_seed, xc0, yc0)),
-										distance[1] - distance[0],
-										To01(ValCoord2D(m_seed, xc1, yc1)));
+		EdgeData data = new EdgeData(	currentCellValue, //To01(ValCoord2D(m_seed, xc0, yc0)),
+										finalDistance, //distance[1] - distance[0],
+										finalCellValue); //To01(ValCoord2D(m_seed, xc1, yc1)));
 
 		if(debug)
 		{
-
+			for(int i = 0; i < otherCells.Length; i++)
+			{
+				if(otherCells[i] == 999999) continue;
+				UnityEngine.Debug.Log(otherCells[i]);
+			}
 		}
 				
 		return data;

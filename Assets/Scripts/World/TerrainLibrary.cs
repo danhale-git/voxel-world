@@ -147,9 +147,9 @@ public class TerrainLibrary
 	{
 		public ExampleWorld() : base()
 		{
-			smoothRadius = 0.2f;
-			SetBiomeFrequency(0.001f);
-			handleSmoothOverlap = false;
+			smoothRadius = 0.6f;
+			SetBiomeFrequency(0.01f);
+			//handleSmoothOverlap = true;
 
 			biomes = new Biome[2]
 			{
