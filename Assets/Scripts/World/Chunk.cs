@@ -218,13 +218,17 @@ public class Chunk
 				}
 				else
 				{
-					if(edge.currentCellValue >= 0.5f)
+					if(edge.currentCellValue >= 0.75f)
 						color = Color.red;
-					else
+					else if(edge.currentCellValue >= 0.5f)
 						color = Color.cyan;
+					else if(edge.currentCellValue >= 0.25f)
+						color = Color.magenta;
+					else
+						color = Color.grey;
 				}
-				color -= color * (float)(Mathf.InverseLerp(0, 0.1f, edge.distance2Edge) / 1.5);
-				if(edge.distance2Edge < TerrainGenerator.defaultWorld.smoothRadius) color -= new Color(0.25f,0.25f,0.1f);
+				//color -= color * (float)(Mathf.InverseLerp(0, 0.1f, edge.distance2Edge) / 1.5);
+				if(edge.distance2Edge < TerrainGenerator.defaultWorld.smoothRadius) color -= new Color(0.1f,0.1f,0.1f);
 
 				for(int y = 0; y < World.chunkSize; y++)
 				{

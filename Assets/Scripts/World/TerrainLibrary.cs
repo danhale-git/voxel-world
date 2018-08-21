@@ -239,4 +239,132 @@ public class TerrainLibrary
 	}
 
 	#endregion
+
+	public class TestWorld : WorldBiomes
+	{
+		public TestWorld() : base()
+		{
+			smoothRadius = 0.6f;
+			SetBiomeFrequency(0.01f);
+			//handleSmoothOverlap = true;
+
+			biomes = new Biome[4]
+			{
+				new TestBiome1(0),
+				new TestBiome2(0.25f),
+				new TestBiome3(0.5f),
+				new TestBiome4(0.75f)
+			};
+
+			InitialiseBiomes();
+		}
+	}
+
+	public class TestBiome1 : Biome
+	{
+		public TestBiome1(float minNoise) : base(minNoise)
+		{
+			layers = new BiomeLayer[1] { 	new TestLayer1(0)};
+			InitialiseLayers();
+		}
+		public override float BaseNoise(int x, int z)
+		{
+			return 1;
+		}
+		
+	}
+	public class TestLayer1 : BiomeLayer
+	{
+		public TestLayer1(float minNoise) : base(minNoise)
+		{
+			maxHeight = 10;
+			surfaceBlock = Blocks.Types.STONE;
+		}
+
+		public override float Noise(int x, int z)
+		{
+			return 1;
+		}
+	}
+
+	public class TestBiome2 : Biome
+	{
+		public TestBiome2(float minNoise) : base(minNoise)
+		{
+			layers = new BiomeLayer[1] { 	new TestLayer2(0)};
+			InitialiseLayers();
+		}
+		public override float BaseNoise(int x, int z)
+		{
+			return 1;
+		}
+		
+	}
+	public class TestLayer2 : BiomeLayer
+	{
+		public TestLayer2(float minNoise) : base(minNoise)
+		{
+			maxHeight = 20;
+			surfaceBlock = Blocks.Types.STONE;
+		}
+
+		public override float Noise(int x, int z)
+		{
+			return 1;
+		}
+	}
+
+	public class TestBiome3 : Biome
+	{
+		public TestBiome3(float minNoise) : base(minNoise)
+		{
+			layers = new BiomeLayer[1] { 	new TestLayer3(0)};
+			InitialiseLayers();
+		}
+		public override float BaseNoise(int x, int z)
+		{
+			return 1;
+		}
+		
+	}
+	public class TestLayer3 : BiomeLayer
+	{
+		public TestLayer3(float minNoise) : base(minNoise)
+		{
+			maxHeight = 30;
+			surfaceBlock = Blocks.Types.STONE;
+		}
+
+		public override float Noise(int x, int z)
+		{
+			return 1;
+		}
+	}
+
+	public class TestBiome4 : Biome
+	{
+		public TestBiome4(float minNoise) : base(minNoise)
+		{
+			layers = new BiomeLayer[1] { 	new TestLayer4(0)};
+			InitialiseLayers();
+		}
+		public override float BaseNoise(int x, int z)
+		{
+			return 1;
+		}
+		
+	}
+	public class TestLayer4 : BiomeLayer
+	{
+		public TestLayer4(float minNoise) : base(minNoise)
+		{
+			maxHeight = 40;
+			surfaceBlock = Blocks.Types.STONE;
+		}
+
+		public override float Noise(int x, int z)
+		{
+			return 1;
+		}
+	}
 }

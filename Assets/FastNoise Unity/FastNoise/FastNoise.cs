@@ -2129,7 +2129,7 @@ public class FastNoise
 			if(otherCells[i] == 999999) continue;
 			
 			float dist2Edge = otherDist[i] - distance[0];
-			if(dist2Edge < finalDistance)
+			if(dist2Edge < biomes.smoothRadius &&  dist2Edge < finalDistance)
 			{
 				TerrainLibrary.Biome otherBiome = biomes.GetBiome(otherCells[i]);
 				if(otherBiome != currentBiome)
@@ -2144,6 +2144,10 @@ public class FastNoise
 										finalDistance, //distance[1] - distance[0],
 										finalCellValue); //To01(ValCoord2D(m_seed, xc1, yc1)));
 
+		/*EdgeData data = new EdgeData(	To01(ValCoord2D(m_seed, xc0, yc0)),
+										distance[1] - distance[0],
+										To01(ValCoord2D(m_seed, xc1, yc1)));*/
+
 		if(debug)
 		{
 			for(int i = 0; i < otherCells.Length; i++)
@@ -2151,6 +2155,8 @@ public class FastNoise
 				if(otherCells[i] == 999999) continue;
 				UnityEngine.Debug.Log(otherCells[i]);
 			}
+
+			UnityEngine.Debug.Log("adjacent: " + finalCellValue);
 		}
 				
 		return data;
