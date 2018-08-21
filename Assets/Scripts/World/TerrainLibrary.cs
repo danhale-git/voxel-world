@@ -20,11 +20,15 @@ public class TerrainLibrary
 			biomeNoiseGen.SetCellularReturnType(FastNoise.CellularReturnType.CellValue);
 			biomeNoiseGen.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Natural);
 			biomeNoiseGen.SetFrequency(0.01f);
+			biomeNoiseGen.SetInterp(FastNoise.Interp.Quintic);	//	Faster noise generation
+			biomeNoiseGen.SetFractalOctaves(1);	//	Faster noise generation
 
 			edgeNoiseGen.SetNoiseType(FastNoise.NoiseType.Cellular);
 			edgeNoiseGen.SetCellularReturnType(FastNoise.CellularReturnType.Distance2Sub);
 			edgeNoiseGen.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Natural);
 			edgeNoiseGen.SetFrequency(0.01f);
+			edgeNoiseGen.SetInterp(FastNoise.Interp.Quintic);	//	Faster noise generation
+			edgeNoiseGen.SetFractalOctaves(1);	//	Faster noise generation
 		}
 
 		//	Assign next biome's min as max
@@ -43,9 +47,9 @@ public class TerrainLibrary
 			edgeNoiseGen.SetFrequency(frequency);
 		}
 
-		//	CellValue
+		//	CellValue for biome type
 		public FastNoise biomeNoiseGen = new FastNoise();
-		//	Distance2EdgeSub
+		//	Distance2EdgeSub for edge smoothing
 		public FastNoise edgeNoiseGen = new FastNoise();
 
 		protected Biome[] biomes;
@@ -60,6 +64,18 @@ public class TerrainLibrary
 					return biomes[i];
 			}
 			return biomes[biomes.Length - 1];
+		}
+
+		//	Get index of biome in list - used for comparing biomes in FastNoise.GetEdgeData()
+		public int GetBiomeIndex(int x, int z) { return GetBiomeIndex( biomeNoiseGen.GetNoise01(x, z) ); }
+		public virtual int GetBiomeIndex(float noise)
+		{
+			for(int i = 0; i < biomes.Length; i++)
+			{
+				if(noise >= biomes[i].min && noise < biomes[i].max)
+					return i;
+			}
+			return biomes.Length - 1;
 		}
 	}
 
@@ -240,9 +256,11 @@ public class TerrainLibrary
 
 	#endregion
 
-	public class TestWorld : WorldBiomes
+	#region Testing >2 biomes
+
+	public class FourBiomeTest : WorldBiomes
 	{
-		public TestWorld() : base()
+		public FourBiomeTest() : base()
 		{
 			smoothRadius = 0.6f;
 			SetBiomeFrequency(0.01f);
@@ -367,4 +385,6 @@ public class TerrainLibrary
 			return 1;
 		}
 	}
+
+	#endregion
 }

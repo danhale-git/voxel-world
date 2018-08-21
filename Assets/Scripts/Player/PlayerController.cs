@@ -95,7 +95,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			World.debug.Output("biome cellular: ", Mathf.InverseLerp(-1, 1, TerrainGenerator.defaultWorld.biomeNoiseGen.GetCellular((int)voxel.x, (int)voxel.z)).ToString());
+			World.debug.Output("biome cellular: ", Mathf.InverseLerp(-1, 1, TerrainGenerator.worldBiomes.biomeNoiseGen.GetCellular((int)voxel.x, (int)voxel.z)).ToString());
 
 		}
 
@@ -268,7 +268,7 @@ public class PlayerController : MonoBehaviour {
 
 			Vector3 chunkPos = World.VoxelOwner(voxel);
 
-			TerrainGenerator.defaultWorld.biomeNoiseGen.GetEdgeData(voxel.x, voxel.z, true);
+			TerrainGenerator.worldBiomes.biomeNoiseGen.GetEdgeData(voxel.x, voxel.z);
 
 			/*Debug.Log("biome: "+TerrainGenerator.defaultWorld.biomeNoiseGen.GetNoise01(voxel.x, voxel.z));
 
@@ -291,11 +291,11 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 
-			TerrainLibrary.Biome biome = TerrainGenerator.defaultWorld.GetBiome((int)voxel.x, (int)voxel.z);
+			TerrainLibrary.Biome biome = TerrainGenerator.worldBiomes.GetBiome((int)voxel.x, (int)voxel.z);
 			float noise = biome.BaseNoise((int)voxel.x, (int)voxel.z);
 			TerrainLibrary.BiomeLayer layer = biome.GetLayer(noise); 
 			Debug.Log("layer: "+layer.min + " - " + layer.max);
-			Debug.Log("min/max: "+TerrainGenerator.GetGradient(noise, biome.GetLayer(noise).min)+" : "+TerrainGenerator.GetGradient(noise, biome.GetLayer(noise).max));
+			Debug.Log("min/max: "+TerrainGenerator.EdgeGradient(noise, biome.GetLayer(noise).min)+" : "+TerrainGenerator.EdgeGradient(noise, biome.GetLayer(noise).max));
 		}
 	}
 

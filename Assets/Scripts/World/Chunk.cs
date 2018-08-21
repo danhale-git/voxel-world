@@ -85,7 +85,7 @@ public class Chunk
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
 			{		
-				TerrainLibrary.Biome biome = TerrainGenerator.defaultWorld.GetBiome(x,z);	
+				TerrainLibrary.Biome biome = TerrainGenerator.worldBiomes.GetBiome(x,z);	
 				//	Generate column
 				for(int y = 0; y < size; y++)
 				{
@@ -157,6 +157,26 @@ public class Chunk
 		Draw(redraw: true);
 	}
 
+	Color DebugBlockColor(int x, int z)
+	{
+		Color color;
+		FastNoise.EdgeData edge = column.edgeMap[x,z];
+		if(edge.distance2Edge < 0.002f)
+		{
+			color = Color.black;
+		}
+		else
+		{
+			if(edge.currentCellValue >= 0.5f)
+				color = Color.red;
+			else
+				color = Color.cyan;
+		}
+		color -= color * (float)(Mathf.InverseLerp(0, 0.1f, edge.distance2Edge) / 1.5);
+		if(edge.distance2Edge < TerrainGenerator.worldBiomes.smoothRadius) color -= new Color(0.1f,0.1f,0.1f);
+		return color;
+	}
+
 	public void Draw(bool redraw = false)
 	{	
 		//bool debugging = false;
@@ -210,25 +230,7 @@ public class Chunk
 		for(int x = 0; x < World.chunkSize; x++)
 			for(int z = 0; z < World.chunkSize; z++)
 			{
-				Color color;
-				FastNoise.EdgeData edge = column.edgeMap[x,z];
-				if(edge.distance2Edge < 0.002f)
-				{
-					color = Color.black;
-				}
-				else
-				{
-					if(edge.currentCellValue >= 0.75f)
-						color = Color.red;
-					else if(edge.currentCellValue >= 0.5f)
-						color = Color.cyan;
-					else if(edge.currentCellValue >= 0.25f)
-						color = Color.magenta;
-					else
-						color = Color.grey;
-				}
-				//color -= color * (float)(Mathf.InverseLerp(0, 0.1f, edge.distance2Edge) / 1.5);
-				if(edge.distance2Edge < TerrainGenerator.defaultWorld.smoothRadius) color -= new Color(0.1f,0.1f,0.1f);
+				
 
 				for(int y = 0; y < World.chunkSize; y++)
 				{
@@ -269,8 +271,9 @@ public class Chunk
 
 					//	Keep count of vertices to offset triangles
 					vertexCount += localVertCount;
-					//cols.AddRange(	Enumerable.Repeat(	(Color)Blocks.colors[(int)blockTypes[x,y,z]],
-					//									localVertCount));
+
+					Color color = (Color)Blocks.colors[(int)blockTypes[x,y,z]];
+					//Color color = DebugBlockColor(x, z);
 
 					cols.AddRange(	Enumerable.Repeat(	color,
 														localVertCount));

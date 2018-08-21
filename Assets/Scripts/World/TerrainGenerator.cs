@@ -4,18 +4,18 @@ using UnityEngine;
 
 public class TerrainGenerator
 {
-	//	Temporary static reference for debugging
-	public static TerrainLibrary.WorldBiomes defaultWorld = new TerrainLibrary.TestWorld();
+	//	Static reference for current world
+	public static TerrainLibrary.WorldBiomes worldBiomes = new TerrainLibrary.ExampleWorld();
 
-	//	Hold value used in topology smoothing
+	//	Hold values used in topology smoothing
 	private struct Topology
 	{
 		public readonly float noise, height, baseNoise;
 		public Topology(float noise, float height, float baseNoise)
 		{
-			this.noise = noise;
-			this.height = height;
-			this.baseNoise = baseNoise;
+			this.noise = noise;			//	Noise for defining layer detail
+			this.height = height;		//	Max height of layer
+			this.baseNoise = baseNoise;	//	Biome base noise
 		}
 	}
 
@@ -33,7 +33,7 @@ public class TerrainGenerator
 
 	//	Return 2 if outside margin
 	//	else return 0 - 1 value representing closeness to border
-	public static float GetGradient(float biomeNoise, float border = 0.5f, float margin = 0.05f)
+	public static float EdgeGradient(float biomeNoise, float border = 0.5f, float margin = 0.05f)
 	{
 		if(biomeNoise < border-margin || biomeNoise > border+margin) return 2;
 
@@ -54,7 +54,7 @@ public class TerrainGenerator
 		float baseNoise = biome.BaseNoise(gx, gz);
 		TerrainLibrary.BiomeLayer layer = biome.GetLayer(baseNoise);
 
-		//	If statement prevents biome type from bein overwritten when getting adjacent biome topology
+		//	Do not overwrite data for this block when getting adjacent biome topology
 		if(column.biomeLayers[x,z] == null) column.biomeLayers[x,z] = layer;
 
 		//	Make sure gradient margins don't overlap
@@ -62,12 +62,14 @@ public class TerrainGenerator
 		//	Clamp margin at max
 		margin = margin > layer.maxMargin ? layer.maxMargin : margin;
 
+		//	Layer height data for current layer
 		Topology currentTopology = new Topology(layer.Noise(gx, gz),
 												layer.maxHeight,
 												baseNoise);
 
-		float bottomGradient = GetGradient(baseNoise, layer.min, margin);
-		float topGradient = GetGradient(baseNoise, layer.max, margin);
+		//	Closeness to top and bottom of baseNoise range defining this biome layer
+		float bottomGradient = EdgeGradient(baseNoise, layer.min, margin);
+		float topGradient = EdgeGradient(baseNoise, layer.max, margin);
 		
 		TerrainLibrary.BiomeLayer adjacentLayer = null;
 		float interpValue;
@@ -87,13 +89,16 @@ public class TerrainGenerator
 		//	Not within margin distance of another layer
 		else
 		{
+			//	No smoothing required
 			return new Topology(currentTopology.noise, currentTopology.height, baseNoise);
 		}
 
+		//	Layer height data for adjacent layer
 		Topology adjacentTopology = new Topology(	adjacentLayer.Noise(gx, gz),
 													adjacentLayer.maxHeight,
 													baseNoise);
 
+		//	Return smoothed topology
 		return SmoothTopologys(currentTopology, adjacentTopology, interpValue);
 	}
 
@@ -114,15 +119,14 @@ public class TerrainGenerator
 				int gz = (int)(z+column.position.z);
 
 				//	Get cellular noise data
-				FastNoise.EdgeData edgeData = defaultWorld.edgeNoiseGen.GetEdgeData(gx, gz);
+				FastNoise.EdgeData edgeData = worldBiomes.edgeNoiseGen.GetEdgeData(gx, gz);
 				column.edgeMap[x,z] = edgeData;
 
 				//	Get current biome type
-				TerrainLibrary.Biome currentBiome = defaultWorld.GetBiome(edgeData.currentCellValue);
+				TerrainLibrary.Biome currentBiome = worldBiomes.GetBiome(edgeData.currentCellValue);
 
 				//	Get adjacent biome type
-				TerrainLibrary.Biome adjacentBiome = defaultWorld.GetBiome(edgeData.adjacentCellValue);
-
+				TerrainLibrary.Biome adjacentBiome = worldBiomes.GetBiome(edgeData.adjacentCellValue);
 
 				//	Get topology for this pixel
 				Topology currentTolopogy = GetBiomeTopology(x, z, column, currentBiome);
@@ -130,9 +134,9 @@ public class TerrainGenerator
 				Topology finalTopology;
 
 				//	Within smoothing radius and adjacent biome is different
-				if(edgeData.distance2Edge < defaultWorld.smoothRadius && currentBiome != adjacentBiome)
+				if(edgeData.distance2Edge < worldBiomes.smoothRadius && currentBiome != adjacentBiome)
 				{
-					float InterpValue = Mathf.InverseLerp(0, defaultWorld.smoothRadius, edgeData.distance2Edge);
+					float InterpValue = Mathf.InverseLerp(0, worldBiomes.smoothRadius, edgeData.distance2Edge);
 
 					//	Get topology for this pixel if adjacent biome type
 					Topology adjacentTopology = GetBiomeTopology(x, z, column, adjacentBiome);
@@ -148,10 +152,9 @@ public class TerrainGenerator
 				//	Generate final height value for chunk data
 				column.heightMap[x,z] = (int)Mathf.Lerp(0, finalTopology.height, finalTopology.baseNoise * finalTopology.noise);
 
-				//	Update highest and lowest in chunk column
+				//	Update highest and lowest block in chunk column
 				column.CheckHighest(column.heightMap[x,z]);
 				column.CheckLowest(column.heightMap[x,z]);
-
 			}					
 	}
 

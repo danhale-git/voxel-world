@@ -2055,7 +2055,7 @@ public class FastNoise
 	}
 
 	//	Get all cellular noise data for pixel
-	public EdgeData GetEdgeData(FN_DECIMAL x, FN_DECIMAL y, bool debug = false)
+	public EdgeData GetEdgeData(FN_DECIMAL x, FN_DECIMAL y)
 	{
 		x *= m_frequency;
 		y *= m_frequency;
@@ -2071,11 +2071,13 @@ public class FastNoise
 		//	Store distance[0] index in case it is assigned to distance[1] later
 		int xc0 = 0, yc0 = 0;
 
-		TerrainLibrary.WorldBiomes biomes = TerrainGenerator.defaultWorld;
+		//	Current world
+		TerrainLibrary.WorldBiomes biomes = TerrainGenerator.worldBiomes;
 
-		FN_DECIMAL[] otherCells = { 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999 };
+		//	All adjacent cell indices and distances
+		int[] otherX = new int[9];
+		int[] otherY = new int[9];
 		FN_DECIMAL[] otherDist = { 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999 };
-
 		int indexCount = 0;
 
 		for (int xi = xr - 1; xi <= xr + 1; xi++)
@@ -2112,52 +2114,45 @@ public class FastNoise
 							yc0 = yi;
 						}
 
-						otherCells[indexCount] = To01(ValCoord2D(m_seed, xi, yi));
+						//	Store all adjacent cells
+						otherX[indexCount] = xi;
+						otherY[indexCount] = yi;
 						otherDist[indexCount] = newDistance;
 						indexCount++;			
 					}
 				}
 
-		float finalDistance = 999999;
-		float finalCellValue = 0;
-
+		//	Current cell
 		float currentCellValue = To01(ValCoord2D(m_seed, xc0, yc0));
-		TerrainLibrary.Biome currentBiome = biomes.GetBiome(currentCellValue);
+		int currentBiome = biomes.GetBiomeIndex(currentCellValue);
 
-		for(int i = 0; i < otherCells.Length; i++)
-		{
-			if(otherCells[i] == 999999) continue;
-			
+		//	Final closest adjacent cell values
+		float adjacentEdgeDistance = 999999;
+		float adjacentCellValue = 0;
+
+		//	Iterate over all adjacent cells
+		for(int i = 0; i < otherDist.Length; i++)
+		{	
+			//	Find closest cell within smoothing radius
 			float dist2Edge = otherDist[i] - distance[0];
-			if(dist2Edge < biomes.smoothRadius &&  dist2Edge < finalDistance)
+			if(dist2Edge < biomes.smoothRadius &&  dist2Edge < adjacentEdgeDistance)
 			{
-				TerrainLibrary.Biome otherBiome = biomes.GetBiome(otherCells[i]);
+				float otherCellValue = To01(ValCoord2D(m_seed, otherX[i], otherY[i]));
+				int otherBiome = biomes.GetBiomeIndex(otherCellValue);
+
+				//	Assign as final value if not current biome
 				if(otherBiome != currentBiome)
 				{
-					finalDistance = dist2Edge;
-					finalCellValue = otherCells[i];
+					adjacentEdgeDistance = dist2Edge;
+					adjacentCellValue = otherCellValue;
 				}
 			}
 		}
 		
-		EdgeData data = new EdgeData(	currentCellValue, //To01(ValCoord2D(m_seed, xc0, yc0)),
-										finalDistance, //distance[1] - distance[0],
-										finalCellValue); //To01(ValCoord2D(m_seed, xc1, yc1)));
-
-		/*EdgeData data = new EdgeData(	To01(ValCoord2D(m_seed, xc0, yc0)),
-										distance[1] - distance[0],
-										To01(ValCoord2D(m_seed, xc1, yc1)));*/
-
-		if(debug)
-		{
-			for(int i = 0; i < otherCells.Length; i++)
-			{
-				if(otherCells[i] == 999999) continue;
-				UnityEngine.Debug.Log(otherCells[i]);
-			}
-
-			UnityEngine.Debug.Log("adjacent: " + finalCellValue);
-		}
+		//	Data for use in terrain generation
+		EdgeData data = new EdgeData(	currentCellValue,
+										adjacentEdgeDistance,
+										adjacentCellValue);
 				
 		return data;
 	}
