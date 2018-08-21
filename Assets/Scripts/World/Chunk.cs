@@ -5,11 +5,7 @@ using System.Linq;
 
 public class Chunk
 {
-	//	DEBUG
-	DebugWrapper debug;
-	//	DEBUG
-
-	//	Chunk local space and game components
+	//	Scene object with mesh/collider etc
 	public GameObject gameObject;
 
 	//	Chunk status
@@ -29,7 +25,7 @@ public class Chunk
 	int size;
 	public Vector3 position;
 
-	public int[,] heightmap;
+	World.Column column;
 
 	//	block data
 	public Blocks.Types[,,] blockTypes;
@@ -45,8 +41,6 @@ public class Chunk
 
 	void InitialiseArrays()
 	{
-		heightmap = new int[size,size];
-
 		blockTypes = new Blocks.Types[size,size,size];
 		blockBytes = new byte[size,size,size];
 		blockShapes = new Shapes.Types[size,size,size];
@@ -61,8 +55,6 @@ public class Chunk
 		
 		world = _world;
 		position = _position;
-		
-		debug = gameObject.AddComponent<DebugWrapper>();
 		
 		//	Apply chunk size
 		size = World.chunkSize;
@@ -79,7 +71,12 @@ public class Chunk
 	public void GenerateBlocks()
 	{
 		if(status == Chunk.Status.GENERATED || status == Chunk.Status.DRAWN) return;
-		heightmap = World.columns[new Vector3(position.x, 0, position.z)].heightMap;
+
+		world.chunksGenerated++;
+		World.debug.Output("Chunks generated", world.chunksGenerated.ToString());
+
+		column = World.Column.Get(position);
+		int[,] heightMap = column.heightMap;
 
 		bool hasAir = false;
 		bool hasBlocks = false;
@@ -87,29 +84,31 @@ public class Chunk
 		//	Iterate over all blocks in chunk
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
-			{
-				int groundHeight = heightmap[x,z];
+			{		
+				TerrainLibrary.Biome biome = TerrainGenerator.worldBiomes.GetBiome(x,z);	
 				//	Generate column
 				for(int y = 0; y < size; y++)
 				{
-					Blocks.Types type;
+					int voxel = (int) (y + this.position.y);
 
 					//	Set block type
-					if (y + this.position.y > groundHeight)
+
+					//	Terrain
+					if (voxel <= heightMap[x,z])
 					{
-						type = Blocks.Types.AIR;
+						blockTypes[x,y,z] = column.biomeLayers[x,z].surfaceBlock;
+
+						if(!hasBlocks)
+							hasBlocks = true;	
+					}
+					//	Air
+					else if(voxel > heightMap[x,z])
+					{
+						blockTypes[x,y,z] = Blocks.Types.AIR;
 						if(!hasAir)
 							hasAir = true;
 					}
-					else
-					{
-						type = Blocks.Types.DIRT;
-						if(!hasBlocks)
-							hasBlocks = true;
-					}
-
-					//	Store new block in 3D array
-					blockTypes[x,y,z] = type;
+					
 				}
 			}
 	
@@ -120,8 +119,20 @@ public class Chunk
 			composition = Composition.SOLID;
 		else if(hasAir && hasBlocks)
 			composition = Composition.MIX;
-		
+
 		status = Status.GENERATED;
+	}
+
+	public void ClearAllBlocks()
+	{
+		//	Iterate over all blocks in chunk
+		for(int x = 0; x < size; x++)
+			for(int z = 0; z < size; z++)
+				for(int y = 0; y < size; y++)
+				{
+					blockTypes[x,y,z] = Blocks.Types.AIR;
+				}
+		composition = Composition.EMPTY;
 	}
 
 	//	Generate bitmask representing surrounding blocks and chose slope type
@@ -146,6 +157,26 @@ public class Chunk
 		Draw(redraw: true);
 	}
 
+	Color DebugBlockColor(int x, int z)
+	{
+		Color color;
+		FastNoise.EdgeData edge = column.edgeMap[x,z];
+		if(edge.distance2Edge < 0.002f)
+		{
+			color = Color.black;
+		}
+		else
+		{
+			if(edge.currentCellValue >= 0.5f)
+				color = Color.red;
+			else
+				color = Color.cyan;
+		}
+		color -= color * (float)(Mathf.InverseLerp(0, 0.1f, edge.distance2Edge) / 1.5);
+		if(edge.distance2Edge < TerrainGenerator.worldBiomes.smoothRadius) color -= new Color(0.1f,0.1f,0.1f);
+		return color;
+	}
+
 	public void Draw(bool redraw = false)
 	{	
 		//bool debugging = false;
@@ -155,7 +186,6 @@ public class Chunk
 		{
 			return;
 		}
-
 		
 		Chunk[] adjacentChunks = new Chunk[6];
 		Vector3[] offsets = Util.CubeFaceDirections();
@@ -184,6 +214,9 @@ public class Chunk
 			if(solidAdjacentChunkCount == 6) return;
 		}
 
+		world.chunksDrawn++;
+		World.debug.Output("Chunks drawn", world.chunksDrawn.ToString());
+
 		List<Vector3> verts = new List<Vector3>();
 		List<Vector3> norms = new List<Vector3>();
 		List<int> tris = new List<int>();
@@ -196,6 +229,9 @@ public class Chunk
 		//	Generate mesh data
 		for(int x = 0; x < World.chunkSize; x++)
 			for(int z = 0; z < World.chunkSize; z++)
+			{
+				
+
 				for(int y = 0; y < World.chunkSize; y++)
 				{
 					//	Check block type, skip drawing if air
@@ -235,9 +271,14 @@ public class Chunk
 
 					//	Keep count of vertices to offset triangles
 					vertexCount += localVertCount;
-					cols.AddRange(	Enumerable.Repeat(	(Color)Blocks.colors[(int)blockTypes[x,y,z]],
+
+					Color color = (Color)Blocks.colors[(int)blockTypes[x,y,z]];
+					//Color color = DebugBlockColor(x, z);
+
+					cols.AddRange(	Enumerable.Repeat(	color,
 														localVertCount));
 				}
+			}
 		CreateMesh(verts, norms, tris, cols);
 		status = Status.DRAWN;
 	}

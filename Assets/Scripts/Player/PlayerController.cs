@@ -56,8 +56,7 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetButtonDown("Fire1") && !Input.GetKeyDown(KeyCode.LeftControl))
 		{
 			if(Input.GetKey(KeyCode.LeftShift))
-				DebugChunk(Ray());
-				//DebugVertColor(Ray());
+				DebugAdjacentCells(Ray());
 			else if(Input.GetKey(KeyCode.LeftAlt))
 				Redraw(Ray());
 			else
@@ -65,9 +64,9 @@ public class PlayerController : MonoBehaviour {
 		}
 
 		//	Break block
-		if(Input.GetButton("Fire2") && Input.GetKey(KeyCode.LeftShift))
+		if(Input.GetButtonDown("Fire2") && Input.GetKey(KeyCode.LeftShift))
 		{
-			AddBlock(Ray());
+			DebugBiomeGradient(Ray());
 		}else if(Input.GetButtonDown("Fire2"))
 		{
 			AddBlock(Ray());
@@ -85,6 +84,22 @@ public class PlayerController : MonoBehaviour {
 		}
 		
 	}
+
+	void CheckCellularNoise()
+	{
+		RaycastHit hit;
+
+		if (Physics.Raycast(Ray(), out hit))
+		{
+			//	get voxel position
+			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
+			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+
+			World.debug.Output("biome cellular: ", Mathf.InverseLerp(-1, 1, TerrainGenerator.worldBiomes.biomeNoiseGen.GetCellular((int)voxel.x, (int)voxel.z)).ToString());
+
+		}
+
+	}
 	
 	//	Raycast down to find current chunk
 	//	Generate more chunks if player has moved to a new chunk
@@ -96,6 +111,8 @@ public class PlayerController : MonoBehaviour {
 			return;
 		}
 		updateTimer = Time.fixedTime;
+
+		CheckCellularNoise();
 
 		//	Raycast to chunk below player
         RaycastHit hit;
@@ -236,6 +253,67 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
 			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
+		}
+	}
+
+	void DebugAdjacentCells(Ray ray)
+	{
+		RaycastHit hit;
+
+		if (Physics.Raycast(ray, out hit))
+		{
+			//	get voxel position
+			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
+			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+
+			Vector3 chunkPos = World.VoxelOwner(voxel);
+
+			TerrainGenerator.worldBiomes.biomeNoiseGen.GetEdgeData(voxel.x, voxel.z);
+
+			/*Debug.Log("biome: "+TerrainGenerator.defaultWorld.biomeNoiseGen.GetNoise01(voxel.x, voxel.z));
+
+			Debug.Log("adjacent: "+TerrainGenerator.defaultWorld.biomeNoiseGen.AdjacentCellValue(voxel.x, voxel.z, true));*/
+
+			//Debug.Log("edge test: "+TerrainGenerator.defaultWorld.edgeNoiseGen.GetNoise(voxel.x, voxel.z));
+			
+			AddBlock(ray);
+			
+		}		
+	}
+
+	void DebugBiomeGradient(Ray ray)
+	{
+		RaycastHit hit;
+
+		if (Physics.Raycast(ray, out hit))
+		{
+			//	get voxel position
+			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
+			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+
+			TerrainLibrary.Biome biome = TerrainGenerator.worldBiomes.GetBiome((int)voxel.x, (int)voxel.z);
+			float noise = biome.BaseNoise((int)voxel.x, (int)voxel.z);
+			TerrainLibrary.BiomeLayer layer = biome.GetLayer(noise); 
+			Debug.Log("layer: "+layer.min + " - " + layer.max);
+			Debug.Log("min/max: "+TerrainGenerator.EdgeGradient(noise, biome.GetLayer(noise).min)+" : "+TerrainGenerator.EdgeGradient(noise, biome.GetLayer(noise).max));
+		}
+	}
+
+	void DeleteChunk(Ray ray)
+	{
+		RaycastHit hit;
+
+		if (Physics.Raycast(ray, out hit))
+		{
+			//	get voxel position
+			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
+			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Chunk chunk;
+			if(!World.chunks.TryGetValue(World.VoxelOwner(voxel), out chunk))
+			{
+				Debug.Log(World.VoxelOwner(voxel));
+			}
+			world.RemoveChunk(chunk.position);
 		}
 	}
 
