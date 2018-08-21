@@ -294,12 +294,14 @@ public class Chunk
 		mesh.SetColors(colors);
 
 		mesh.RecalculateNormals();
+		UnityEditor.MeshUtility.Optimize(mesh);
 
 		filter = gameObject.AddComponent<MeshFilter>();
 		filter.mesh = mesh;
 
 		renderer = gameObject.AddComponent<MeshRenderer>();		
 		renderer.sharedMaterial = world.defaultMaterial;
+		renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
 
 		collider = gameObject.AddComponent<MeshCollider>();
 		collider.sharedMesh = filter.mesh;
