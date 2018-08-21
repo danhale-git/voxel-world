@@ -273,7 +273,8 @@ public class World : MonoBehaviour
 	{
 		Chunk chunk = chunks[position];
 		if(chunk.status == Chunk.Status.DRAWN) { return false; }
-
+		
+		chunk.SmoothBlocks();
 		chunk.Draw();
 		return true;
 	}

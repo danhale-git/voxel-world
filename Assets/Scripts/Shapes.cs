@@ -779,7 +779,7 @@ public static class Shapes
 		int y = (int)voxel.y;
 		int z = (int)voxel.z;
 
-		if(chunk.blockTypes[x,y,z] != Blocks.Types.DIRT) return;
+		if(chunk.blockTypes[x,y,z] != Blocks.Types.LIGHTGRASS) return;
 
 		switch(chunk.blockBytes[x,y,z])
 		{
