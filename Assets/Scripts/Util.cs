@@ -13,45 +13,6 @@ public static class Util
     	return span.TotalMilliseconds;
 	}
 
-	public static void SpiralTest()
-	{
-		Vector3 position = new Vector3(0,50,0);
-		int increment = 1;
-		for(int i = 0; i < 5; i++)
-		{
-			for(int r = 0; r < increment; r++)
-			{
-				position += Vector3.right;
-				// do stuff
-			}
-			for(int d = 0; d < increment; d++)
-			{
-				position += Vector3.back;
-				// do stuff
-			}
-
-			increment++;
-
-			for(int l = 0; l < increment; l++)
-			{
-				position += Vector3.left;
-				// do stuff
-			}
-			for(int u = 0; u < increment; u++)
-			{
-				position += Vector3.forward;
-				// do stuff
-			}
-
-			increment++;
-		}
-		for(int u = 0; u < increment - 1; u++)
-		{
-			position += Vector3.right;
-			// do stuff
-		}
-	}
-
 	public static Vector3[] CubeFaceDirections()
 	{
 		return new Vector3[]
@@ -65,10 +26,39 @@ public static class Util
 		};
 	}
 
+	//	Round Vector values to nearest ints
+	public static Vector3 RoundVector3(Vector3 toRound)
+	{
+		Vector3 rounded = new Vector3(	Mathf.Round(toRound.x),
+										Mathf.Round(toRound.y),
+										Mathf.Round(toRound.z));
+		return rounded;
+	}
+
 	public static bool InChunk(float value, float offsetIn)
 	{
 		if(value < 0 + offsetIn || value >= World.chunkSize - offsetIn) return false;
 		return true;
+	}
+
+	//	Wrap local block positions outside max chunk size
+	public static Vector3 WrapBlockIndex(Vector3 index)
+	{
+		float[] vector = new float[3] {	index.x,
+									index.y,
+									index.z};
+
+		for(int i = 0; i < 3; i++)
+		{
+			//	if below min then max
+			if(vector[i] == -1) 
+				vector[i] = World.chunkSize-1; 
+			//	if above max then min
+			else if(vector[i] == World.chunkSize) 
+				vector[i] = 0;
+		}
+
+		return new Vector3(vector[0], vector[1], vector[2]);
 	}
 
 	//	Return 8 adjacent positions

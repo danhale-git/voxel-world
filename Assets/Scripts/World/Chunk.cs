@@ -331,7 +331,7 @@ public class Chunk
 			if(neighbour.z >= size)	neighbourOwner = adjacent[(int)Shapes.CubeFace.FRONT];
 
 			//	Convert local index to neighbouring chunk
-			neighbour = BlockUtils.WrapBlockIndex(neighbour);
+			neighbour = Util.WrapBlockIndex(neighbour);
 		}
 		//	Neighbour is in chunk being drawn		
 		else

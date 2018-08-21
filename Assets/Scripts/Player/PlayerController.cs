@@ -93,7 +93,7 @@ public class PlayerController : MonoBehaviour {
 		{
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
-			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Vector3 voxel = Util.RoundVector3(pointInCube);
 
 			World.debug.Output("biome cellular: ", Mathf.InverseLerp(-1, 1, TerrainGenerator.worldBiomes.biomeNoiseGen.GetCellular((int)voxel.x, (int)voxel.z)).ToString());
 
@@ -196,7 +196,7 @@ public class PlayerController : MonoBehaviour {
 		{
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
-			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Vector3 voxel = Util.RoundVector3(pointInCube);
 
 			world.ChangeBlock(voxel, Blocks.Types.AIR);
 		}
@@ -210,7 +210,7 @@ public class PlayerController : MonoBehaviour {
 		{
 			//	get voxel position
 			Vector3 pointInCube = hit.point + (hit.normal * 0.1f);
-			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Vector3 voxel = Util.RoundVector3(pointInCube);
 
 			world.ChangeBlock(voxel, blockPlaceType, blockPlaceShape);
 		}
@@ -224,7 +224,7 @@ public class PlayerController : MonoBehaviour {
 		{
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
-			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Vector3 voxel = Util.RoundVector3(pointInCube);
 			Debug.Log(World.GetBitMask(voxel));
 		}
 	}
@@ -237,7 +237,7 @@ public class PlayerController : MonoBehaviour {
 		{
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
-			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Vector3 voxel = Util.RoundVector3(pointInCube);
 			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
 			Debug.Log(chunk.position);
 		}
@@ -251,7 +251,7 @@ public class PlayerController : MonoBehaviour {
 		{
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
-			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Vector3 voxel = Util.RoundVector3(pointInCube);
 			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
 		}
 	}
@@ -264,7 +264,7 @@ public class PlayerController : MonoBehaviour {
 		{
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
-			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Vector3 voxel = Util.RoundVector3(pointInCube);
 
 			Vector3 chunkPos = World.VoxelOwner(voxel);
 
@@ -289,7 +289,7 @@ public class PlayerController : MonoBehaviour {
 		{
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
-			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Vector3 voxel = Util.RoundVector3(pointInCube);
 
 			TerrainLibrary.Biome biome = TerrainGenerator.worldBiomes.GetBiome((int)voxel.x, (int)voxel.z);
 			float noise = biome.BaseNoise((int)voxel.x, (int)voxel.z);
@@ -307,7 +307,7 @@ public class PlayerController : MonoBehaviour {
 		{
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
-			Vector3 voxel = BlockUtils.RoundVector3(pointInCube);
+			Vector3 voxel = Util.RoundVector3(pointInCube);
 			Chunk chunk;
 			if(!World.chunks.TryGetValue(World.VoxelOwner(voxel), out chunk))
 			{
