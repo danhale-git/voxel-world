@@ -6,10 +6,12 @@ using System.Linq;
 public static class Shapes
 {
 	public enum Types {CUBE, WEDGE, CORNERIN, CORNEROUT, OUTCROP, STRIP, STRIPEND}
-	public enum Rotate { FRONT = 0, RIGHT = 90, BACK = 180, LEFT = 270 }
+	public enum Rotate { FRONT, RIGHT, BACK, LEFT }
+	static int[] rotations = { 0, 90, 180, 270 };
 	
 	public enum CubeFace {TOP, BOTTOM, RIGHT, LEFT, FRONT, BACK}
 	public enum Faces {RIGHT, LEFT, FRONT, BACK, TOP, BOTTOM, LSLOPE, RSLOPE}
+	const int numberOfFaces = 8;
 
 	//	For specifying which face of a shape is being worked on
 	/* public enum WedgeFace {SLOPE, BOTTOM, LEFT, RIGHT, BACK}	//
@@ -36,8 +38,112 @@ public static class Shapes
 	readonly static Vector3 v10 = new Vector3( 	0.5f,	0f,		 0f);		//	middle right
 	readonly static Vector3 v11 = new Vector3( -0.5f,	0f,		 0f);		//	middle left
 	readonly static Vector3 v12 = new Vector3( 	0f, 	0f,		 0f);		//	middle
-	
+
+	public class Meshes
+	{
+		public List<Shape> shapes = new List<Shape>();
+
+		public Meshes()
+		{
+			shapes.Add(new Cube());
+			shapes.Add(new Wedge());
+
+			foreach(Shape shape in shapes)
+			{
+				shape.GenerateMeshes();
+			}
+		}
+	}
+
 	public class Shape
+	{
+		Vector3[][][] shapeVertices = new Vector3[rotations.Length][][];
+		Vector3[][][] shapeNormals = new Vector3[rotations.Length][][];
+		int[][][] shapeTriangles = new int[rotations.Length][][];
+
+		public void GenerateMeshes()
+		{
+			bool[] allFaces = { true, true, true, true, true, true }; 
+			for(int r = 0; r < rotations.Length; r++)
+			{
+				Quaternion rotation = Quaternion.Euler(0, rotations[r], 0);
+				List<Faces> faces = GetFaces(allFaces, rotation);
+
+				shapeVertices[r] = new Vector3[numberOfFaces][];
+				shapeNormals[r] = new Vector3[numberOfFaces][];
+				shapeTriangles[r] = new int[numberOfFaces][];
+
+				for(int f = 0; f < faces.Count; f++)
+				{
+					shapeVertices[r][(int)faces[f]] = RotateVectors(	Vertices(faces[f], Vector3.zero),
+																		Vector3.zero,
+																		rotation);
+
+					shapeNormals[r][(int)faces[f]] = RotateNormals(		Normals(faces[f]),
+																		rotation);
+
+					shapeTriangles[r][(int)faces[f]] = Triangles(		faces[f], 0);
+				}
+			}
+		}
+
+		public virtual List<Faces> GetFaces(bool[] exposedFaces, Quaternion rotation)
+		{ return new List<Faces>(); }
+
+		public int Draw(List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles,
+						Vector3 position, 			int rotationIndex,	bool[] exposedFaces, 	int vertCount)
+		{
+			Quaternion qRotation = Quaternion.Euler(0, rotations[rotationIndex], 0);
+			List<Faces> faces = GetFaces(exposedFaces, qRotation);
+			int localVertCount = 0;
+			int localTriCount = 0;
+			
+			Vector3[][] vertArrays = new Vector3[faces.Count][];
+			Vector3[][] normArrays = new Vector3[faces.Count][];
+			int[][] triArrays = new int[faces.Count][];
+
+			for(int i = 0; i < faces.Count; i++)
+			{
+				vertArrays[i] =	OffsetVectors(		shapeVertices[rotationIndex][(int)faces[i]],
+													position);
+
+				normArrays[i] = shapeNormals[rotationIndex][(int)faces[i]];
+
+				triArrays[i] = Triangles(faces[i], vertCount + localVertCount);
+				
+				localTriCount += triArrays[i].Length;
+				localVertCount += vertArrays[i].Length;
+			}
+
+			Vector3[] allVerts = new Vector3[localVertCount];
+			Vector3[] allNorms = new Vector3[localVertCount];
+			int[] allTris = new int[localTriCount];
+
+			int vertIndexOffset = 0;
+			int triIndexOffset = 0;
+			for(int i = 0; i < faces.Count; i++)
+			{
+				vertArrays[i].CopyTo(allVerts, vertIndexOffset);
+				normArrays[i].CopyTo(allNorms, vertIndexOffset);
+
+				triArrays[i].CopyTo( allTris,  triIndexOffset);
+
+				vertIndexOffset += vertArrays[i].Length;
+				triIndexOffset += triArrays[i].Length;
+			}
+			vertices.AddRange(allVerts);
+			normals.AddRange(allNorms);
+			triangles.AddRange(allTris);
+
+			return localVertCount;
+		}
+
+		public virtual Vector3[] Vertices(Faces face, Vector3 offset) {	return new Vector3[0]; }
+		public virtual int[] Triangles(Faces face, int offset) { return new int[0]; }
+		public virtual Vector3[] Normals(Faces face) {	return new Vector3[0]; }
+	}
+
+	/*public class Shape
 	{
 		public virtual List<Faces> GetFaces(bool[] exposedFaces, Quaternion rotation)
 		{ return new List<Faces>(); }
@@ -94,7 +200,7 @@ public static class Shapes
 		public virtual Vector3[] Vertices(Faces face, Vector3 offset) {	return new Vector3[0]; }
 		public virtual int[] Triangles(Faces face, int offset) { return new int[0]; }
 		public virtual Vector3[] Normals(Faces face) {	return new Vector3[0]; }
-	}
+	}*/
 
 	//	//	//	//	//	//	//	//	//	//	//	//	//	//	//	//	//	//
 
@@ -909,7 +1015,7 @@ public static class Shapes
 			case 68:
 			case 4:
 				chunk.blockShapes[x,y,z] = Types.WEDGE;
-				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
+				chunk.blockYRotation[x,y,z] = (int)Rotate.FRONT;
 				break;
 
 			case 49:
@@ -917,7 +1023,7 @@ public static class Shapes
 			case 33:
 			case 1:
 				chunk.blockShapes[x,y,z] = Types.WEDGE;
-				chunk.blockYRotation[x,y,z] = Rotate.RIGHT;
+				chunk.blockYRotation[x,y,z] = (int)Rotate.RIGHT;
 				break;
 
 			case 168:
@@ -925,7 +1031,7 @@ public static class Shapes
 			case 8:
 			case 136:
 				chunk.blockShapes[x,y,z] = Types.WEDGE;
-				chunk.blockYRotation[x,y,z] = Rotate.BACK;
+				chunk.blockYRotation[x,y,z] = (int)Rotate.BACK;
 				break;
 
 			case 194:
@@ -933,23 +1039,22 @@ public static class Shapes
 			case 130:
 			case 66:
 				chunk.blockShapes[x,y,z] = Types.WEDGE;
-				chunk.blockYRotation[x,y,z] = Rotate.LEFT;
+				chunk.blockYRotation[x,y,z] = (int)Rotate.LEFT;
 				break;
 
 			//	CUBE
 
 			case 0:
 				chunk.blockShapes[x,y,z] = Types.CUBE;
-				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
+				chunk.blockYRotation[x,y,z] = (int)Rotate.FRONT;
 				break;
 
 			default:
 				chunk.blockShapes[x,y,z] = Types.CUBE;
-				chunk.blockYRotation[x,y,z] = Rotate.FRONT;
+				chunk.blockYRotation[x,y,z] = (int)Rotate.FRONT;
 				break;
 		}
 	}
-
 
 	#region Misc
 
@@ -1040,7 +1145,18 @@ public static class Shapes
 
 	#endregion
 
-    #region Rotation
+    #region Rotation and offset
+
+	static Vector3[] OffsetVectors(Vector3[] vectors, Vector3 offset)
+	{
+		//	Apply adjusted values to new array to avoid editing the original shape
+		Vector3[] adjustedVectors = new Vector3[vectors.Length];
+		for(int i = 0; i < vectors.Length; i++)
+		{
+			adjustedVectors[i] = offset + vectors[i];
+		}
+		return adjustedVectors;
+	}
 
 	//	Rotate vertices around centre by yRotation on Y axis
 	static Vector3[] RotateVectors(Vector3[] vectors, Vector3 centre, Quaternion rotation)

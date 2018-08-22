@@ -31,20 +31,16 @@ public class Chunk
 	public Blocks.Types[,,] blockTypes;
 	public byte[,,] blockBytes;
 	public Shapes.Types[,,] blockShapes;
-	public Shapes.Rotate[,,] blockYRotation;
+	public int[,,] blockYRotation;
 
-	List<Shapes.Shape> shapes = new List<Shapes.Shape>()
-	{
-		new Shapes.Cube(),
-		new Shapes.Wedge()
-	};
+	List<Shapes.Shape> shapes = World.shapeMeshes.shapes;
 
 	void InitialiseArrays()
 	{
 		blockTypes = new Blocks.Types[size,size,size];
 		blockBytes = new byte[size,size,size];
 		blockShapes = new Shapes.Types[size,size,size];
-		blockYRotation = new Shapes.Rotate[size,size,size];
+		blockYRotation = new int[size,size,size];
 	}
 
 	public Chunk(Vector3 _position, World _world)
@@ -143,7 +139,6 @@ public class Chunk
 				for(int y = 0; y < size; y++)
 				{
 					Vector3 blockPosition = new Vector3(x,y,z);
-
 					blockBytes[x,y,z] = World.GetBitMask(blockPosition + this.position);
 					Shapes.SetSlopes(this, blockPosition);
 				}
@@ -261,11 +256,10 @@ public class Chunk
 
 					//	Check block shapes and generate mesh data
 					int localVertCount = 0;
-					Quaternion rotation = Quaternion.Euler(0, (int)blockYRotation[x,y,z], 0);
 
 					localVertCount = shapes[(int)blockShapes[x,y,z]].Draw(	verts, norms, tris,
 																			blockPosition,
-														 					rotation, 
+														 					blockYRotation[x,y,z], 
 																			exposedFaces,
 																			vertexCount);
 

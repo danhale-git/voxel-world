@@ -19,7 +19,7 @@ public class World : MonoBehaviour
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 8;
+	public static int viewDistance = 4;
 	//	Size of all chunks
 	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
@@ -28,6 +28,7 @@ public class World : MonoBehaviour
 	public static bool drawEdges = true;
 
 	TerrainGenerator terrain;
+	public static Shapes.Meshes shapeMeshes;
 
 	//	Chunk and terrain data
 	public static Dictionary<Vector3, Chunk> chunks = new Dictionary<Vector3, Chunk>();
@@ -36,6 +37,11 @@ public class World : MonoBehaviour
 	Coroutine chunkDrawCoroutine;
 
 	public PlayerController player;
+
+	void Awake()
+	{
+		shapeMeshes = new Shapes.Meshes();
+	}
 
 	void Start()
 	{
