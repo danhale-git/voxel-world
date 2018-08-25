@@ -19,7 +19,7 @@ public class World : MonoBehaviour
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 4;
+	public static int viewDistance = 8;
 	//	Size of all chunks
 	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
@@ -204,11 +204,14 @@ public class World : MonoBehaviour
 		}
 
 		//	Set top and bottom chunks to generate
-		column.topChunkGenerate = Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize;
-		column.bottomChunkGenerate = Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize;
-		
+		column.topChunkGenerate = (Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize) + chunkSize;
+		column.bottomChunkGenerate = (Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize) - chunkSize;
+
 		debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2.5f);
 		debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2.5f);
+
+		debug.OutlineChunk(new Vector3(position.x, column.topChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
+		debug.OutlineChunk(new Vector3(position.x, column.bottomChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
 
 		column.sizeCalculated = true;
 	}
@@ -239,7 +242,7 @@ public class World : MonoBehaviour
 
 		//	Create a column of Chunk class instances covering visible terrain + 1
 		bool aChunkWasCreated = false;
-		for(int y = topol.bottomChunkGenerate - chunkSize; y <= topol.topChunkGenerate + chunkSize; y+=chunkSize)
+		for(int y = topol.bottomChunkGenerate; y <= topol.topChunkGenerate; y+=chunkSize)
 		{
 			bool drawn = CreateChunk(new Vector3(x, y, z), skipDictCheck: true);
 			if(!aChunkWasCreated && drawn) aChunkWasCreated = true;
@@ -254,6 +257,8 @@ public class World : MonoBehaviour
 		Chunk chunk = chunks[position];
 		if(chunk.status == Chunk.Status.GENERATED) return false;
 
+		//debug.OutlineChunk(position, Color.white, sizeDivision: 4f);
+
 		chunk.GenerateBlocks();
 		return true;
 	}
@@ -264,7 +269,7 @@ public class World : MonoBehaviour
 
 		//	Generate blocks in chunks covering visible terrain + 1
 		bool aChunkWasGenerated = false;
-		for(int y = topol.bottomChunkGenerate - chunkSize; y <= topol.topChunkGenerate + chunkSize; y+=chunkSize)
+		for(int y = topol.bottomChunkGenerate; y <= topol.topChunkGenerate; y+=chunkSize)
 		{
 			bool drawn = GenerateChunk(new Vector3(x, y, z));
 			if(!aChunkWasGenerated && drawn) aChunkWasGenerated = true;
@@ -280,7 +285,8 @@ public class World : MonoBehaviour
 		Chunk chunk = chunks[position];
 		if(chunk.status == Chunk.Status.DRAWN) { return false; }
 		
-		chunk.SmoothBlocks();
+		//chunk.SmoothBlocks();
+
 		chunk.Draw();
 		return true;
 	}
@@ -492,29 +498,6 @@ public class World : MonoBehaviour
 		int y = Mathf.FloorToInt(voxel.y / chunkSize);
 		int z = Mathf.FloorToInt(voxel.z / chunkSize);
 		return new Vector3(x*chunkSize,y*chunkSize,z*chunkSize);
-	}
-	//	Get type of block at voxel
-	public static Blocks.Types GetType(Vector3 voxel)
-	{
-		Chunk chunk = chunks[VoxelOwner(voxel)];
-		Vector3 local = voxel - chunk.position;
-		return chunk.blockTypes[(int)local.x, (int)local.y, (int)local.z];
-	}
-	//	Get byte representing arrangement of solid blocks around voxel
-	public static byte GetBitMask(Vector3 voxel)
-	{
-		Vector3[] neighbours = Util.HorizontalBlockNeighbours(voxel);
-			int value = 1;
-			int total = 0;
-			for(int i = 0; i < neighbours.Length; i++)
-			{
-				if(Blocks.seeThrough[(int)GetType(neighbours[i])])
-				{
-					total += value;
-				}
-				value *= 2;
-			}
-		return (byte)total;
 	}
 
 	#endregion

@@ -397,7 +397,7 @@ public static class Shapes
 		}
 	}
 
-	public  class CornerIn
+	/*public  class CornerIn
 	{
 		 int Draw(List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles,
 						Vector3 position, 			Quaternion rotation, 	bool[] exposedFaces, int vertCount)
@@ -885,7 +885,7 @@ public static class Shapes
 		int y = (int)voxel.y;
 		int z = (int)voxel.z;
 
-		if(chunk.blockTypes[x,y,z] != Blocks.Types.LIGHTGRASS) return;
+		//if(chunk.blockTypes[x,y,z] != Blocks.Types.LIGHTGRASS) return;
 
 		switch(chunk.blockBytes[x,y,z])
 		{
