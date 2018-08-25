@@ -500,6 +500,14 @@ public class World : MonoBehaviour
 		return new Vector3(x*chunkSize,y*chunkSize,z*chunkSize);
 	}
 
+	public static Chunk VoxelOwnerChunk(Vector3 voxel)
+	{
+		int x = Mathf.FloorToInt(voxel.x / chunkSize);
+		int y = Mathf.FloorToInt(voxel.y / chunkSize);
+		int z = Mathf.FloorToInt(voxel.z / chunkSize);
+		return chunks[new Vector3(x*chunkSize,y*chunkSize,z*chunkSize)];
+	}
+
 	#endregion
 
 }

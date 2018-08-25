@@ -151,26 +151,6 @@ public class Chunk
 		Draw(redraw: true);
 	}
 
-	Color DebugBlockColor(int x, int z)
-	{
-		Color color;
-		FastNoise.EdgeData edge = column.edgeMap[x,z];
-		if(edge.distance2Edge < 0.002f)
-		{
-			color = Color.black;
-		}
-		else
-		{
-			if(edge.currentCellValue >= 0.5f)
-				color = Color.red;
-			else
-				color = Color.cyan;
-		}
-		color -= color * (float)(Mathf.InverseLerp(0, 0.1f, edge.distance2Edge) / 1.5);
-		if(edge.distance2Edge < TerrainGenerator.worldBiomes.smoothRadius) color -= new Color(0.1f,0.1f,0.1f);
-		return color;
-	}
-
 	public void Draw(bool redraw = false)
 	{	
 		//bool debugging = false;
@@ -214,15 +194,45 @@ public class Chunk
 			for(int x = 0; x < World.chunkSize; x++)
 				for(int z = 0; z < World.chunkSize; z++)
 				{
-					int y = column.heightMap[x,z] - (int)this.position.y;
-					if(y > World.chunkSize-1 || y < 0) continue;
-					//Debug.Log(x+" "+y+" "+z);
-					Blocks.Types type = blockTypes[x,y,z];
-					Vector3 blockPosition = new Vector3(x,y,z);
-					if(Blocks.smoothSurface[(int)type])
+					int height = column.heightMap[x,z] - (int)this.position.y;
+					Shapes.Types previousShape = 0;
+					int previousRotation = 0;
+
+					for(int y = height; y > height -3; y-- )
 					{
-						blockBytes[x,y,z] = GetBitMask(blockPosition);
-						Shapes.SetSlopes(this, blockPosition);
+						if(y > World.chunkSize-1 || y < 0) continue;				
+
+						Blocks.Types type = blockTypes[x,y,z];
+						Vector3 blockPosition = new Vector3(x,y,z);
+						if(Blocks.smoothSurface[(int)type])
+						{
+							blockBytes[x,y,z] = GetBitMask(blockPosition);
+							Shapes.SetSlopes(this, blockPosition);
+						}
+
+						int rotationDifference = blockYRotation[x,y,z] - previousRotation;
+						int loopedRotation = rotationDifference > 3 ? rotationDifference - 3 : rotationDifference;
+
+						if(	 y < height)
+						{
+							if(	 previousShape == Shapes.Types.WEDGE ||
+								 previousShape == Shapes.Types.WEDGECORNER ||
+								 previousShape == Shapes.Types.WEDGECORNERINVERSE ||
+								(previousShape == Shapes.Types.CORNERIN && blockShapes[x,y,z] == Shapes.Types.WEDGE))
+							{
+								blockShapes[x,y,z] = 0;
+								blockYRotation[x,y,z] = 0;
+							}
+							else if(previousShape == Shapes.Types.CORNEROUT && blockShapes[x,y,z] == Shapes.Types.WEDGE)
+							{
+								if(loopedRotation == 0 || loopedRotation == 2)
+									blockShapes[x,y,z] = Shapes.Types.WEDGECORNER; // Use previous rotation to calculate rotation difference and choose normal or inverse wedge corner
+								else if(loopedRotation == 3 || loopedRotation == 1)
+									blockShapes[x,y,z] = Shapes.Types.WEDGECORNERINVERSE; // Use previous rotation to calculate rotation difference and choose normal or inverse wedge corner
+							}
+						}
+						previousShape = blockShapes[x,y,z];
+						previousRotation = blockYRotation[x,y,z];
 					}
 				}
 		}
@@ -261,6 +271,7 @@ public class Chunk
 					//	Check block shapes and generate mesh data
 					int localVertCount = 0;
 
+					
 					localVertCount = shapes[(int)blockShapes[x,y,z]].Draw(	verts, norms, tris,
 																			blockPosition,
 														 					blockYRotation[x,y,z], 
@@ -271,7 +282,7 @@ public class Chunk
 					vertexCount += localVertCount;
 
 					Color color = (Color)Blocks.colors[(int)blockTypes[x,y,z]];
-					//Color color = DebugBlockColor(x, z);
+					//if(blockShapes[x,y,z] == Shapes.Types.WEDGECORNER) color = Color.red;
 
 					cols.AddRange(	Enumerable.Repeat(	color,
 														localVertCount));

@@ -13,7 +13,7 @@ public static class Util
     	return span.TotalMilliseconds;
 	}
 
-	public static Vector3[] CubeFaceDirections()
+	/*public static Vector3[] CubeFaceDirections()
 	{
 		return new Vector3[]
 		{
@@ -23,6 +23,19 @@ public static class Util
 			Vector3.left,		//	3
 			Vector3.forward,	//	4
 			Vector3.back		//	5
+		};
+	}*/
+
+	public static Vector3[] CubeFaceDirections()
+	{
+		return new Vector3[]
+		{
+			Vector3.forward,			//	0
+			Vector3.right,		//	1
+			Vector3.back,		//	2
+			Vector3.left,		//	3
+			Vector3.up,	//	4
+			Vector3.down		//	5
 		};
 	}
 
@@ -130,5 +143,25 @@ public static class Util
 	public static double RoundToDP(float value, int decimalPlaces)
 	{
 		return System.Math.Round(value, decimalPlaces);
+	}
+
+	static Color DebugBlockColor(int x, int z, World.Column column)
+	{
+		Color color;
+		FastNoise.EdgeData edge = column.edgeMap[x,z];
+		if(edge.distance2Edge < 0.002f)
+		{
+			color = Color.black;
+		}
+		else
+		{
+			if(edge.currentCellValue >= 0.5f)
+				color = Color.red;
+			else
+				color = Color.cyan;
+		}
+		color -= color * (float)(Mathf.InverseLerp(0, 0.1f, edge.distance2Edge) / 1.5);
+		if(edge.distance2Edge < TerrainGenerator.worldBiomes.smoothRadius) color -= new Color(0.1f,0.1f,0.1f);
+		return color;
 	}
 }
