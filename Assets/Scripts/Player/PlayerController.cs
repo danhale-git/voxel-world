@@ -233,7 +233,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 local = voxel - chunk.position;
 			int x = (int)local.x, y = (int)local.y, z = (int)local.z;
 			Debug.Log(chunk.blockShapes[x,y,z]);
-			Debug.Log(chunk.GetBitMask(voxel -chunk.position, true, chunk.blockTypes[x,y,z]));
+			Debug.Log(chunk.GetBitMask(voxel -chunk.position));
 		}
 	}
 

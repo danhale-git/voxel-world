@@ -84,9 +84,16 @@ public static class Util
 		return rounded;
 	}
 
-	public static bool InChunk(float value, float offsetIn)
+	public static bool InChunk(float value, float offsetIn = 0)
 	{
 		if(value < 0 + offsetIn || value >= World.chunkSize - offsetIn) return false;
+		return true;
+	}
+	public static bool InChunk(Vector3 value, float offsetIn = 0)
+	{
+		if(	(value.x < 0 + offsetIn || value.x >= World.chunkSize - offsetIn) ||
+			(value.y < 0 + offsetIn || value.y >= World.chunkSize - offsetIn) ||
+			(value.z < 0 + offsetIn || value.z >= World.chunkSize - offsetIn) ) return false;
 		return true;
 	}
 
@@ -117,14 +124,25 @@ public static class Util
 		//	changing it will break bitmasking
 		return new Vector3[]
 		{
-			Vector3.right + voxel,
+			new Vector3(voxel.x+1, voxel.y, voxel.z),
+			new Vector3(voxel.x-1, voxel.y, voxel.z),
+			new Vector3(voxel.x, voxel.y, voxel.z+1),
+			new Vector3(voxel.x, voxel.y, voxel.z-1),
+			new Vector3(voxel.x+1, voxel.y, voxel.z+1),
+			new Vector3(voxel.x+1, voxel.y, voxel.z-1),
+			new Vector3(voxel.x-1, voxel.y, voxel.z+1),
+			new Vector3(voxel.x-1, voxel.y, voxel.z-1)
+
+
+
+			/*Vector3.right + voxel,
 			Vector3.left + voxel,
 			Vector3.forward + voxel,
 			Vector3.back + voxel,
 			new Vector3(1, 0, 1) + voxel,
 			new Vector3(1, 0, -1) + voxel,	
 			new Vector3(-1, 0, 1) + voxel,	
-			new Vector3(-1, 0, -1) + voxel
+			new Vector3(-1, 0, -1) + voxel*/
 		};
 	}
 

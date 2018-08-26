@@ -105,7 +105,17 @@ public class World : MonoBehaviour
 				Vector3 offset = new Vector3(x, 0, z) * chunkSize;
 				Vector3 position = centerChunk + offset;
 				
-				GenerateColumn((int)position.x,
+				GenerateColumn(	(int)position.x,
+								(int)position.z);
+			}
+
+		for(int x = -radius + 1; x < radius; x++)
+			for(int z = -radius + 1; z < radius; z++)
+			{
+				Vector3 offset = new Vector3(x, 0, z) * chunkSize;
+				Vector3 position = centerChunk + offset;
+
+				SmoothColumn(	(int)position.x,
 								(int)position.z);
 			}
 
@@ -278,15 +288,31 @@ public class World : MonoBehaviour
 		return aChunkWasGenerated;
 	}
 
+	//	Smooth terrain
+	void SmoothChunk(Vector3 position)
+	{
+		Chunk chunk = chunks[position];
+		if(chunk.status != Chunk.Status.GENERATED) { return; }
 
-	//	Draw chunk meshe
+		chunk.SmoothBlocks();
+	}
+	void SmoothColumn(int x, int z)
+	{
+		Column topol = columns[new Vector3(x, 0, z)];
+		if(topol.spawnStatus != Chunk.Status.GENERATED) return;
+
+		for(int y = topol.bottomChunkDraw; y <= topol.topChunkDraw; y+=chunkSize)
+		{
+			SmoothChunk(new Vector3(x, y, z));
+		}
+	}
+
+	//	Draw chunk meshes
 	bool DrawChunk(Vector3 position)
 	{
 		Chunk chunk = chunks[position];
 		if(chunk.status == Chunk.Status.DRAWN) { return false; }
 		
-		//chunk.SmoothBlocks();
-
 		chunk.Draw();
 		return true;
 	}

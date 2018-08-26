@@ -143,55 +143,10 @@ public class Chunk
 				}
 	}*/
 
-	public void Redraw()
+	public void SmoothBlocks()
 	{
-		Object.DestroyImmediate(filter);
-		Object.DestroyImmediate(renderer);
-		Object.DestroyImmediate(collider);
-		Draw(redraw: true);
-	}
-
-	public void Draw(bool redraw = false)
-	{	
-		//bool debugging = false;
-
-		if(status == Status.DRAWN && !redraw ||
-		   composition == Composition.EMPTY)
-		{
-			return;
-		}
-		
-		Vector3[] offsets = Util.CubeFaceDirections();
-		int solidAdjacentChunkCount = 0;
-		for(int i = 0; i < 6; i++)
-		{
-			Vector3 adjacentPosition = this.position + (offsets[i] * World.chunkSize);
-
-			//World.debug.OutlineChunk(adjacentPosition, Color.green, sizeDivision: 3.5f);
-
-			Chunk adjacentChunk = World.chunks[adjacentPosition];
-			if(adjacentChunk.composition == Chunk.Composition.SOLID)
-			{
-				solidAdjacentChunkCount++;
-			}
-			if(solidAdjacentChunkCount == 6) return;
-		}
-
-		world.chunksDrawn++;
-		World.debug.Output("Chunks drawn", world.chunksDrawn.ToString());
-
-		List<Vector3> verts = new List<Vector3>();
-		List<Vector3> norms = new List<Vector3>();
-		List<int> tris = new List<int>();
-		List<Color> cols = new List<Color>();
-
-		//	Vertex count for offsetting triangle indices
-		int vertexCount = 0;
-		int exposedBlockCount = 0;
-
-		if(!redraw && composition == Composition.MIX)
-		{
-			//	Remove unwanted blocks from surface
+		if(this.composition != Composition.MIX) return;
+		//	Remove unwanted blocks from surface
 			//	*This is not completely deterministic - the order in which chunks are processed could impact the final terrain in some cases
 			for(int x = 0; x < World.chunkSize; x++)
 				for(int z = 0; z < World.chunkSize; z++)
@@ -244,7 +199,53 @@ public class Chunk
 						previousY = y;
 					}
 				}
+	}
+
+	public void Redraw()
+	{
+		Object.DestroyImmediate(filter);
+		Object.DestroyImmediate(renderer);
+		Object.DestroyImmediate(collider);
+		Draw(redraw: true);
+	}
+
+	public void Draw(bool redraw = false)
+	{	
+		//bool debugging = false;
+
+		if(status == Status.DRAWN && !redraw ||
+		   composition == Composition.EMPTY)
+		{
+			return;
 		}
+		
+		Vector3[] offsets = Util.CubeFaceDirections();
+		int solidAdjacentChunkCount = 0;
+		for(int i = 0; i < 6; i++)
+		{
+			Vector3 adjacentPosition = this.position + (offsets[i] * World.chunkSize);
+
+			//World.debug.OutlineChunk(adjacentPosition, Color.green, sizeDivision: 3.5f);
+
+			Chunk adjacentChunk = World.chunks[adjacentPosition];
+			if(adjacentChunk.composition == Chunk.Composition.SOLID)
+			{
+				solidAdjacentChunkCount++;
+			}
+			if(solidAdjacentChunkCount == 6) return;
+		}
+
+		world.chunksDrawn++;
+		World.debug.Output("Chunks drawn", world.chunksDrawn.ToString());
+
+		List<Vector3> verts = new List<Vector3>();
+		List<Vector3> norms = new List<Vector3>();
+		List<int> tris = new List<int>();
+		List<Color> cols = new List<Color>();
+
+		//	Vertex count for offsetting triangle indices
+		int vertexCount = 0;
+		int exposedBlockCount = 0;
 
 		//	Generate mesh data
 		for(int x = 0; x < World.chunkSize; x++)
@@ -363,7 +364,7 @@ public class Chunk
 		}
 	}
 
-	public byte GetBitMask(Vector3 voxel, bool checkType = false, Blocks.Types currentType = 0)
+	public byte GetBitMask(Vector3 voxel)
 	{
 		Vector3[] neighbours = Util.HorizontalBlockNeighbours(voxel);
 		int value = 1;
@@ -371,19 +372,24 @@ public class Chunk
 
 		for(int i = 0; i < neighbours.Length; i++)
 		{
-			Chunk owner = BlockOwner(neighbours[i]);
-
-			Vector3 pos = owner != this ? Util.WrapBlockIndex(neighbours[i]) : neighbours[i];
+			Chunk owner;
+			Vector3 pos;
+			if(!Util.InChunk(neighbours[i]))
+			{
+				owner = BlockOwner(neighbours[i]);
+				pos = owner != this ? Util.WrapBlockIndex(neighbours[i]) : neighbours[i];
+			}
+			else
+			{
+				owner = this;
+				pos = neighbours[i];
+			}		
 
 			int x = (int)pos.x, y = (int)pos.y, z = (int)pos.z;
 			
 			Blocks.Types type = owner.blockTypes[x, y, z];
 
 			if(Blocks.seeThrough[(int)type])
-			{
-				total += value;
-			}
-			else if(checkType && type != currentType)
 			{
 				total += value;
 			}
