@@ -132,17 +132,6 @@ public static class Util
 			new Vector3(voxel.x+1, voxel.y, voxel.z-1),
 			new Vector3(voxel.x-1, voxel.y, voxel.z+1),
 			new Vector3(voxel.x-1, voxel.y, voxel.z-1)
-
-
-
-			/*Vector3.right + voxel,
-			Vector3.left + voxel,
-			Vector3.forward + voxel,
-			Vector3.back + voxel,
-			new Vector3(1, 0, 1) + voxel,
-			new Vector3(1, 0, -1) + voxel,	
-			new Vector3(-1, 0, 1) + voxel,	
-			new Vector3(-1, 0, -1) + voxel*/
 		};
 	}
 

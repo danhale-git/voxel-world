@@ -119,7 +119,7 @@ public class World : MonoBehaviour
 								(int)position.z);
 			}
 
-		//	Draw chunk spiralling out from player in radius
+		//	Draw chunks spiralling out from player in radius
 		if(chunkDrawCoroutine != null) StopCoroutine(chunkDrawCoroutine);
 		chunkDrawCoroutine = StartCoroutine(DrawChunksInSpiral(centerChunk, radius));
 	}
