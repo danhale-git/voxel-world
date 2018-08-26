@@ -228,11 +228,12 @@ public class PlayerController : MonoBehaviour {
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = Util.RoundVector3(pointInCube);
+
 			Chunk chunk = World.VoxelOwnerChunk(voxel);
-			Debug.Log(chunk.GetBitMask(voxel - chunk.position));
 			Vector3 local = voxel - chunk.position;
 			int x = (int)local.x, y = (int)local.y, z = (int)local.z;
 			Debug.Log(chunk.blockShapes[x,y,z]);
+			Debug.Log(chunk.GetBitMask(voxel -chunk.position));
 		}
 	}
 

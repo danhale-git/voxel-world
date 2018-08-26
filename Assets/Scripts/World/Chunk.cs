@@ -191,12 +191,23 @@ public class Chunk
 
 		if(!redraw && composition == Composition.MIX)
 		{
+			//	Remove unwanted blocks from surface
+			for(int x = 0; x < World.chunkSize; x++)
+				for(int z = 0; z < World.chunkSize; z++)
+				{
+					int y = column.heightMap[x,z] - (int)this.position.y;
+
+					if(y > World.chunkSize-1 || y < 0) continue;
+
+					blockBytes[x,y,z] = GetBitMask(new Vector3(x,y,z));
+					Shapes.RemoveBlocks(this, x, y, z);
+				}
+
+			//	Assign shapes to smooth terrain
 			for(int x = 0; x < World.chunkSize; x++)
 				for(int z = 0; z < World.chunkSize; z++)
 				{
 					int height = column.heightMap[x,z] - (int)this.position.y;
-					Shapes.Types previousShape = 0;
-					int previousRotation = 0;
 
 					for(int y = height; y > height -3; y-- )
 					{
@@ -207,32 +218,8 @@ public class Chunk
 						if(Blocks.smoothSurface[(int)type])
 						{
 							blockBytes[x,y,z] = GetBitMask(blockPosition);
-							Shapes.SetSlopes(this, blockPosition);
+							Shapes.SetSlopes(this, x, y, z);
 						}
-
-						int rotationDifference = blockYRotation[x,y,z] - previousRotation;
-						int loopedRotation = rotationDifference > 3 ? rotationDifference - 3 : rotationDifference;
-
-						if(	 y < height)
-						{
-							if(	 previousShape == Shapes.Types.WEDGE ||
-								 previousShape == Shapes.Types.WEDGECORNER ||
-								 previousShape == Shapes.Types.WEDGECORNERINVERSE ||
-								(previousShape == Shapes.Types.CORNERIN && blockShapes[x,y,z] == Shapes.Types.WEDGE))
-							{
-								blockShapes[x,y,z] = 0;
-								blockYRotation[x,y,z] = 0;
-							}
-							else if(previousShape == Shapes.Types.CORNEROUT && blockShapes[x,y,z] == Shapes.Types.WEDGE)
-							{
-								if(loopedRotation == 0 || loopedRotation == 2)
-									blockShapes[x,y,z] = Shapes.Types.WEDGECORNER; // Use previous rotation to calculate rotation difference and choose normal or inverse wedge corner
-								else if(loopedRotation == 3 || loopedRotation == 1)
-									blockShapes[x,y,z] = Shapes.Types.WEDGECORNERINVERSE; // Use previous rotation to calculate rotation difference and choose normal or inverse wedge corner
-							}
-						}
-						previousShape = blockShapes[x,y,z];
-						previousRotation = blockYRotation[x,y,z];
 					}
 				}
 		}

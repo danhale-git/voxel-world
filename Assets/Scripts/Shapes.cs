@@ -5,7 +5,7 @@ using System.Linq;
 
 public static class Shapes
 {
-	public enum Types {CUBE, WEDGE, CORNERIN, CORNEROUT, OUTCROP, STRIP, STRIPEND, WEDGECORNER, WEDGECORNERINVERSE, NONE}
+	public enum Types {CUBE, WEDGE, CORNERIN, CORNEROUT, DIAGONALSTRIP}
 	public enum Rotate { FRONT, RIGHT, BACK, LEFT }
 	static int[] rotations = { 0, 90, 180, 270 };
 	
@@ -14,15 +14,6 @@ public static class Shapes
 
 	public enum Faces {RIGHT, LEFT, FRONT, BACK, TOP, BOTTOM, LSLOPE, RSLOPE}
 	const int numberOfFaces = 8;
-
-	//	For specifying which face of a shape is being worked on
-	/* public enum WedgeFace {SLOPE, BOTTOM, LEFT, RIGHT, BACK}	//
-	public enum CornerOutFace {SLOPE, BOTTOM, LEFT}
-	public enum CornerInFace {SLOPE, TOP}
-	public enum OutCropFace {RSLOPE, LSLOPE, RIGHT, LEFT, FRONT, BACK, TOP, BOTTOM}
-	public enum StripFace {RIGHT, LEFT, FRONT, BACK, TOP, BOTTOM}
-	public enum StripEndFace {RIGHT, LEFT, FRONT, BACK, TOP, BOTTOM}
-	public enum LumpFace {RIGHT, LEFT, FRONT, BACK, BOTTOM}	//*/
 
 	//	Cube corners
 	readonly static Vector3 v0 = new Vector3( 	-0.5f, -0.5f,	 0.5f );	//	left bottom front
@@ -51,11 +42,7 @@ public static class Shapes
 			shapes.Add(new Wedge());
 			shapes.Add(new CornerIn());
 			shapes.Add(new CornerOut());
-			shapes.Add(new Outcrop());
-			shapes.Add(new Strip());
-			shapes.Add(new StripEnd());
-			shapes.Add(new WedgeCorner());
-			shapes.Add(new WedgeCornerInverse());
+			shapes.Add(new DiagonalStrip());
 
 			foreach(Shape shape in shapes)
 			{
@@ -66,11 +53,11 @@ public static class Shapes
 
 	public class Shape
 	{
-		Vector3[][][] shapeVertices = new Vector3[rotations.Length][][];
-		Vector3[][][] shapeNormals = new Vector3[rotations.Length][][];
-		int[][][] shapeTriangles = new int[rotations.Length][][];
+		protected Vector3[][][] shapeVertices = new Vector3[rotations.Length][][];
+		protected Vector3[][][] shapeNormals = new Vector3[rotations.Length][][];
+		protected int[][][] shapeTriangles = new int[rotations.Length][][];
 
-		public void GenerateMeshes()
+		public virtual void GenerateMeshes()
 		{
 			for(int r = 0; r < rotations.Length; r++)
 			{
@@ -157,6 +144,26 @@ public static class Shapes
 
 	public class Cube : Shape
 	{
+		//	Override Generate meshes because cubes don't need rotation
+		public override void GenerateMeshes()
+		{
+			Quaternion rotation = Quaternion.Euler(0, 0, 0);
+			List<Faces> faces = GetFaces(new bool[6], 0, true);
+
+			shapeVertices[0] = new Vector3[numberOfFaces][];
+			shapeNormals[0] = new Vector3[numberOfFaces][];
+			shapeTriangles[0] = new int[numberOfFaces][];
+
+			for(int f = 0; f < faces.Count; f++)
+			{
+				shapeVertices[0][(int)faces[f]] = 	Vertices(faces[f], Vector3.zero);
+
+				shapeNormals[0][(int)faces[f]] =	Normals(faces[f]);
+
+				shapeTriangles[0][(int)faces[f]] = 	Triangles(faces[f], 0);
+			}
+			
+		}
 		public override List<Faces> GetFaces(bool[] exposedFaces, int rotation, bool getAll = false)
 		{
 			List<Faces> faces = new List<Faces>();
@@ -335,83 +342,13 @@ public static class Shapes
 		}
 	}
 
-	public  class Outcrop : Shape
-	{
-		public override List<Faces> GetFaces(bool[] exposedFaces, int rotation, bool getAll = false)		 
-		{
-			List<Faces> faces = new List<Faces>();
-
-			if(getAll || TopFront(exposedFaces, rotation))
-			{
-												faces.Add(Faces.RSLOPE);
-												faces.Add(Faces.LSLOPE);
-												faces.Add(Faces.TOP);
-			}
-			if(getAll || Right(exposedFaces, rotation))	faces.Add(Faces.RIGHT);
-			if(getAll || Left(exposedFaces, rotation))	faces.Add(Faces.LEFT);
-			if(getAll || Front(exposedFaces, rotation))	faces.Add(Faces.FRONT);
-			if(getAll || Back(exposedFaces, rotation))	faces.Add(Faces.BACK);
-			if(getAll || Bottom(exposedFaces, rotation))	faces.Add(Faces.BOTTOM);
-			return faces;
-		}
-
-		public override Vector3[] Vertices(Faces face, Vector3 offset)
-		{
-			switch(face)
-			{
-				case Faces.RSLOPE: return new Vector3[] {v1+offset, v6+offset, v9+offset};
-				case Faces.LSLOPE: return new Vector3[] {v9+offset, v7+offset, v0+offset};
-				case Faces.RIGHT: return new Vector3[] {v2+offset, v6+offset, v1+offset};
-				case Faces.LEFT: return new Vector3[] {v0+offset, v7+offset, v3+offset};
-				case Faces.FRONT: return new Vector3[] {v0+offset, v1+offset, v9+offset};				
-				case Faces.BACK: return new Vector3[] {v6+offset, v7+offset, v3+offset, v2+offset};				
-				case Faces.TOP: return new Vector3[] {v7+offset, v9+offset, v6+offset};				
-				case Faces.BOTTOM: return new Vector3[] {v0+offset, v1+offset, v2+offset, v3+offset};
-				default: return null;			}
-		}
-
-		public override int[] Triangles(Faces face, int offset)
-		{
-			switch(face)
-			{
-				case Faces.RSLOPE: return new int[] {0+offset, 1+offset, 2+offset};
-				case Faces.LSLOPE: return new int[] {0+offset, 1+offset, 2+offset};
-				case Faces.RIGHT: return new int[] {0+offset, 1+offset, 2+offset};
-				case Faces.LEFT: return new int[] {0+offset, 1+offset, 2+offset};
-				case Faces.FRONT: return new int[] {0+offset, 1+offset, 2+offset};
-				case Faces.BACK: return new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
-				case Faces.TOP: return new int[] {0+offset, 1+offset, 2+offset};
-				case Faces.BOTTOM: return new int[] {0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset};
-				default: return null;			}
-		}
-
-		public override Vector3[] Normals(Faces face)
-		{
-			switch(face)
-			{
-				case Faces.RSLOPE: return Enumerable.Repeat(Vector3.up + (Vector3.forward / 2) + Vector3.right, 3).ToArray();
-				case Faces.LSLOPE: return Enumerable.Repeat(Vector3.up + (Vector3.forward / 2) + Vector3.left, 3).ToArray();
-				case Faces.RIGHT: return Enumerable.Repeat(Vector3.right, 3).ToArray();
-				case Faces.LEFT: return Enumerable.Repeat(Vector3.left, 3).ToArray();
-				case Faces.FRONT: return Enumerable.Repeat(Vector3.forward, 3).ToArray();
-				case Faces.BACK: return Enumerable.Repeat(Vector3.back, 4).ToArray();
-				case Faces.TOP: return Enumerable.Repeat(Vector3.up + (Vector3.forward / 2), 3).ToArray();
-				case Faces.BOTTOM: return Enumerable.Repeat(Vector3.down, 4).ToArray();
-				default: return null;
-			}
-		}
-	}
-
-	public class Strip : Shape
+	public class DiagonalStrip : Shape
 	{
 		public override List<Faces> GetFaces(bool[] exposedFaces, int rotation, bool getAll = false)		 		
 		{
 			List<Faces> faces = new List<Faces>();
-			faces.Add(Faces.RIGHT);
-			faces.Add(Faces.LEFT);
-			if(getAll || Back(exposedFaces, rotation))		faces.Add(Faces.BACK);
-			if(getAll || Front(exposedFaces, rotation))		faces.Add(Faces.FRONT);
-			if(getAll || Bottom(exposedFaces, rotation))	faces.Add(Faces.BOTTOM);
+			if(getAll || TopFrontLeft(exposedFaces, rotation))		faces.Add(Faces.LSLOPE);
+			if(getAll || TopBackRight(exposedFaces, rotation))		faces.Add(Faces.RSLOPE);
 			return faces;			
 		}
 
@@ -419,11 +356,8 @@ public static class Shapes
 		{
 			switch(face)
 			{
-				case Faces.RIGHT: return new Vector3[] {v0+offset, v9+offset, v8+offset, v3+offset};
-				case Faces.LEFT: return new Vector3[] {v9+offset, v1+offset, v2+offset, v8+offset};				
-				case Faces.FRONT: return new Vector3[] {v0+offset, v1+offset, v9+offset};
-				case Faces.BACK: return new Vector3[] {v8+offset, v2+offset, v3+offset};
-				case Faces.BOTTOM: return new Vector3[] {v3+offset, v2+offset, v1+offset, v0+offset};
+				case Faces.LSLOPE: return new Vector3[] {v5+offset, v7+offset, v0+offset};
+				case Faces.RSLOPE: return new Vector3[] {v2+offset, v7+offset, v5+offset};				
 				default: return null;
 			}
 		}
@@ -432,11 +366,8 @@ public static class Shapes
 		{
 			switch(face)
 			{
-				case Faces.RIGHT: return new int[] {0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset};
-				case Faces.LEFT: return new int[] {0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset};
-				case Faces.FRONT: return new int[] {0+offset, 1+offset, 2+offset};				
-				case Faces.BACK: return new int[] {0+offset, 1+offset, 2+offset};
-				case Faces.BOTTOM: return new int[] {0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset};				
+				case Faces.LSLOPE: return new int[] {0+offset, 1+offset, 2+offset};
+				case Faces.RSLOPE: return new int[] {0+offset, 1+offset, 2+offset};
 				default: return null;
 			}
 		}
@@ -445,177 +376,16 @@ public static class Shapes
 		{
 			switch(face)
 			{
-				case Faces.RIGHT: return Enumerable.Repeat(Vector3.right + Vector3.up, 4).ToArray();				
-				case Faces.LEFT: return Enumerable.Repeat(Vector3.left + Vector3.up, 4).ToArray();
-				case Faces.FRONT: return Enumerable.Repeat(Vector3.forward, 3).ToArray();				
-				case Faces.BACK: return Enumerable.Repeat(Vector3.back, 3).ToArray();
-				case Faces.BOTTOM: return Enumerable.Repeat(Vector3.down, 4).ToArray();
+				case Faces.LSLOPE: return Enumerable.Repeat(Vector3.left + Vector3.up + Vector3.forward, 3).ToArray();				
+				case Faces.RSLOPE: return Enumerable.Repeat(Vector3.right + Vector3.up + Vector3.back, 3).ToArray();
 				default: return null;
-			}
-		}
-	}
-
-	public class StripEnd : Shape
-	{
-		public override List<Faces> GetFaces(bool[] exposedFaces, int rotation, bool getAll = false)		 				
-		{
-			List<Faces> faces = new List<Faces>();
-			faces.Add(Faces.RIGHT);
-			faces.Add(Faces.LEFT);
-			faces.Add(Faces.FRONT);
-			if(getAll || Back(exposedFaces, rotation))		faces.Add(Faces.BACK);
-			if(getAll || Bottom(exposedFaces, rotation))	faces.Add(Faces.BOTTOM);
-			return faces;		
-		}
-		public override Vector3[] Vertices(Faces face, Vector3 offset)
-		{
-			switch(face)
-			{
-				case Faces.RIGHT: return new Vector3[] {v0+offset, v12+offset, v8+offset, v3+offset};
-				case Faces.LEFT: return new Vector3[] {v12+offset, v1+offset, v2+offset, v8+offset};				
-				case Faces.FRONT: return new Vector3[] {v0+offset, v1+offset, v12+offset};
-				case Faces.BACK: return new Vector3[] {v8+offset, v2+offset, v3+offset};
-				case Faces.BOTTOM: return new Vector3[] {v3+offset, v2+offset, v1+offset, v0+offset};
-				default: return null;
-			}
-		}
-
-		public override int[] Triangles(Faces face, int offset)
-		{
-			switch(face)
-			{
-				case Faces.RIGHT: return new int[] {0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset};
-				case Faces.LEFT: return new int[] {0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset};
-				case Faces.FRONT: return new int[] {0+offset, 1+offset, 2+offset};				
-				case Faces.BACK: return new int[] {0+offset, 1+offset, 2+offset};
-				case Faces.BOTTOM: return new int[] {0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset};				
-				default: return null;
-			}
-		}
-
-		public override Vector3[] Normals(Faces face)
-		{
-			switch(face)
-			{
-				case Faces.RIGHT: return Enumerable.Repeat(Vector3.right + Vector3.up, 4).ToArray();				
-				case Faces.LEFT: return Enumerable.Repeat(Vector3.left + Vector3.up, 4).ToArray();
-				case Faces.FRONT: return Enumerable.Repeat(Vector3.forward, 3).ToArray();				
-				case Faces.BACK: return Enumerable.Repeat(Vector3.back, 3).ToArray();
-				case Faces.BOTTOM: return Enumerable.Repeat(Vector3.down, 4).ToArray();
-				default: return null;
-			}
-		}
-	}
-
-	public class WedgeCorner : Shape
-	{
-		public override List<Faces> GetFaces(bool[] exposedFaces, int rotation, bool getAll = false)
-		{
-			List<Faces> faces = new List<Faces>();
-			faces.Add(Faces.TOP);
-			if(getAll || TopFront(exposedFaces, rotation))	faces.Add(Faces.FRONT);
-			if(getAll || Left(exposedFaces, rotation))		faces.Add(Faces.RIGHT);
-			if(getAll || Right(exposedFaces, rotation))		faces.Add(Faces.LEFT);
-			return faces;	
-		}
-				
-		public override Vector3[] Vertices(Faces face, Vector3 offset)
-		{ 
-			switch(face)
-			{
-				case Faces.FRONT: 	return new Vector3[] {v6+offset, v1+offset, v0+offset};
-				case Faces.RIGHT: 	return new Vector3[] {v6+offset, v2+offset, v1+offset};
-				case Faces.LEFT: 	return new Vector3[] {v7+offset, v0+offset, v3+offset};
-				case Faces.TOP: 	return new Vector3[] {v6+offset, v0+offset, v4+offset};
-				default: 			return null;
-			}
-		}
-
-		public override Vector3[] Normals(Faces face)
-		{
-			switch(face)
-			{
-				case Faces.FRONT: 	return Enumerable.Repeat(Vector3.up + Vector3.forward, 3).ToArray();
-				case Faces.RIGHT: 	return Enumerable.Repeat(Vector3.right, 3).ToArray();
-				case Faces.LEFT: 	return Enumerable.Repeat(Vector3.left, 3).ToArray();
-				case Faces.TOP: 	return Enumerable.Repeat(Vector3.forward + Vector3.right, 3).ToArray();
-				default: 			return null;
-
-			}
-		}
-
-		public override int[] Triangles(Faces face, int offset)
-		{
-			switch(face)
-			{
-				case Faces.FRONT: 	return new int[] {2+offset, 1+offset, 0+offset};
-				case Faces.RIGHT: 	return new int[] {2+offset, 1+offset, 0+offset};
-				case Faces.LEFT: 	return new int[] {2+offset, 1+offset, 0+offset};
-				case Faces.TOP: 	return new int[] {2+offset, 1+offset, 0+offset};
-				default: 			return null;
-			}
-		}
-	}
-
-	public class WedgeCornerInverse : Shape
-	{
-		public override List<Faces> GetFaces(bool[] exposedFaces, int rotation, bool getAll = false)
-		{
-			List<Faces> faces = new List<Faces>();
-			faces.Add(Faces.TOP);
-			if(getAll || TopFront(exposedFaces, rotation))	faces.Add(Faces.FRONT);
-			if(getAll || Left(exposedFaces, rotation))		faces.Add(Faces.RIGHT);
-			if(getAll || Right(exposedFaces, rotation))		faces.Add(Faces.LEFT);
-			return faces;	
-		}
-				
-		public override Vector3[] Vertices(Faces face, Vector3 offset)
-		{ 
-			switch(face)
-			{
-				case Faces.FRONT: 	return new Vector3[] {v1+offset, v0+offset, v7+offset};
-				case Faces.RIGHT: 	return new Vector3[] {v6+offset, v2+offset, v1+offset};
-				case Faces.LEFT: 	return new Vector3[] {v7+offset, v0+offset, v3+offset};
-				case Faces.TOP: 	return new Vector3[] {v5+offset, v1+offset, v7+offset};
-				default: 			return null;
-			}
-		}
-
-		public override Vector3[] Normals(Faces face)
-		{
-			switch(face)
-			{
-				case Faces.FRONT: 	return Enumerable.Repeat(Vector3.up + Vector3.forward, 3).ToArray();
-				case Faces.RIGHT: 	return Enumerable.Repeat(Vector3.right, 3).ToArray();
-				case Faces.LEFT: 	return Enumerable.Repeat(Vector3.left, 3).ToArray();
-				case Faces.TOP: 	return Enumerable.Repeat(Vector3.forward + Vector3.left, 3).ToArray();
-				default: 			return null;
-
-			}
-		}
-
-		public override int[] Triangles(Faces face, int offset)
-		{
-			switch(face)
-			{
-				case Faces.FRONT: 	return new int[] {2+offset, 1+offset, 0+offset};
-				case Faces.RIGHT: 	return new int[] {2+offset, 1+offset, 0+offset};
-				case Faces.LEFT: 	return new int[] {2+offset, 1+offset, 0+offset};
-				case Faces.TOP: 	return new int[] {2+offset, 1+offset, 0+offset};
-				default: 			return null;
 			}
 		}
 	}
 	
 	//	Choose which shape a block has based on which adjacent blocks are see through
-	public static void SetSlopes(Chunk chunk, Vector3 voxel)
+	public static void SetSlopes(Chunk chunk, int x, int y, int z)
 	{
-		int x = (int)voxel.x;
-		int y = (int)voxel.y;
-		int z = (int)voxel.z;
-
-		//if(chunk.blockTypes[x,y,z] != Blocks.Types.LIGHTGRASS) return;
-
 		switch(chunk.blockBytes[x,y,z])
 		{
 			//	CORNER OUT
@@ -627,6 +397,12 @@ public static class Shapes
 			case 100:
 			case 101:
 			case 97:
+			case 116:
+			case 69:
+			case 113:
+			case 36:
+			case 5:
+			case 37:
 				chunk.blockShapes[x,y,z] = Types.CORNEROUT;
 				chunk.blockYRotation[x,y,z] = (int)Rotate.FRONT;
 				break;
@@ -635,6 +411,10 @@ public static class Shapes
 			case 41:
 			case 169:
 			case 185:
+			case 9:
+			case 152:
+			case 153:
+			case 25:
 				chunk.blockShapes[x,y,z] = Types.CORNEROUT;
 				chunk.blockYRotation[x,y,z] = (int)Rotate.RIGHT;
 				break;
@@ -646,6 +426,14 @@ public static class Shapes
 			case 104:
 			case 106:
 			case 177:
+			case 74:
+			case 232:
+			case 42:
+			case 162:
+			case 72:
+			case 98:
+			case 226:
+			case 10:
 				chunk.blockShapes[x,y,z] = Types.CORNEROUT;
 				chunk.blockYRotation[x,y,z] = (int)Rotate.BACK;
 				break;
@@ -655,7 +443,11 @@ public static class Shapes
 			case 214:
 			case 82:
 			case 198:
-			case 98:
+			case 150:
+			case 148:
+			case 210:
+			case 134:
+			case 132:
 				chunk.blockShapes[x,y,z] = Types.CORNEROUT;
 				chunk.blockYRotation[x,y,z] = (int)Rotate.LEFT;
 				break;
@@ -682,75 +474,13 @@ public static class Shapes
 				chunk.blockYRotation[x,y,z] = (int)Rotate.LEFT;
 				break;
 
-			//	OUTCROP
-			
-			case 80:
-				chunk.blockShapes[x,y,z] = Types.OUTCROP;
-				chunk.blockYRotation[x,y,z] = (int)Rotate.FRONT;
-				break;
-
-			case 48:
-				chunk.blockShapes[x,y,z] = Types.OUTCROP;
-				chunk.blockYRotation[x,y,z] = (int)Rotate.RIGHT;
-				break;
-
-			case 160:
-				chunk.blockShapes[x,y,z] = Types.OUTCROP;
-				chunk.blockYRotation[x,y,z] = (int)Rotate.BACK;
-				break;
-
-			case 192:
-				chunk.blockShapes[x,y,z] = Types.OUTCROP;
-				chunk.blockYRotation[x,y,z] = (int)Rotate.LEFT;
-				break;
-
-			//  STRIP
-			
-			case 243:
-			case 163:
-			case 83:
-				chunk.blockShapes[x,y,z] = Types.STRIP;
-				chunk.blockYRotation[x,y,z] = (int)Rotate.FRONT;
-				break;
-
-			case 252:
-			case 60:
-			case 204:
-				chunk.blockShapes[x,y,z] = Types.STRIP;
-				chunk.blockYRotation[x,y,z] = (int)Rotate.RIGHT;
-				break;
-
-			//	STRIPEND
-			
-			case 247:
-			case 87:
-				chunk.blockShapes[x,y,z] = Types.STRIPEND;
-				chunk.blockYRotation[x,y,z] = (int)Rotate.FRONT;
-				break;
-			
-			case 61:
-				chunk.blockShapes[x,y,z] = Types.STRIPEND;
-				chunk.blockYRotation[x,y,z] = (int)Rotate.RIGHT;
-				break;
-
-			case 251:
-			case 171:
-				chunk.blockShapes[x,y,z] = Types.STRIPEND;
-				chunk.blockYRotation[x,y,z] = (int)Rotate.BACK;
-				break;
-
-			case 254:
-			case 206:
-				chunk.blockShapes[x,y,z] = Types.STRIPEND;
-				chunk.blockYRotation[x,y,z] = (int)Rotate.LEFT;
-				break;
-
 			//	WEDGE
 
 			case 20:
 			case 84:
 			case 68:
 			case 4:
+			case 80:
 				chunk.blockShapes[x,y,z] = Types.WEDGE;
 				chunk.blockYRotation[x,y,z] = (int)Rotate.FRONT;
 				break;
@@ -759,6 +489,7 @@ public static class Shapes
 			case 17:
 			case 33:
 			case 1:
+			case 48:
 				chunk.blockShapes[x,y,z] = Types.WEDGE;
 				chunk.blockYRotation[x,y,z] = (int)Rotate.RIGHT;
 				break;
@@ -767,6 +498,7 @@ public static class Shapes
 			case 40:
 			case 8:
 			case 136:
+			case 160:
 				chunk.blockShapes[x,y,z] = Types.WEDGE;
 				chunk.blockYRotation[x,y,z] = (int)Rotate.BACK;
 				break;
@@ -775,8 +507,20 @@ public static class Shapes
 			case 2:
 			case 130:
 			case 66:
+			case 192:
 				chunk.blockShapes[x,y,z] = Types.WEDGE;
 				chunk.blockYRotation[x,y,z] = (int)Rotate.LEFT;
+				break;
+
+			//	DIAGONAL STRIP
+			case 96:
+				chunk.blockShapes[x,y,z] = Types.DIAGONALSTRIP;
+				chunk.blockYRotation[x,y,z] = (int)Rotate.FRONT;
+				break;
+
+			case 144:
+				chunk.blockShapes[x,y,z] = Types.DIAGONALSTRIP;
+				chunk.blockYRotation[x,y,z] = (int)Rotate.RIGHT;
 				break;
 
 			//	CUBE
@@ -786,6 +530,19 @@ public static class Shapes
 				chunk.blockYRotation[x,y,z] = (int)Rotate.FRONT;
 				break;
 
+			
+
+			default:
+				chunk.blockShapes[x,y,z] = Types.CUBE;
+				chunk.blockYRotation[x,y,z] = (int)Rotate.FRONT;
+				break;
+		}
+	}
+
+	public static void RemoveBlocks(Chunk chunk, int x, int y, int z)
+	{
+		switch(chunk.blockBytes[x,y,z])
+		{
 			//	DELETE
 			case 127:
 			case 111:
@@ -793,13 +550,47 @@ public static class Shapes
 			case 78:
 			case 255:
 			case 187:
+			case 189:
+			case 222:
+			case 125:
+			case 121:
+			case 119:
+			case 238:
+			case 115:
+			case 231:
+			case 6:
+			case 22:
+			case 154:
+			case 149:
+			case 235:
+			case 157:
+			case 215:
+			case 247:
+			case 87:			
+			case 61:
+			case 251:
+			case 171:
+			case 254:
+			case 206:
+			case 243:
+			case 163:
+			case 83:
+			case 252:
+			case 60:
+			case 204:
+			case 3:
+			case 107:
+			case 142:
+			case 218:
+			case 51:
+			case 102:
+			case 105:
 				chunk.blockTypes[x,y,z] = Blocks.Types.AIR;
 				break;
 
 			default:
-				chunk.blockShapes[x,y,z] = Types.CUBE;
-				chunk.blockYRotation[x,y,z] = (int)Rotate.FRONT;
 				break;
+
 		}
 	}
 
@@ -825,6 +616,13 @@ public static class Shapes
 	{
 		return (exposedFaces[(int)RotateFace(CubeFace.TOP, rotationIndex)]   ||
 				exposedFaces[(int)RotateFace(CubeFace.FRONT, rotationIndex)] ||
+				exposedFaces[(int)RotateFace(CubeFace.LEFT, rotationIndex)]);
+	}
+
+	static bool TopBackRight(bool[] exposedFaces, int rotationIndex)
+	{
+		return (exposedFaces[(int)RotateFace(CubeFace.TOP, rotationIndex)]   ||
+				exposedFaces[(int)RotateFace(CubeFace.BACK, rotationIndex)] ||
 				exposedFaces[(int)RotateFace(CubeFace.LEFT, rotationIndex)]);
 	}
 
