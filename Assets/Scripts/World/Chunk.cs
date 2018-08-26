@@ -192,6 +192,7 @@ public class Chunk
 		if(!redraw && composition == Composition.MIX)
 		{
 			//	Remove unwanted blocks from surface
+			//	*This is not completely deterministic - the order in which chunks are processed could impact the final terrain in some cases
 			for(int x = 0; x < World.chunkSize; x++)
 				for(int z = 0; z < World.chunkSize; z++)
 				{
@@ -199,8 +200,13 @@ public class Chunk
 
 					if(y > World.chunkSize-1 || y < 0) continue;
 
-					blockBytes[x,y,z] = GetBitMask(new Vector3(x,y,z));
-					Shapes.RemoveBlocks(this, x, y, z);
+					Blocks.Types type = blockTypes[x,y,z];
+
+					if(Blocks.smoothSurface[(int)type])
+					{
+						blockBytes[x,y,z] = GetBitMask(new Vector3(x,y,z));//, true, type);
+						Shapes.RemoveBlocks(this, x, y, z);
+					}
 				}
 
 			//	Assign shapes to smooth terrain
@@ -208,10 +214,12 @@ public class Chunk
 				for(int z = 0; z < World.chunkSize; z++)
 				{
 					int height = column.heightMap[x,z] - (int)this.position.y;
+					Shapes.Types previousShape = 0;
+					int previousY = 0;
 
-					for(int y = height; y > height -3; y-- )
+					for(int y = height; y > height - 2; y-- )
 					{
-						if(y > World.chunkSize-1 || y < 0) continue;				
+						if(y > World.chunkSize-1 || y < 0) continue;
 
 						Blocks.Types type = blockTypes[x,y,z];
 						Vector3 blockPosition = new Vector3(x,y,z);
@@ -220,6 +228,20 @@ public class Chunk
 							blockBytes[x,y,z] = GetBitMask(blockPosition);
 							Shapes.SetSlopes(this, x, y, z);
 						}
+
+						//	Avoid overhangs on steep slopes - does not handle iterating between two chunks
+						if(previousShape == Shapes.Types.CORNEROUT && (blockShapes[x,y,z] == Shapes.Types.CORNEROUT || blockShapes[x,y,z] == Shapes.Types.WEDGE))
+						{
+							blockShapes[x,y+1,z] = Shapes.Types.CORNEROUT2;
+							blockShapes[x,y,z] = Shapes.Types.CUBE;
+						}
+						else if(previousShape == Shapes.Types.WEDGE)
+						{
+							blockShapes[x,y,z] = Shapes.Types.CUBE;
+						}
+
+						previousShape = blockShapes[x,y,z];
+						previousY = y;
 					}
 				}
 		}
@@ -312,7 +334,7 @@ public class Chunk
 		Chunk neighbourOwner = BlockOwner(neighbour);
 
 		//	Neighbour is outside this chunk
-		if(neighbourOwner != this)
+		if(!neighbourOwner.Equals(this))
 		{
 			//	Convert local index to neighbouring chunk
 			neighbour = Util.WrapBlockIndex(neighbour);
@@ -335,12 +357,13 @@ public class Chunk
 			int x = (int)neighbour.x, y = (int)neighbour.y, z = (int)neighbour.z;
 
 			Blocks.Types type = neighbourOwner.blockTypes[x, y, z];
+			
 
 			return (Blocks.seeThrough[(int)type] || (int)neighbourOwner.blockShapes[x, y, z] != 0);
 		}
 	}
 
-	public byte GetBitMask(Vector3 voxel)
+	public byte GetBitMask(Vector3 voxel, bool checkType = false, Blocks.Types currentType = 0)
 	{
 		Vector3[] neighbours = Util.HorizontalBlockNeighbours(voxel);
 		int value = 1;
@@ -357,6 +380,10 @@ public class Chunk
 			Blocks.Types type = owner.blockTypes[x, y, z];
 
 			if(Blocks.seeThrough[(int)type])
+			{
+				total += value;
+			}
+			else if(checkType && type != currentType)
 			{
 				total += value;
 			}
@@ -386,5 +413,9 @@ public class Chunk
 		if(edge == Vector3.zero) return this;
 
 		return World.chunks[this.position + (edge * World.chunkSize)];
+	}
+	Vector3 BlockPosition(Chunk owner, Vector3 position)
+	{
+		return owner != this ? Util.WrapBlockIndex(position) : position;
 	}
 }

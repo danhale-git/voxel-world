@@ -5,7 +5,7 @@ using System.Linq;
 
 public static class Shapes
 {
-	public enum Types {CUBE, WEDGE, CORNERIN, CORNEROUT, DIAGONALSTRIP}
+	public enum Types {CUBE, WEDGE, CORNERIN, CORNEROUT, CORNEROUT2, DIAGONALSTRIP}
 	public enum Rotate { FRONT, RIGHT, BACK, LEFT }
 	static int[] rotations = { 0, 90, 180, 270 };
 	
@@ -42,6 +42,7 @@ public static class Shapes
 			shapes.Add(new Wedge());
 			shapes.Add(new CornerIn());
 			shapes.Add(new CornerOut());
+			shapes.Add(new CornerOut2());
 			shapes.Add(new DiagonalStrip());
 
 			foreach(Shape shape in shapes)
@@ -147,20 +148,23 @@ public static class Shapes
 		//	Override Generate meshes because cubes don't need rotation
 		public override void GenerateMeshes()
 		{
-			Quaternion rotation = Quaternion.Euler(0, 0, 0);
-			List<Faces> faces = GetFaces(new bool[6], 0, true);
-
-			shapeVertices[0] = new Vector3[numberOfFaces][];
-			shapeNormals[0] = new Vector3[numberOfFaces][];
-			shapeTriangles[0] = new int[numberOfFaces][];
-
-			for(int f = 0; f < faces.Count; f++)
+			for(int r = 0; r < rotations.Length; r++)
 			{
-				shapeVertices[0][(int)faces[f]] = 	Vertices(faces[f], Vector3.zero);
+				Quaternion rotation = Quaternion.Euler(0, rotations[r], 0);
+				List<Faces> faces = GetFaces(new bool[6], 0, true);
 
-				shapeNormals[0][(int)faces[f]] =	Normals(faces[f]);
+				shapeVertices[r] = new Vector3[numberOfFaces][];
+				shapeNormals[r] = new Vector3[numberOfFaces][];
+				shapeTriangles[r] = new int[numberOfFaces][];
 
-				shapeTriangles[0][(int)faces[f]] = 	Triangles(faces[f], 0);
+				for(int f = 0; f < faces.Count; f++)
+				{
+					shapeVertices[r][(int)faces[f]] = 	Vertices(faces[f], Vector3.zero);
+
+					shapeNormals[r][(int)faces[f]] = 	Normals(faces[f]);
+
+					shapeTriangles[r][(int)faces[f]] = 	Triangles(	faces[f], 0);
+				}
 			}
 			
 		}
@@ -337,6 +341,50 @@ public static class Shapes
 				case Faces.FRONT: return Enumerable.Repeat(Vector3.up + Vector3.forward + Vector3.right, 3).ToArray();
 				case Faces.BOTTOM: return Enumerable.Repeat(Vector3.up, 3).ToArray();
 				case Faces.LEFT: return Enumerable.Repeat(Vector3.right, 3).ToArray();
+				default: return null;
+			}
+		}
+	}
+
+	public  class CornerOut2 : Shape
+	{
+		public override List<Faces> GetFaces(bool[] exposedFaces, int rotation, bool getAll = false)
+		{
+			List<Faces> faces = new List<Faces>();
+			if(getAll || TopFrontRight(exposedFaces, rotation))
+			{
+				faces.Add(Faces.FRONT);
+				faces.Add(Faces.RIGHT);
+			}
+			return faces;
+		}	
+
+		public override  Vector3[] Vertices(Faces face, Vector3 offset)
+		{
+			switch(face)
+			{
+				case Faces.FRONT: return new Vector3[] {v7+offset, v1+offset, v0+offset};
+				case Faces.RIGHT: return new Vector3[] {v1+offset, v2+offset, v7+offset};
+				default: return null;
+			}
+		}
+
+		public override  int[] Triangles(Faces face, int offset)
+		{
+			switch(face)
+			{
+				case Faces.FRONT: return new int[] {2+offset, 1+offset, 0+offset};
+				case Faces.RIGHT: return new int[] {0+offset, 1+offset, 2+offset};			
+				default: return null;
+			}
+		}
+
+		public override  Vector3[] Normals(Faces face)
+		{
+			switch(face)
+			{
+				case Faces.FRONT: return Enumerable.Repeat(Vector3.up + Vector3.forward, 3).ToArray();
+				case Faces.RIGHT: return Enumerable.Repeat(Vector3.up + Vector3.right, 3).ToArray();
 				default: return null;
 			}
 		}
