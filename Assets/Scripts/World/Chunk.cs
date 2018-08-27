@@ -25,7 +25,7 @@ public class Chunk
 	int size;
 	public Vector3 position;
 
-	World.Column column;
+	Column column;
 
 	//	block data
 	public Blocks.Types[,,] blockTypes;
@@ -71,7 +71,7 @@ public class Chunk
 		world.chunksGenerated++;
 		World.debug.Output("Chunks generated", world.chunksGenerated.ToString());
 
-		column = World.Column.Get(position);
+		column = Column.Get(position);
 		int[,] heightMap = column.heightMap;
 
 		bool hasAir = false;

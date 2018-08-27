@@ -152,7 +152,7 @@ public static class Util
 		return System.Math.Round(value, decimalPlaces);
 	}
 
-	static Color DebugBlockColor(int x, int z, World.Column column)
+	static Color DebugBlockColor(int x, int z, Column column)
 	{
 		Color color;
 		FastNoise.EdgeData edge = column.edgeMap[x,z];

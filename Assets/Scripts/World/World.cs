@@ -132,60 +132,13 @@ public class World : MonoBehaviour
 
 	#region Topology
 
-	//	Terrain data
-	public class Column
-	{
-		public Vector3 position;
-		public Chunk.Status spawnStatus;
-		public bool sizeCalculated = false;
-		public int[,] heightMap;
-		public FastNoise.EdgeData[,] edgeMap;
-		public int[,][] cuts = new int[chunkSize,chunkSize][];
-		public TerrainLibrary.BiomeLayer[,] biomeLayers = new TerrainLibrary.BiomeLayer[chunkSize,chunkSize];
-
-		public int highestPoint = 0;
-		public int topChunkGenerate;
-		public int topChunkDraw;	
-
-		public int lowestPoint = 1000;
-		public int bottomChunkGenerate;
-		public int bottomChunkDraw;
-		
-		public Column(Vector3 _position, TerrainGenerator terrain)
-		{
-			position = _position;
-			terrain.GetTopologyData(this);
-		}
-
-		public static Column Get(Vector3 position)
-		{
-			Column column = columns[new Vector3(position.x, 0, position.z)];
-			return column;
-		}
-
-		public void CheckLowest(int value)
-		{
-			if(value < lowestPoint)
-			{
-				lowestPoint = value;
-			}
-		}
-		public void CheckHighest(int value)
-		{
-			if(value > highestPoint)
-			{
-				highestPoint = value;
-			}
-		}
-	}
-
 	//	Generate terrain and store highest/lowest points
 	bool GenerateColumnData(Vector3 position)
 	{
 		Column column;
 		if(columns.TryGetValue(position, out column)) return false;
 
-		column = new Column(position, terrain);
+		column = new Column(position, terrain, this);
 		columns[position] = column;
 
 		return true;
