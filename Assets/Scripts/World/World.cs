@@ -226,7 +226,7 @@ public class World : MonoBehaviour
 
 		if(chunk.status == Chunk.Status.GENERATED) return;
 
-		debug.OutlineChunk(position, Color.white, sizeDivision: 2.5f);
+		//debug.OutlineChunk(position, Color.white, sizeDivision: 2.5f);
 
 		chunk.GenerateBlocks();
 	}
@@ -248,7 +248,7 @@ public class World : MonoBehaviour
 		Chunk chunk = chunks[position];
 		if(chunk.status != Chunk.Status.GENERATED) return;
 
-		debug.OutlineChunk(position, Color.cyan, sizeDivision: 4f);
+		//debug.OutlineChunk(position, Color.cyan, sizeDivision: 4f);
 
 		chunk.SmoothBlocks();
 	}
@@ -271,7 +271,7 @@ public class World : MonoBehaviour
 		Chunk chunk = chunks[position];
 		if(chunk.status == Chunk.Status.DRAWN) return;
 		
-		debug.OutlineChunk(position, Color.red, sizeDivision: 3.5f);
+		//debug.OutlineChunk(position, Color.red, sizeDivision: 3.5f);
 
 		chunk.Draw();
 	}
