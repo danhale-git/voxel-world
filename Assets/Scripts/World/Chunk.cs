@@ -241,6 +241,7 @@ public class Chunk
 		List<Vector3> verts = new List<Vector3>();
 		List<Vector3> norms = new List<Vector3>();
 		List<int> tris = new List<int>();
+		List<Vector2> UVs = new List<Vector2>();
 		List<Color> cols = new List<Color>();
 
 		//	Vertex count for offsetting triangle indices
@@ -282,7 +283,7 @@ public class Chunk
 					int localVertCount = 0;
 
 					
-					localVertCount = shapes[(int)blockShapes[x,y,z]].Draw(	verts, norms, tris,
+					localVertCount = shapes[(int)blockShapes[x,y,z]].Draw(	verts, norms, tris, UVs,
 																			blockPosition,
 														 					blockYRotation[x,y,z], 
 																			exposedFaces,
@@ -298,12 +299,12 @@ public class Chunk
 														localVertCount));
 				}
 			
-		CreateMesh(verts, norms, tris, cols);
+		CreateMesh(verts, norms, tris, UVs, cols);
 		status = Status.DRAWN;
 	}
 
 	//	create a mesh with given attributes
-	public void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles, List<Color> colors)
+	public void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles, List<Vector2> UVs, List<Color> colors)
 	{
 		Mesh mesh = new Mesh();
 
@@ -311,7 +312,7 @@ public class Chunk
 		mesh.SetNormals(normals);
 		mesh.SetTriangles(triangles, 0);
 		mesh.SetColors(colors);
-
+		mesh.SetUVs(0, UVs);
 		mesh.RecalculateNormals();
 		UnityEditor.MeshUtility.Optimize(mesh);
 
@@ -321,6 +322,8 @@ public class Chunk
 		renderer = gameObject.AddComponent<MeshRenderer>();		
 		renderer.sharedMaterial = world.defaultMaterial;
 		renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
+
+		
 
 		collider = gameObject.AddComponent<MeshCollider>();
 		collider.sharedMesh = filter.mesh;

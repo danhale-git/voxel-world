@@ -56,7 +56,7 @@ public class PlayerController : MonoBehaviour {
 		GetCurrentChunk();
 
 
-		World.debug.Output("Player facing", " x:"+Util.RoundToDP(transform.forward.x, 1).ToString()+" y:"+Util.RoundToDP(transform.forward.y, 1).ToString()+" z:"+Util.RoundToDP(transform.forward.z, 1).ToString());
+		//World.debug.Output("Player facing", " x:"+Util.RoundToDP(transform.forward.x, 1).ToString()+" y:"+Util.RoundToDP(transform.forward.y, 1).ToString()+" z:"+Util.RoundToDP(transform.forward.z, 1).ToString());
 
 		//	Break block
 		if(Input.GetButtonDown("Fire1") && !Input.GetKeyDown(KeyCode.LeftControl))

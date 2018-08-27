@@ -32,6 +32,15 @@ public static class Shapes
 	readonly static Vector3 v11 = new Vector3( -0.5f,	0f,		 0f);		//	middle left
 	readonly static Vector3 v12 = new Vector3( 	0f, 	0f,		 0f);		//	middle
 
+	const float texSize = 0;
+	const float UVmin = 0;
+	const float UVmax = 1;
+	static Vector2 UVbl = new Vector2(UVmin, UVmin);
+	static Vector2 UVbr = new Vector2(UVmax, UVmin);
+	static Vector2 UVtl = new Vector2(UVmin, UVmax);
+	static Vector2 UVtr = new Vector2(UVmax, UVmax);
+
+
 	public class Meshes
 	{
 		public List<Shape> shapes = new List<Shape>();
@@ -57,6 +66,7 @@ public static class Shapes
 		protected Vector3[][][] shapeVertices = new Vector3[rotations.Length][][];
 		protected Vector3[][][] shapeNormals = new Vector3[rotations.Length][][];
 		protected int[][][] shapeTriangles = new int[rotations.Length][][];
+		protected Vector2[][][] shapeUVs = new Vector2[rotations.Length][][];
 
 		public virtual void GenerateMeshes()
 		{
@@ -68,6 +78,7 @@ public static class Shapes
 				shapeVertices[r] = new Vector3[numberOfFaces][];
 				shapeNormals[r] = new Vector3[numberOfFaces][];
 				shapeTriangles[r] = new int[numberOfFaces][];
+				shapeUVs[r] = new Vector2[numberOfFaces][];
 
 				for(int f = 0; f < faces.Count; f++)
 				{
@@ -78,6 +89,8 @@ public static class Shapes
 																		rotation);
 
 					shapeTriangles[r][(int)faces[f]] = Triangles(		faces[f], 0);
+
+					shapeUVs[r][(int)faces[f]] = UVs(faces[f]);
 				}
 			}
 		}
@@ -85,7 +98,7 @@ public static class Shapes
 		public virtual List<Faces> GetFaces(bool[] exposedFaces, int rotationIndex, bool getAll = false)
 		{ return new List<Faces>(); }
 
-		public int Draw(List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles,
+		public int Draw(List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles, List<Vector2> UVs,
 						Vector3 position, 			int rotationIndex,	bool[] exposedFaces, 	int vertCount)
 		{
 			//Quaternion qRotation = Quaternion.Euler(0, rotations[rotationIndex], 0);
@@ -98,6 +111,7 @@ public static class Shapes
 			Vector3[][] vertArrays = new Vector3[faces.Count][];
 			Vector3[][] normArrays = new Vector3[faces.Count][];
 			int[][] triArrays = new int[faces.Count][];
+			Vector2[][] UVArrays = new Vector2[faces.Count][];
 
 			for(int i = 0; i < faces.Count; i++)
 			{
@@ -107,6 +121,8 @@ public static class Shapes
 				normArrays[i] = shapeNormals[rotationIndex][(int)faces[i]];
 
 				triArrays[i] = Triangles(faces[i], vertCount + localVertCount);
+
+				UVArrays[i] = shapeUVs[rotationIndex][(int)faces[i]];
 				
 				localTriCount += triArrays[i].Length;
 				localVertCount += vertArrays[i].Length;
@@ -115,6 +131,7 @@ public static class Shapes
 			Vector3[] allVerts = new Vector3[localVertCount];
 			Vector3[] allNorms = new Vector3[localVertCount];
 			int[] allTris = new int[localTriCount];
+			Vector2[] allUVs = new Vector2[localVertCount];
 
 			int vertIndexOffset = 0;
 			int triIndexOffset = 0;
@@ -125,12 +142,15 @@ public static class Shapes
 
 				triArrays[i].CopyTo( allTris,  triIndexOffset);
 
+				UVArrays[i].CopyTo(	 allUVs, vertIndexOffset);
+
 				vertIndexOffset += vertArrays[i].Length;
 				triIndexOffset += triArrays[i].Length;
 			}
 			vertices.AddRange(allVerts);
 			normals.AddRange(allNorms);
 			triangles.AddRange(allTris);
+			UVs.AddRange(allUVs);
 
 			return localVertCount;
 		}
@@ -138,6 +158,7 @@ public static class Shapes
 		public virtual Vector3[] Vertices(Faces face) {	return new Vector3[0]; }
 		public virtual int[] Triangles(Faces face, int offset) { return new int[0]; }
 		public virtual Vector3[] Normals(Faces face) {	return new Vector3[0]; }
+		public virtual Vector2[] UVs(Faces face) {	return new Vector2[0]; }
 	}
 
 	//	//	//	//	//	//	//	//	//	//	//	//	//	//	//	//	//	//
@@ -155,6 +176,7 @@ public static class Shapes
 				shapeVertices[r] = new Vector3[numberOfFaces][];
 				shapeNormals[r] = new Vector3[numberOfFaces][];
 				shapeTriangles[r] = new int[numberOfFaces][];
+				shapeUVs[r] = new Vector2[numberOfFaces][];
 
 				for(int f = 0; f < faces.Count; f++)
 				{
@@ -163,6 +185,8 @@ public static class Shapes
 					shapeNormals[r][(int)faces[f]] = 	Normals(faces[f]);
 
 					shapeTriangles[r][(int)faces[f]] = 	Triangles(	faces[f], 0);
+
+					shapeUVs[r][(int)faces[f]] = UVs(faces[f]);
 				}
 			}
 			
@@ -193,6 +217,20 @@ public static class Shapes
 			}		
 		}
 
+		public override Vector2[] UVs(Faces face)
+		{
+			switch(face)
+			{
+				case Faces.TOP: 	return new Vector2[] {UVbl, UVbr, UVtr, UVtl};
+				case Faces.BOTTOM: 	return new Vector2[] {UVbl, UVbr, UVtr, UVtl};
+				case Faces.RIGHT: 	return new Vector2[] {UVtr, UVtl, UVbl, UVbr};
+				case Faces.LEFT: 	return new Vector2[] {UVtr, UVtl, UVbl, UVbr};
+				case Faces.FRONT: 	return new Vector2[] {UVtr, UVtl, UVbl, UVbr};
+				case Faces.BACK: 	return new Vector2[] {UVtr, UVtl, UVbl, UVbr};
+				default: 			return null;
+			}	
+		}
+
 		public override int[] Triangles(Faces face, int offset)
 		{
 			return new int[] {3+offset, 1+offset, 0+offset, 3+offset, 2+offset, 1+offset};
@@ -210,7 +248,6 @@ public static class Shapes
 				case Faces.BACK: return Enumerable.Repeat(Vector3.back,4).ToArray();
 				default: return null;
 			}
-
 		}
 	}
 

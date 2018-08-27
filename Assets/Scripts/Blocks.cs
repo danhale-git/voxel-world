@@ -34,10 +34,10 @@ public static class Blocks
 
 	public static bool[] smoothSurface = new bool[] {
 														false,		//	0	//	AIR
-														true,		//	1	//	DIRT
+														false,		//	1	//	DIRT
 														false,		//	2	//	STONE
-														true,		//	3	//	GRASS
-														true,		//	4	//	LIGHTGRASS
+														false,		//	3	//	GRASS
+														false,		//	4	//	LIGHTGRASS
 														false		//	5	//	WATER
 													};			
 }
