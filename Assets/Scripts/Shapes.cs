@@ -71,8 +71,7 @@ public static class Shapes
 
 				for(int f = 0; f < faces.Count; f++)
 				{
-					shapeVertices[r][(int)faces[f]] = RotateVectors(	Vertices(faces[f], Vector3.zero),
-																		Vector3.zero,
+					shapeVertices[r][(int)faces[f]] = RotateVectors(	Vertices(faces[f]),
 																		rotation);
 
 					shapeNormals[r][(int)faces[f]] = RotateNormals(		Normals(faces[f]),
@@ -136,7 +135,7 @@ public static class Shapes
 			return localVertCount;
 		}
 
-		public virtual Vector3[] Vertices(Faces face, Vector3 offset) {	return new Vector3[0]; }
+		public virtual Vector3[] Vertices(Faces face) {	return new Vector3[0]; }
 		public virtual int[] Triangles(Faces face, int offset) { return new int[0]; }
 		public virtual Vector3[] Normals(Faces face) {	return new Vector3[0]; }
 	}
@@ -159,7 +158,7 @@ public static class Shapes
 
 				for(int f = 0; f < faces.Count; f++)
 				{
-					shapeVertices[r][(int)faces[f]] = 	Vertices(faces[f], Vector3.zero);
+					shapeVertices[r][(int)faces[f]] = 	Vertices(faces[f]);
 
 					shapeNormals[r][(int)faces[f]] = 	Normals(faces[f]);
 
@@ -180,16 +179,16 @@ public static class Shapes
 			return faces;	
 		}
 
-		public override Vector3[] Vertices(Faces face, Vector3 offset)
+		public override Vector3[] Vertices(Faces face)
 		{	
 			switch(face)
 			{
-				case Faces.TOP: 	return new Vector3[] {v7+offset, v6+offset, v5+offset, v4+offset};
-				case Faces.BOTTOM: 	return new Vector3[] {v0+offset, v1+offset, v2+offset, v3+offset};
-				case Faces.RIGHT: 	return new Vector3[] {v5+offset, v6+offset, v2+offset, v1+offset};
-				case Faces.LEFT: 	return new Vector3[] {v7+offset, v4+offset, v0+offset, v3+offset};
-				case Faces.FRONT: 	return new Vector3[] {v4+offset, v5+offset, v1+offset, v0+offset};
-				case Faces.BACK: 	return new Vector3[] {v6+offset, v7+offset, v3+offset, v2+offset};
+				case Faces.TOP: 	return new Vector3[] {v7, v6, v5, v4};
+				case Faces.BOTTOM: 	return new Vector3[] {v0, v1, v2, v3};
+				case Faces.RIGHT: 	return new Vector3[] {v5, v6, v2, v1};
+				case Faces.LEFT: 	return new Vector3[] {v7, v4, v0, v3};
+				case Faces.FRONT: 	return new Vector3[] {v4, v5, v1, v0};
+				case Faces.BACK: 	return new Vector3[] {v6, v7, v3, v2};
 				default: 			return null;
 			}		
 		}
@@ -203,12 +202,12 @@ public static class Shapes
 		{
 			switch(face)
 			{
-				case Faces.TOP: return new Vector3[] {Vector3.up,Vector3.up,Vector3.up,Vector3.up};
-				case Faces.BOTTOM: return new Vector3[] {Vector3.down,Vector3.down,Vector3.down,Vector3.down};				
-				case Faces.RIGHT: return new Vector3[] {Vector3.right,Vector3.right,Vector3.right,Vector3.right};
-				case Faces.LEFT: return new Vector3[] {Vector3.left,Vector3.left,Vector3.left,Vector3.left};
-				case Faces.FRONT: return new Vector3[] {Vector3.forward,Vector3.forward,Vector3.forward,Vector3.forward};
-				case Faces.BACK: return new Vector3[] {Vector3.back,Vector3.back,Vector3.back,Vector3.back};
+				case Faces.TOP: return Enumerable.Repeat(Vector3.up,4).ToArray();
+				case Faces.BOTTOM: return Enumerable.Repeat(Vector3.down,4).ToArray();
+				case Faces.RIGHT: return Enumerable.Repeat(Vector3.right,4).ToArray();
+				case Faces.LEFT: return Enumerable.Repeat(Vector3.left,4).ToArray();
+				case Faces.FRONT: return Enumerable.Repeat(Vector3.forward,4).ToArray();
+				case Faces.BACK: return Enumerable.Repeat(Vector3.back,4).ToArray();
 				default: return null;
 			}
 
@@ -226,13 +225,13 @@ public static class Shapes
 			return faces;	
 		}
 				
-		public override Vector3[] Vertices(Faces face, Vector3 offset)
+		public override Vector3[] Vertices(Faces face)
 		{ 
 			switch(face)
 			{
-				case Faces.FRONT: 	return new Vector3[] {v7+offset, v6+offset, v1+offset, v0+offset};
-				case Faces.RIGHT: 	return new Vector3[] {v6+offset, v2+offset, v1+offset};
-				case Faces.LEFT: 	return new Vector3[] {v7+offset, v0+offset, v3+offset};
+				case Faces.FRONT: 	return new Vector3[] {v7, v6, v1, v0};
+				case Faces.RIGHT: 	return new Vector3[] {v6, v2, v1};
+				case Faces.LEFT: 	return new Vector3[] {v7, v0, v3};
 				default: 			return null;
 			}
 		}
@@ -271,12 +270,12 @@ public static class Shapes
 			return faces;
 		}
 
-		public override Vector3[] Vertices(Faces face, Vector3 offset)
+		public override Vector3[] Vertices(Faces face)
 		{
 			switch(face)
 			{
-				case Faces.FRONT: return new Vector3[] {v4+offset, v6+offset, v1+offset};
-				case Faces.TOP: return new Vector3[] {v7+offset, v6+offset, v4+offset};
+				case Faces.FRONT: return new Vector3[] {v4, v6, v1};
+				case Faces.TOP: return new Vector3[] {v7, v6, v4};
 				default: return null;
 			}
 		}
@@ -312,13 +311,13 @@ public static class Shapes
 			return faces;
 		}	
 
-		public override  Vector3[] Vertices(Faces face, Vector3 offset)
+		public override  Vector3[] Vertices(Faces face)
 		{
 			switch(face)
 			{
-				case Faces.FRONT: return new Vector3[] {v7+offset, v2+offset, v0+offset};
-				case Faces.BOTTOM: return new Vector3[] {v0+offset, v1+offset, v2+offset};
-				case Faces.LEFT: return new Vector3[] {v7+offset, v0+offset, v4+offset};
+				case Faces.FRONT: return new Vector3[] {v7, v2, v0};
+				case Faces.BOTTOM: return new Vector3[] {v0, v1, v2};
+				case Faces.LEFT: return new Vector3[] {v7, v0, v4};
 				default: return null;
 			}
 		}
@@ -359,12 +358,12 @@ public static class Shapes
 			return faces;
 		}	
 
-		public override  Vector3[] Vertices(Faces face, Vector3 offset)
+		public override  Vector3[] Vertices(Faces face)
 		{
 			switch(face)
 			{
-				case Faces.FRONT: return new Vector3[] {v7+offset, v1+offset, v0+offset};
-				case Faces.RIGHT: return new Vector3[] {v1+offset, v2+offset, v7+offset};
+				case Faces.FRONT: return new Vector3[] {v7, v1, v0};
+				case Faces.RIGHT: return new Vector3[] {v1, v2, v7};
 				default: return null;
 			}
 		}
@@ -400,12 +399,12 @@ public static class Shapes
 			return faces;			
 		}
 
-		public override Vector3[] Vertices(Faces face, Vector3 offset)
+		public override Vector3[] Vertices(Faces face)
 		{
 			switch(face)
 			{
-				case Faces.LSLOPE: return new Vector3[] {v5+offset, v7+offset, v0+offset};
-				case Faces.RSLOPE: return new Vector3[] {v2+offset, v7+offset, v5+offset};				
+				case Faces.LSLOPE: return new Vector3[] {v5, v7, v0};
+				case Faces.RSLOPE: return new Vector3[] {v2, v7, v5};				
 				default: return null;
 			}
 		}
@@ -732,8 +731,9 @@ public static class Shapes
 	}
 
 	//	Rotate vertices around centre by yRotation on Y axis
-	static Vector3[] RotateVectors(Vector3[] vectors, Vector3 centre, Quaternion rotation)
-	{		
+	static Vector3[] RotateVectors(Vector3[] vectors, Quaternion rotation)
+	{
+		Vector3 centre = Vector3.zero;		
 		Vector3[] rotatedVertices = new Vector3[vectors.Length];
 		for(int i = 0; i < vectors.Length; i++)
 		{
