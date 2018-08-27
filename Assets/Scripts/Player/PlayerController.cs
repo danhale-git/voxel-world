@@ -109,13 +109,11 @@ public class PlayerController : MonoBehaviour {
 	void GetCurrentChunk()
 	{
 		//	Only do this twice per second
-		if(Time.fixedTime - updateTimer < 0.5f)
+		if(Time.fixedTime - updateTimer < 1f)
 		{
 			return;
 		}
 		updateTimer = Time.fixedTime;
-
-		CheckCellularNoise();
 
 		//	Raycast to chunk below player
         RaycastHit hit;
