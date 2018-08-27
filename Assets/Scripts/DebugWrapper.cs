@@ -68,7 +68,7 @@ public class DebugWrapper : MonoBehaviour
 		for(int i = 0; i < 4; i++)
 		{
 			Shapes.Faces face = (Shapes.Faces)i;
-			Vector3[] vertices = cube.Vertices(face, Vector3.zero);
+			Vector3[] vertices = cube.Vertices(face);
 
 			for(int e = 0; e < vertices.Length; e++)
 			{

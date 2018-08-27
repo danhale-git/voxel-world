@@ -48,15 +48,21 @@ public class PlayerController : MonoBehaviour {
 
 	void Update ()
 	{
-		Movement();
+		if(Input.GetKey(KeyCode.LeftShift))
+			Movement(0.25f);
+		else
+			Movement(1);
 		
 		GetCurrentChunk();
+
+
+		World.debug.Output("Player facing", " x:"+Util.RoundToDP(transform.forward.x, 1).ToString()+" y:"+Util.RoundToDP(transform.forward.y, 1).ToString()+" z:"+Util.RoundToDP(transform.forward.z, 1).ToString());
 
 		//	Break block
 		if(Input.GetButtonDown("Fire1") && !Input.GetKeyDown(KeyCode.LeftControl))
 		{
 			if(Input.GetKey(KeyCode.LeftShift))
-				DebugAdjacentCells(Ray());
+				DebugBitMask(Ray());
 			else if(Input.GetKey(KeyCode.LeftAlt))
 				Redraw(Ray());
 			else
@@ -64,10 +70,7 @@ public class PlayerController : MonoBehaviour {
 		}
 
 		//	Break block
-		if(Input.GetButtonDown("Fire2") && Input.GetKey(KeyCode.LeftShift))
-		{
-			DebugBiomeGradient(Ray());
-		}else if(Input.GetButtonDown("Fire2"))
+		if(Input.GetButtonDown("Fire2"))
 		{
 			AddBlock(Ray());
 		}
@@ -106,13 +109,11 @@ public class PlayerController : MonoBehaviour {
 	void GetCurrentChunk()
 	{
 		//	Only do this twice per second
-		if(Time.fixedTime - updateTimer < 0.5f)
+		if(Time.fixedTime - updateTimer < 1f)
 		{
 			return;
 		}
 		updateTimer = Time.fixedTime;
-
-		CheckCellularNoise();
 
 		//	Raycast to chunk below player
         RaycastHit hit;
@@ -147,36 +148,36 @@ public class PlayerController : MonoBehaviour {
 
 	//	Simple flying first person movement
 	//	Probably temporary
-	void Movement()
+	void Movement(float slow)
 	{
 		if(Input.GetKey(KeyCode.W))	//	forward
 		{
-			transform.Translate((Vector3.forward * speed) * Time.deltaTime);
+			transform.Translate((Vector3.forward * (speed * slow)) * Time.deltaTime);
 			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.S))	//	back
 		{
-			transform.Translate((Vector3.back * speed) * Time.deltaTime);
+			transform.Translate((Vector3.back * (speed * slow)) * Time.deltaTime);
 			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.A))	//	left
 		{
-			transform.Translate((Vector3.left * speed) * Time.deltaTime);
+			transform.Translate((Vector3.left * (speed * slow)) * Time.deltaTime);
 			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.D))	//	right
 		{
-			transform.Translate((Vector3.right * speed) * Time.deltaTime);
+			transform.Translate((Vector3.right * (speed * slow)) * Time.deltaTime);
 			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.LeftControl))	//	down
 		{
-			transform.Translate((Vector3.down * speed) * Time.deltaTime);
+			transform.Translate((Vector3.down * (speed * slow)) * Time.deltaTime);
 			CursorOff();
 		}
 		if(Input.GetKey(KeyCode.Space))	//	up
 		{
-			transform.Translate((Vector3.up * speed) * Time.deltaTime);
+			transform.Translate((Vector3.up * (speed * slow)) * Time.deltaTime);
 			CursorOff();
 		}
 
@@ -225,7 +226,12 @@ public class PlayerController : MonoBehaviour {
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = Util.RoundVector3(pointInCube);
-			Debug.Log(World.GetBitMask(voxel));
+
+			Chunk chunk = World.VoxelOwnerChunk(voxel);
+			Vector3 local = voxel - chunk.position;
+			int x = (int)local.x, y = (int)local.y, z = (int)local.z;
+			Debug.Log(chunk.blockShapes[x,y,z]);
+			Debug.Log(chunk.GetBitMask(voxel -chunk.position));
 		}
 	}
 
@@ -253,49 +259,6 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = Util.RoundVector3(pointInCube);
 			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
-		}
-	}
-
-	void DebugAdjacentCells(Ray ray)
-	{
-		RaycastHit hit;
-
-		if (Physics.Raycast(ray, out hit))
-		{
-			//	get voxel position
-			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
-			Vector3 voxel = Util.RoundVector3(pointInCube);
-
-			Vector3 chunkPos = World.VoxelOwner(voxel);
-
-			TerrainGenerator.worldBiomes.biomeNoiseGen.GetEdgeData(voxel.x, voxel.z);
-
-			/*Debug.Log("biome: "+TerrainGenerator.defaultWorld.biomeNoiseGen.GetNoise01(voxel.x, voxel.z));
-
-			Debug.Log("adjacent: "+TerrainGenerator.defaultWorld.biomeNoiseGen.AdjacentCellValue(voxel.x, voxel.z, true));*/
-
-			//Debug.Log("edge test: "+TerrainGenerator.defaultWorld.edgeNoiseGen.GetNoise(voxel.x, voxel.z));
-			
-			AddBlock(ray);
-			
-		}		
-	}
-
-	void DebugBiomeGradient(Ray ray)
-	{
-		RaycastHit hit;
-
-		if (Physics.Raycast(ray, out hit))
-		{
-			//	get voxel position
-			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
-			Vector3 voxel = Util.RoundVector3(pointInCube);
-
-			TerrainLibrary.Biome biome = TerrainGenerator.worldBiomes.GetBiome((int)voxel.x, (int)voxel.z);
-			float noise = biome.BaseNoise((int)voxel.x, (int)voxel.z);
-			TerrainLibrary.BiomeLayer layer = biome.GetLayer(noise); 
-			Debug.Log("layer: "+layer.min + " - " + layer.max);
-			Debug.Log("min/max: "+TerrainGenerator.EdgeGradient(noise, biome.GetLayer(noise).min)+" : "+TerrainGenerator.EdgeGradient(noise, biome.GetLayer(noise).max));
 		}
 	}
 

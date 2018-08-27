@@ -195,7 +195,7 @@ public class TerrainLibrary
 	{
 		public Hills(float minNoise) : base(minNoise)
 		{
-			maxHeight = 40;
+			maxHeight = 25;
 			surfaceBlock = Blocks.Types.LIGHTGRASS;
 
 			noiseGen.SetNoiseType(FastNoise.NoiseType.PerlinFractal);

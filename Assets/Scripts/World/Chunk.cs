@@ -25,26 +25,22 @@ public class Chunk
 	int size;
 	public Vector3 position;
 
-	World.Column column;
+	Column column;
 
 	//	block data
 	public Blocks.Types[,,] blockTypes;
 	public byte[,,] blockBytes;
 	public Shapes.Types[,,] blockShapes;
-	public Shapes.Rotate[,,] blockYRotation;
+	public int[,,] blockYRotation;
 
-	List<Shapes.Shape> shapes = new List<Shapes.Shape>()
-	{
-		new Shapes.Cube(),
-		new Shapes.Wedge()
-	};
+	List<Shapes.Shape> shapes = World.shapeMeshes.shapes;
 
 	void InitialiseArrays()
 	{
 		blockTypes = new Blocks.Types[size,size,size];
 		blockBytes = new byte[size,size,size];
 		blockShapes = new Shapes.Types[size,size,size];
-		blockYRotation = new Shapes.Rotate[size,size,size];
+		blockYRotation = new int[size,size,size];
 	}
 
 	public Chunk(Vector3 _position, World _world)
@@ -75,7 +71,7 @@ public class Chunk
 		world.chunksGenerated++;
 		World.debug.Output("Chunks generated", world.chunksGenerated.ToString());
 
-		column = World.Column.Get(position);
+		column = Column.Get(position);
 		int[,] heightMap = column.heightMap;
 
 		bool hasAir = false;
@@ -85,7 +81,6 @@ public class Chunk
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
 			{		
-				TerrainLibrary.Biome biome = TerrainGenerator.worldBiomes.GetBiome(x,z);	
 				//	Generate column
 				for(int y = 0; y < size; y++)
 				{
@@ -136,16 +131,73 @@ public class Chunk
 	}
 
 	//	Generate bitmask representing surrounding blocks and chose slope type
-	public void SmoothBlocks()
+	/*public void SmoothBlocks()
 	{
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
 				for(int y = 0; y < size; y++)
 				{
 					Vector3 blockPosition = new Vector3(x,y,z);
-
 					blockBytes[x,y,z] = World.GetBitMask(blockPosition + this.position);
 					Shapes.SetSlopes(this, blockPosition);
+				}
+	}*/
+
+	public void SmoothBlocks()
+	{
+		//	*This is not completely deterministic - the order in which chunks are processed could impact the final terrain in some cases
+		if(this.composition != Composition.MIX) return;
+			//	Remove unwanted blocks from surface
+			for(int x = 0; x < World.chunkSize; x++)
+				for(int z = 0; z < World.chunkSize; z++)
+				{
+					int y = column.heightMap[x,z] - (int)this.position.y;
+
+					if(y > World.chunkSize-1 || y < 0) continue;
+
+					Blocks.Types type = blockTypes[x,y,z];
+
+					if(Blocks.smoothSurface[(int)type])
+					{
+						blockBytes[x,y,z] = GetBitMask(new Vector3(x,y,z));//, true, type);
+						Shapes.RemoveBlocks(this, x, y, z);
+					}
+				}
+
+			//	Assign shapes to smooth terrain
+			for(int x = 0; x < World.chunkSize; x++)
+				for(int z = 0; z < World.chunkSize; z++)
+				{
+					int height = column.heightMap[x,z] - (int)this.position.y;
+					Shapes.Types previousShape = 0;
+					int previousY = 0;
+
+					for(int y = height; y > height - 2; y-- )
+					{
+						if(y > World.chunkSize-1 || y < 0) continue;
+
+						Blocks.Types type = blockTypes[x,y,z];
+						Vector3 blockPosition = new Vector3(x,y,z);
+						if(Blocks.smoothSurface[(int)type])
+						{
+							blockBytes[x,y,z] = GetBitMask(blockPosition);
+							Shapes.SetSlopes(this, x, y, z);
+						}
+
+						//	Avoid overhangs on steep slopes - does not handle iterating between two chunks
+						if(previousShape == Shapes.Types.CORNEROUT && (blockShapes[x,y,z] == Shapes.Types.CORNEROUT || blockShapes[x,y,z] == Shapes.Types.WEDGE))
+						{
+							blockShapes[x,y+1,z] = Shapes.Types.CORNEROUT2;
+							blockShapes[x,y,z] = Shapes.Types.CUBE;
+						}
+						else if(previousShape == Shapes.Types.WEDGE)
+						{
+							blockShapes[x,y,z] = Shapes.Types.CUBE;
+						}
+
+						previousShape = blockShapes[x,y,z];
+						previousY = y;
+					}
 				}
 	}
 
@@ -155,26 +207,6 @@ public class Chunk
 		Object.DestroyImmediate(renderer);
 		Object.DestroyImmediate(collider);
 		Draw(redraw: true);
-	}
-
-	Color DebugBlockColor(int x, int z)
-	{
-		Color color;
-		FastNoise.EdgeData edge = column.edgeMap[x,z];
-		if(edge.distance2Edge < 0.002f)
-		{
-			color = Color.black;
-		}
-		else
-		{
-			if(edge.currentCellValue >= 0.5f)
-				color = Color.red;
-			else
-				color = Color.cyan;
-		}
-		color -= color * (float)(Mathf.InverseLerp(0, 0.1f, edge.distance2Edge) / 1.5);
-		if(edge.distance2Edge < TerrainGenerator.worldBiomes.smoothRadius) color -= new Color(0.1f,0.1f,0.1f);
-		return color;
 	}
 
 	public void Draw(bool redraw = false)
@@ -187,27 +219,16 @@ public class Chunk
 			return;
 		}
 		
-		Chunk[] adjacentChunks = new Chunk[6];
 		Vector3[] offsets = Util.CubeFaceDirections();
 		int solidAdjacentChunkCount = 0;
 		for(int i = 0; i < 6; i++)
 		{
-			Vector3 adjacentPosition = this.position + (offsets[i] * this.size);
-			/*if(!World.chunks.TryGetValue(adjacentPosition, out adjacentChunks[i]))
-			{
-				debugging = true;
-				debug.OutlineChunk(adjacentPosition, Color.red, removePrevious: false);
-				debug.OutlineChunk(position, Color.green, removePrevious: false);
-				world.disableChunkGeneration = true;
+			Vector3 adjacentPosition = this.position + (offsets[i] * World.chunkSize);
 
-				Debug.Log(adjacentPosition);
+			//World.debug.OutlineChunk(adjacentPosition, Color.green, sizeDivision: 3.5f);
 
-				//world.CreateChunk(adjacentPosition);
-				//world.GenerateChunk(adjacentPosition);
-			}*/
-
-			adjacentChunks[i] = World.chunks[adjacentPosition];
-			if(adjacentChunks[i].composition == Chunk.Composition.SOLID)
+			Chunk adjacentChunk = World.chunks[adjacentPosition];
+			if(adjacentChunk.composition == Chunk.Composition.SOLID)
 			{
 				solidAdjacentChunkCount++;
 			}
@@ -220,6 +241,7 @@ public class Chunk
 		List<Vector3> verts = new List<Vector3>();
 		List<Vector3> norms = new List<Vector3>();
 		List<int> tris = new List<int>();
+		List<Vector2> UVs = new List<Vector2>();
 		List<Color> cols = new List<Color>();
 
 		//	Vertex count for offsetting triangle indices
@@ -229,9 +251,6 @@ public class Chunk
 		//	Generate mesh data
 		for(int x = 0; x < World.chunkSize; x++)
 			for(int z = 0; z < World.chunkSize; z++)
-			{
-				
-
 				for(int y = 0; y < World.chunkSize; y++)
 				{
 					//	Check block type, skip drawing if air
@@ -242,6 +261,7 @@ public class Chunk
 					{ continue; }
 
 					Vector3 blockPosition = new Vector3(x,y,z);
+
 					Shapes.Types shape = blockShapes[x,y,z];
 				
 					//	Check if adjacent blocks are exposed
@@ -249,7 +269,7 @@ public class Chunk
 					bool blockExposed = false;
 					for(int e = 0; e < 6; e++)
 					{
-						exposedFaces[e] = FaceExposed((Shapes.CubeFace)e, blockPosition, adjacentChunks);
+						exposedFaces[e] = FaceExposed(offsets[e], blockPosition);
 						
 						if(exposedFaces[e] && !blockExposed) { blockExposed = true; }
 					}
@@ -261,30 +281,31 @@ public class Chunk
 
 					//	Check block shapes and generate mesh data
 					int localVertCount = 0;
-					Quaternion rotation = Quaternion.Euler(0, (int)blockYRotation[x,y,z], 0);
 
-					localVertCount = shapes[(int)blockShapes[x,y,z]].Draw(	verts, norms, tris,
+					
+					localVertCount = shapes[(int)blockShapes[x,y,z]].Draw(	verts, norms, tris, UVs,
 																			blockPosition,
-														 					rotation, 
+														 					blockYRotation[x,y,z], 
 																			exposedFaces,
-																			vertexCount);
+																			vertexCount,
+																			(int)type);
 
 					//	Keep count of vertices to offset triangles
 					vertexCount += localVertCount;
 
 					Color color = (Color)Blocks.colors[(int)blockTypes[x,y,z]];
-					//Color color = DebugBlockColor(x, z);
+					//if(blockShapes[x,y,z] == Shapes.Types.WEDGECORNER) color = Color.red;
 
 					cols.AddRange(	Enumerable.Repeat(	color,
 														localVertCount));
 				}
-			}
-		CreateMesh(verts, norms, tris, cols);
+			
+		CreateMesh(verts, norms, tris, UVs, cols);
 		status = Status.DRAWN;
 	}
 
 	//	create a mesh with given attributes
-	public void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles, List<Color> colors)
+	public void CreateMesh(List<Vector3> vertices, List<Vector3> normals, List<int> triangles, List<Vector2> UVs, List<Color> colors)
 	{
 		Mesh mesh = new Mesh();
 
@@ -292,52 +313,40 @@ public class Chunk
 		mesh.SetNormals(normals);
 		mesh.SetTriangles(triangles, 0);
 		mesh.SetColors(colors);
-
+		mesh.SetUVs(0, UVs);
 		mesh.RecalculateNormals();
+		UnityEditor.MeshUtility.Optimize(mesh);
 
 		filter = gameObject.AddComponent<MeshFilter>();
 		filter.mesh = mesh;
 
 		renderer = gameObject.AddComponent<MeshRenderer>();		
 		renderer.sharedMaterial = world.defaultMaterial;
+		renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
+
+		
 
 		collider = gameObject.AddComponent<MeshCollider>();
 		collider.sharedMesh = filter.mesh;
 	}
 
 	//	Player can see through adjacent block
-	bool FaceExposed(Shapes.CubeFace face, Vector3 blockPosition, Chunk[] adjacent)
+	bool FaceExposed(Vector3 offset, Vector3 blockPosition)
 	{	
-		//	Direction of neighbour
-		Vector3 faceDirection = Shapes.FaceToDirection(face);	
 		//	Neighbour position
-		Vector3 neighbour = blockPosition + faceDirection;
+		Vector3 neighbour = blockPosition + offset;
 		
-		Chunk neighbourOwner = null;
+		Chunk neighbourOwner = BlockOwner(neighbour);
 
 		//	Neighbour is outside this chunk
-		if(neighbour.x < 0 || neighbour.x >= size || 
-		   neighbour.y < 0 || neighbour.y >= size ||
-		   neighbour.z < 0 || neighbour.z >= size)
+		if(!neighbourOwner.Equals(this))
 		{
-			//	Get adjacent chunk on that side
-			if(neighbour.x < 0)	neighbourOwner = adjacent[(int)Shapes.CubeFace.LEFT];
-			if(neighbour.y < 0)	neighbourOwner = adjacent[(int)Shapes.CubeFace.BOTTOM];
-			if(neighbour.z < 0) neighbourOwner = adjacent[(int)Shapes.CubeFace.BACK];
-
-
-			if(neighbour.x >= size) neighbourOwner = adjacent[(int)Shapes.CubeFace.RIGHT];
-			if(neighbour.y >= size) neighbourOwner = adjacent[(int)Shapes.CubeFace.TOP];
-			if(neighbour.z >= size)	neighbourOwner = adjacent[(int)Shapes.CubeFace.FRONT];
-
 			//	Convert local index to neighbouring chunk
 			neighbour = Util.WrapBlockIndex(neighbour);
 		}
 		//	Neighbour is in chunk being drawn		
 		else
 		{
-			neighbourOwner = this;
-
 			//	Block not at edge and chunk is solid
 			if(composition == Composition.SOLID) return false;
 		}
@@ -350,9 +359,73 @@ public class Chunk
 		else
 		{
 			//	Check if block type is see through
-			Blocks.Types type = neighbourOwner.blockTypes[(int)neighbour.x, (int)neighbour.y, (int)neighbour.z];
+			int x = (int)neighbour.x, y = (int)neighbour.y, z = (int)neighbour.z;
 
-			return (Blocks.seeThrough[(int)type]);
+			Blocks.Types type = neighbourOwner.blockTypes[x, y, z];
+			
+
+			return (Blocks.seeThrough[(int)type] || (int)neighbourOwner.blockShapes[x, y, z] != 0);
 		}
+	}
+
+	public byte GetBitMask(Vector3 voxel)
+	{
+		Vector3[] neighbours = Util.HorizontalBlockNeighbours(voxel);
+		int value = 1;
+		int total = 0;
+
+		for(int i = 0; i < neighbours.Length; i++)
+		{
+			Chunk owner;
+			Vector3 pos;
+			if(!Util.InChunk(neighbours[i]))
+			{
+				owner = BlockOwner(neighbours[i]);
+				pos = owner != this ? Util.WrapBlockIndex(neighbours[i]) : neighbours[i];
+			}
+			else
+			{
+				owner = this;
+				pos = neighbours[i];
+			}		
+
+			int x = (int)pos.x, y = (int)pos.y, z = (int)pos.z;
+			
+			Blocks.Types type = owner.blockTypes[x, y, z];
+
+			if(Blocks.seeThrough[(int)type])
+			{
+				total += value;
+			}
+			value *= 2;
+		}
+		return (byte)total;
+	}
+
+	Chunk BlockOwner(Vector3 pos)
+	{
+		//	Get block's edge
+		int x = 0, y = 0, z = 0;
+
+		if		(pos.x < 0) 				x = -1;
+		else if (pos.x > World.chunkSize-1) 	x = 1;
+
+		if		(pos.y < 0) 				y = -1;
+		else if (pos.y > World.chunkSize-1) 	y = 1;
+
+		if		(pos.z < 0) 				z = -1;
+		else if (pos.z > World.chunkSize-1) 	z = 1;
+
+		//	The edge 
+		Vector3 edge = new Vector3(x, y, z);
+
+		//	Voxel is in this chunk
+		if(edge == Vector3.zero) return this;
+
+		return World.chunks[this.position + (edge * World.chunkSize)];
+	}
+	Vector3 BlockPosition(Chunk owner, Vector3 position)
+	{
+		return owner != this ? Util.WrapBlockIndex(position) : position;
 	}
 }

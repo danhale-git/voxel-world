@@ -13,7 +13,7 @@ public static class Util
     	return span.TotalMilliseconds;
 	}
 
-	public static Vector3[] CubeFaceDirections()
+	/*public static Vector3[] CubeFaceDirections()
 	{
 		return new Vector3[]
 		{
@@ -23,6 +23,55 @@ public static class Util
 			Vector3.left,		//	3
 			Vector3.forward,	//	4
 			Vector3.back		//	5
+		};
+	}*/
+
+	public static Vector3[] CubeFaceDirections()
+	{
+		return new Vector3[]
+		{
+			Vector3.forward,			//	0
+			Vector3.right,		//	1
+			Vector3.back,		//	2
+			Vector3.left,		//	3
+			Vector3.up,	//	4
+			Vector3.down		//	5
+		};
+	}
+
+	public static Vector3[] AdjacentDirections()
+	{
+		return new Vector3[]
+		{
+			Vector3.up,
+			Vector3.down,
+
+			Vector3.right,
+			Vector3.left,
+			Vector3.forward,
+			Vector3.back,
+			new Vector3(0, 1, 1),	//	right forward
+			new Vector3(0, -1, 1),	//	left forward
+			new Vector3(0, 1, -1),	//	right back
+			new Vector3(0, -1, -1),//	left back
+
+			new Vector3(1, 1, 0),	//	up right
+			new Vector3(1, -1, 0),	//	up left
+			new Vector3(1, 0, 1),	//	up forward
+			new Vector3(1, 0, -0),	//	up back
+			new Vector3(1, 1, 1),	//	up right forward
+			new Vector3(1, -1, 1),	//	up left forward
+			new Vector3(1, 1, -1),	//	up right back
+			new Vector3(1, -1, -1),	//	up left back
+
+			new Vector3(-1, 1, 0),	//	down right
+			new Vector3(-1, -1, 0),	//	down left
+			new Vector3(-1, 0, 1),	//	down forward
+			new Vector3(-1, 0, -0),	//	down back
+			new Vector3(-1, 1, 1),	//	down right forward
+			new Vector3(-1, -1, 1),	//	down left forward
+			new Vector3(-1, 1, -1),	//	down right back
+			new Vector3(-1, -1, -1),//	down left back
 		};
 	}
 
@@ -35,9 +84,16 @@ public static class Util
 		return rounded;
 	}
 
-	public static bool InChunk(float value, float offsetIn)
+	public static bool InChunk(float value, float offsetIn = 0)
 	{
 		if(value < 0 + offsetIn || value >= World.chunkSize - offsetIn) return false;
+		return true;
+	}
+	public static bool InChunk(Vector3 value, float offsetIn = 0)
+	{
+		if(	(value.x < 0 + offsetIn || value.x >= World.chunkSize - offsetIn) ||
+			(value.y < 0 + offsetIn || value.y >= World.chunkSize - offsetIn) ||
+			(value.z < 0 + offsetIn || value.z >= World.chunkSize - offsetIn) ) return false;
 		return true;
 	}
 
@@ -64,14 +120,19 @@ public static class Util
 	//	Return 8 adjacent positions
 	public static Vector3[] HorizontalBlockNeighbours(Vector3 voxel)
 	{
-		return new Vector3[] { 	Vector3.right + voxel,
-								Vector3.left + voxel,
-								Vector3.forward + voxel,
-								Vector3.back + voxel,
-								Vector3.right + Vector3.forward + voxel,
-								Vector3.right + Vector3.back + voxel,
-								Vector3.left + Vector3.forward + voxel,
-								Vector3.left + Vector3.back + voxel	};
+		//	The order of the vectors in this list is sacred
+		//	changing it will break bitmasking
+		return new Vector3[]
+		{
+			new Vector3(voxel.x+1, voxel.y, voxel.z),
+			new Vector3(voxel.x-1, voxel.y, voxel.z),
+			new Vector3(voxel.x, voxel.y, voxel.z+1),
+			new Vector3(voxel.x, voxel.y, voxel.z-1),
+			new Vector3(voxel.x+1, voxel.y, voxel.z+1),
+			new Vector3(voxel.x+1, voxel.y, voxel.z-1),
+			new Vector3(voxel.x-1, voxel.y, voxel.z+1),
+			new Vector3(voxel.x-1, voxel.y, voxel.z-1)
+		};
 	}
 
 	public static Vector3[] HorizontalChunkNeighbours(Vector3 position, int chunkSize)
@@ -89,5 +150,25 @@ public static class Util
 	public static double RoundToDP(float value, int decimalPlaces)
 	{
 		return System.Math.Round(value, decimalPlaces);
+	}
+
+	static Color DebugBlockColor(int x, int z, Column column)
+	{
+		Color color;
+		FastNoise.EdgeData edge = column.edgeMap[x,z];
+		if(edge.distance2Edge < 0.002f)
+		{
+			color = Color.black;
+		}
+		else
+		{
+			if(edge.currentCellValue >= 0.5f)
+				color = Color.red;
+			else
+				color = Color.cyan;
+		}
+		color -= color * (float)(Mathf.InverseLerp(0, 0.1f, edge.distance2Edge) / 1.5);
+		if(edge.distance2Edge < TerrainGenerator.worldBiomes.smoothRadius) color -= new Color(0.1f,0.1f,0.1f);
+		return color;
 	}
 }

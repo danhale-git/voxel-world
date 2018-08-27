@@ -19,7 +19,7 @@ public class World : MonoBehaviour
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 8;
+	public static int viewDistance = 4;
 	//	Size of all chunks
 	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
@@ -28,14 +28,22 @@ public class World : MonoBehaviour
 	public static bool drawEdges = true;
 
 	TerrainGenerator terrain;
+	public static Shapes.Meshes shapeMeshes;
 
 	//	Chunk and terrain data
 	public static Dictionary<Vector3, Chunk> chunks = new Dictionary<Vector3, Chunk>();
 	public static Dictionary<Vector3, Column> columns = new Dictionary<Vector3, Column>();
 
-	Coroutine chunkDrawCoroutine;
+	Coroutine currentCoroutine;
+	List<IEnumerator> coroutines = new List<IEnumerator>();
+	bool coroutineRunning = false;
 
 	public PlayerController player;
+
+	void Awake()
+	{
+		shapeMeshes = new Shapes.Meshes();
+	}
 
 	void Start()
 	{
@@ -51,113 +59,63 @@ public class World : MonoBehaviour
 
 	#region World Generation
 
+	//	Add coroutine to list, start if necessary
+	void AddCoroutine(IEnumerator coroutine)
+	{
+		coroutines.Add(coroutine);
+		if(coroutines.Count == 1)
+		{
+			coroutineRunning = true;
+			currentCoroutine = StartCoroutine(coroutines[0]);
+		}
+	}
+	//	Coroutine has finished running
+	void CoroutineComplete()
+	{
+		if(currentCoroutine != null) StopCoroutine(currentCoroutine);
+		coroutines.RemoveAt(0);
+		if(coroutines.Count == 0)
+		{
+			coroutineRunning = false;
+		}
+		else
+		{
+			currentCoroutine = StartCoroutine(coroutines[0]);
+		}
+		debug.Output("Active coroutines", coroutines.Count.ToString());
+	}
+	void ClearCoroutines()
+	{
+		coroutines.Clear();
+		if(currentCoroutine != null) StopCoroutine(currentCoroutine);
+	}
+
 	//	Generate and draw chunks in a cube radius of veiwDistance around player
-	//	Called in PlayerController
+	//	Called in PlayerController and World.Start()
 	public void LoadChunks(Vector3 centerChunk, int radius)
 	{
 		if(disableChunkGeneration)
 		{ Debug.Log("Chunk generation disabled!"); return; }
+		if(coroutineRunning) ClearCoroutines();
 
-		//	Prevent multiple instances of chunk drawing coroutines
 		centerChunk = new Vector3(centerChunk.x, 0, centerChunk.z);
 
-		//	Generate terrain in raduis +2
-		for(int x = -radius-1; x < radius+2; x++)
-			for(int z = -radius-1; z < radius+2; z++)
-			{
-				Vector3 offset = new Vector3(x,0,z) * chunkSize;
-				Vector3 position = centerChunk + offset;
+		AddCoroutine(ChunksInSquare(centerChunk, radius+1, GenerateColumnData, 20));
 
-				GenerateColumnData(position);
-			}
+		AddCoroutine(ChunksInSquare(centerChunk, radius, GetColumnSize, 20));
 
-		//	Get column size in radius +1
-		for(int x = -radius; x < radius+1; x++)
-			for(int z = -radius; z < radius+1; z++)
-			{
-				Vector3 offset = new Vector3(x,0,z) * chunkSize;
-				Vector3 position = centerChunk + offset;
+		AddCoroutine(ChunksInSquare(centerChunk, radius, CreateColumn, 20));
 
-				GetColumnSize(position);
-			}
+		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumn, 20));
 
-		//	Create chunks in radius + 1
-		for(int x = -radius; x < radius+1; x++)
-			for(int z = -radius; z < radius+1; z++)
-			{
-				Vector3 offset = new Vector3(x, 0, z) * chunkSize;
-				Vector3 position = centerChunk + offset;
+		AddCoroutine(ChunksInSquare(centerChunk, radius-1, SmoothColumn, 20));
 
-				CreateColumn((int)position.x,
-						  	 (int)position.z);
-			}
-
-		//	Generate block data in radius +1
-		for(int x = -radius; x < radius+1; x++)
-			for(int z = -radius; z < radius+1; z++)
-			{
-				Vector3 offset = new Vector3(x, 0, z) * chunkSize;
-				Vector3 position = centerChunk + offset;
-				
-				GenerateColumn((int)position.x,
-								(int)position.z);
-			}
-
-		//	Draw chunk spiralling out from player in radius
-		if(chunkDrawCoroutine != null) StopCoroutine(chunkDrawCoroutine);
-		chunkDrawCoroutine = StartCoroutine(DrawChunksInSpiral(centerChunk, radius));
+		AddCoroutine(ChunksInSpiral(centerChunk, radius-1, DrawColumn, 2));
 	}
 
 	#endregion
 
-	#region Topology
-
-	//	Terrain data
-	public class Column
-	{
-		public Vector3 position;
-		public Chunk.Status spawnStatus;
-		public bool sizeCalculated = false;
-		public int[,] heightMap;
-		public FastNoise.EdgeData[,] edgeMap;
-		public int[,][] cuts = new int[chunkSize,chunkSize][];
-		public TerrainLibrary.BiomeLayer[,] biomeLayers = new TerrainLibrary.BiomeLayer[chunkSize,chunkSize];
-
-		public int highestPoint = 0;
-		public int topChunkGenerate;
-		public int topChunkDraw;	
-
-		public int lowestPoint = 1000;
-		public int bottomChunkGenerate;
-		public int bottomChunkDraw;
-		
-		public Column(Vector3 _position, TerrainGenerator terrain)
-		{
-			position = _position;
-			terrain.GetTopologyData(this);
-		}
-
-		public static Column Get(Vector3 position)
-		{
-			Column column = columns[new Vector3(position.x, 0, position.z)];
-			return column;
-		}
-
-		public void CheckLowest(int value)
-		{
-			if(value < lowestPoint)
-			{
-				lowestPoint = value;
-			}
-		}
-		public void CheckHighest(int value)
-		{
-			if(value > highestPoint)
-			{
-				highestPoint = value;
-			}
-		}
-	}
+	#region Column
 
 	//	Generate terrain and store highest/lowest points
 	bool GenerateColumnData(Vector3 position)
@@ -165,17 +123,17 @@ public class World : MonoBehaviour
 		Column column;
 		if(columns.TryGetValue(position, out column)) return false;
 
-		column = new Column(position, terrain);
+		column = new Column(position, terrain, this);
 		columns[position] = column;
 
 		return true;
 	}
 
 	//	Determine which chunks should generated and drawn
-	void GetColumnSize(Vector3 position)
+	bool GetColumnSize(Vector3 position)
 	{
 		Column column = Column.Get(position);
-		if(column.sizeCalculated) return;
+		if(column.sizeCalculated) return false;
 
 		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position, chunkSize);
 
@@ -198,111 +156,158 @@ public class World : MonoBehaviour
 		}
 
 		//	Set top and bottom chunks to generate
-		column.topChunkGenerate = Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize;
-		column.bottomChunkGenerate = Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize;
-		
-		debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2.5f);
-		debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2.5f);
+		column.topChunkGenerate = (Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize) + chunkSize;
+		column.bottomChunkGenerate = (Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize) - chunkSize;
+
+		//debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2f);
+		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2f);
+
+		//debug.OutlineChunk(new Vector3(position.x, column.topChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
+		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
 
 		column.sizeCalculated = true;
+		return true;
 	}
 
 	#endregion
 
 	#region Chunk Generation
 
-
-	//	Create Chunk class instance
-	public bool CreateChunk(Vector3 position, bool skipDictCheck = false)
+	//	Create column of Chunk class instances
+	bool CreateColumn(Vector3 position)
 	{
-		if(!skipDictCheck && chunks.ContainsKey(position)) return false;
+		Column topol = columns[new Vector3(position.x, 0, position.z)];
 
+		//	Skip if already created
+		if(topol.spawnStatus != Chunk.Status.NONE) return false;
+
+		//	Iterate over chunks defined by column's top and bottom visible blocks
+		for(int y = topol.bottomChunkGenerate; y <= topol.topChunkGenerate; y+=chunkSize)
+		{
+			CreateChunk(new Vector3(position.x, y, position.z), skipDictCheck: true);
+		}
+
+		//	Update column status to created
+		topol.spawnStatus = Chunk.Status.CREATED;
+		return true;
+	}
+	void CreateChunk(Vector3 position, bool skipDictCheck = false)
+	{
+		if(!skipDictCheck && chunks.ContainsKey(position)) return;
+
+		//	Track chunk metrics
 		chunksCreated++;
 		debug.Output("Chunks created", chunksCreated.ToString());
 
+		//	Create chunk
 		Chunk chunk = new Chunk(position, this);
 		chunks.Add(position, chunk);
+
+		//	Update chunk status to created
 		chunk.status = Chunk.Status.CREATED;
-
-		return true;
 	}
-	bool CreateColumn(int x, int z)
+	
+	//	Generate blocks in column of chunks
+	bool GenerateColumn(Vector3 position)
 	{
-		Column topol = columns[new Vector3(x, 0, z)];
-		if(topol.spawnStatus != Chunk.Status.NONE) return false;
-
-		//	Create a column of Chunk class instances covering visible terrain + 1
-		bool aChunkWasCreated = false;
-		for(int y = topol.bottomChunkGenerate - chunkSize; y <= topol.topChunkGenerate + chunkSize; y+=chunkSize)
-		{
-			bool drawn = CreateChunk(new Vector3(x, y, z), skipDictCheck: true);
-			if(!aChunkWasCreated && drawn) aChunkWasCreated = true;
-		}
-		topol.spawnStatus = Chunk.Status.CREATED;
-		return aChunkWasCreated;
-	}
-
-	//	Generate blocks in chunk
-	public bool GenerateChunk(Vector3 position)
-	{
-		Chunk chunk = chunks[position];
-		if(chunk.status == Chunk.Status.GENERATED) return false;
-
-		chunk.GenerateBlocks();
-		return true;
-	}
-	bool GenerateColumn(int x, int z)
-	{
-		Column topol = columns[new Vector3(x, 0, z)];
+		Column topol = columns[new Vector3(position.x, 0, position.z)];
 		if((int)topol.spawnStatus > 1) return false;
 
-		//	Generate blocks in chunks covering visible terrain + 1
-		bool aChunkWasGenerated = false;
-		for(int y = topol.bottomChunkGenerate - chunkSize; y <= topol.topChunkGenerate + chunkSize; y+=chunkSize)
+		for(int y = topol.bottomChunkGenerate; y <= topol.topChunkGenerate; y+=chunkSize)
 		{
-			bool drawn = GenerateChunk(new Vector3(x, y, z));
-			if(!aChunkWasGenerated && drawn) aChunkWasGenerated = true;
+			GenerateChunk(new Vector3(position.x, y, position.z));
 		}
 		topol.spawnStatus = Chunk.Status.GENERATED;
-		return aChunkWasGenerated;
-	}
-
-
-	//	Draw chunk meshe
-	bool DrawChunk(Vector3 position)
-	{
-		Chunk chunk = chunks[position];
-		if(chunk.status == Chunk.Status.DRAWN) { return false; }
-
-		chunk.Draw();
 		return true;
 	}
-	bool DrawColumn(Vector3 position)
+	void GenerateChunk(Vector3 position)
+	{
+		Chunk chunk = chunks[position];
+
+		if(chunk.status == Chunk.Status.GENERATED) return;
+
+		//debug.OutlineChunk(position, Color.white, sizeDivision: 2.5f);
+
+		chunk.GenerateBlocks();
+	}
+	
+	//	Smooth terrain in column of chunks
+	bool SmoothColumn(Vector3 position)
 	{
 		Column topol = columns[new Vector3(position.x, 0, position.z)];
 		if(topol.spawnStatus != Chunk.Status.GENERATED) return false;
 
-		//debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.white, removePrevious: false, sizeDivision: 3.5f);
-
-		//	Draw chunk meshes covering visible chunks
-		bool aChunkWasDrawn = false;
 		for(int y = topol.bottomChunkDraw; y <= topol.topChunkDraw; y+=chunkSize)
 		{
-			bool drawn = DrawChunk(new Vector3(position.x, y, position.z));
-			if(!aChunkWasDrawn && drawn) aChunkWasDrawn = true;
+			SmoothChunk(new Vector3(position.x, y, position.z));
+		}
+		return true;
+	}
+	void SmoothChunk(Vector3 position)
+	{
+		Chunk chunk = chunks[position];
+		if(chunk.status != Chunk.Status.GENERATED) return;
+
+		//debug.OutlineChunk(position, Color.cyan, sizeDivision: 4f);
+
+		chunk.SmoothBlocks();
+	}
+	
+	//	Draw chunk meshes in column of chunks
+	bool DrawColumn(Vector3 position)
+	{
+		Column topol = columns[new Vector3(position.x, 0, position.z)];
+		if(topol.spawnStatus != Chunk.Status.GENERATED) return false;
+		
+		for(int y = topol.bottomChunkDraw; y <= topol.topChunkDraw; y+=chunkSize)
+		{
+			DrawChunk(new Vector3(position.x, y, position.z));
 		}
 		topol.spawnStatus = Chunk.Status.DRAWN;
-		return aChunkWasDrawn;
+		return true;
+	}
+	void DrawChunk(Vector3 position)
+	{
+		Chunk chunk = chunks[position];
+		if(chunk.status == Chunk.Status.DRAWN) return;
+		
+		//debug.OutlineChunk(position, Color.red, sizeDivision: 3.5f);
+
+		chunk.Draw();
+	}
+	
+	delegate bool ChunkOperation(Vector3 position);
+
+	IEnumerator ChunksInSquare(Vector3 center, int radius, ChunkOperation delegateOperation, int iterationsPerFrame)
+	{
+		int iterationCount = 0;
+		for(int x = -radius; x < radius+1; x++)
+			for(int z = -radius; z < radius+1; z++)
+			{
+				Vector3 offset = new Vector3(x, 0, z) * chunkSize;
+				Vector3 position = center + offset;
+
+				if(delegateOperation(position))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
+			}
+		CoroutineComplete();		
 	}
 
-
-	//	Make a horizontal grid of chunks moving in a spiral out from the center
-	IEnumerator DrawChunksInSpiral(Vector3 center, int radius)
+	IEnumerator ChunksInSpiral(Vector3 center, int radius, ChunkOperation delegateOperation, int iterationsPerFrame)
 	{
 		Vector3 position = center;
 		//	Trim radius to allow buffer of generated chunks
-		radius = radius - 2;
-		DrawColumn(position);
+		delegateOperation(position);
+
+		int iterationCount = 0;
+
 		int increment = 1;
 		for(int i = 0; i < radius; i++)
 		{
@@ -310,12 +315,28 @@ public class World : MonoBehaviour
 			for(int r = 0; r < increment; r++)
 			{
 				position += Vector3.right * chunkSize;
-				if(DrawColumn(position)) yield return null;
+				if(delegateOperation(position))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
 			}
 			for(int b = 0; b < increment; b++)
 			{
 				position += Vector3.back * chunkSize;
-				if(DrawColumn(position)) yield return null;
+				if(delegateOperation(position))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
 			}
 
 			increment++;
@@ -324,12 +345,28 @@ public class World : MonoBehaviour
 			for(int l = 0; l < increment; l++)
 			{
 				position += Vector3.left * chunkSize;
-				if(DrawColumn(position)) yield return null;
+				if(delegateOperation(position))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
 			}
 			for(int f = 0; f < increment; f++)
 			{
 				position += Vector3.forward * chunkSize;
-				if(DrawColumn(position)) yield return null;
+				if(delegateOperation(position))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
 			}
 
 			increment++;
@@ -338,8 +375,17 @@ public class World : MonoBehaviour
 		for(int r = 0; r < increment - 1; r++)
 		{
 			position += Vector3.right * chunkSize;
-			if(DrawColumn(position)) yield return null;
+			if(delegateOperation(position))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
 		}
+		CoroutineComplete();
 	}
 
 	#endregion
@@ -486,28 +532,13 @@ public class World : MonoBehaviour
 		int z = Mathf.FloorToInt(voxel.z / chunkSize);
 		return new Vector3(x*chunkSize,y*chunkSize,z*chunkSize);
 	}
-	//	Get type of block at voxel
-	public static Blocks.Types GetType(Vector3 voxel)
+
+	public static Chunk VoxelOwnerChunk(Vector3 voxel)
 	{
-		Chunk chunk = chunks[VoxelOwner(voxel)];
-		Vector3 local = voxel - chunk.position;
-		return chunk.blockTypes[(int)local.x, (int)local.y, (int)local.z];
-	}
-	//	Get byte representing arrangement of solid blocks around voxel
-	public static byte GetBitMask(Vector3 voxel)
-	{
-		Vector3[] neighbours = Util.HorizontalBlockNeighbours(voxel);
-			int value = 1;
-			int total = 0;
-			for(int i = 0; i < neighbours.Length; i++)
-			{
-				if(Blocks.seeThrough[(int)GetType(neighbours[i])])
-				{
-					total += value;
-				}
-				value *= 2;
-			}
-		return (byte)total;
+		int x = Mathf.FloorToInt(voxel.x / chunkSize);
+		int y = Mathf.FloorToInt(voxel.y / chunkSize);
+		int z = Mathf.FloorToInt(voxel.z / chunkSize);
+		return chunks[new Vector3(x*chunkSize,y*chunkSize,z*chunkSize)];
 	}
 
 	#endregion

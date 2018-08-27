@@ -44,7 +44,7 @@ public class TerrainGenerator
 	}
 
 	//	Get biome layer topology and smooth between layers at edges using Perlin or Simplex noise
-	private Topology GetBiomeTopology(int x, int z, World.Column column, TerrainLibrary.Biome biome)
+	private Topology GetBiomeTopology(int x, int z, Column column, TerrainLibrary.Biome biome)
 	{
 		//	Global voxel column coordinates
 		int gx = (int)(x+column.position.x);
@@ -104,7 +104,7 @@ public class TerrainGenerator
 
 	//	Get biome topology and smooth between biomes if necessary
 	//	using Cellular value and distance-to-edge noise respectively
-	public void GetTopologyData(World.Column column)
+	public void GetTopologyData(Column column)
 	{	
 		int chunkSize = World.chunkSize;
 		column.heightMap = new int[chunkSize,chunkSize];
