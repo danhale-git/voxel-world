@@ -45,7 +45,7 @@ public static class Blocks
 														false,		//	1	//	DIRT
 														false,		//	2	//	STONE
 														false,		//	3	//	GRASS
-														false,		//	4	//	LIGHTGRASS
+														true,		//	4	//	LIGHTGRASS
 														false		//	5	//	WATER
 													};			
 }

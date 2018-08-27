@@ -174,7 +174,7 @@ public static class Shapes
 	public class Cube : Shape
 	{
 		//	Override Generate meshes because cubes don't need rotation
-		public override void GenerateMeshes()
+		/*public override void GenerateMeshes()
 		{
 			List<Faces> faces = GetFaces(new bool[6], 0, true);
 
@@ -206,7 +206,7 @@ public static class Shapes
 				}
 			}
 			
-		}
+		}*/
 		public override List<Faces> GetFaces(bool[] exposedFaces, int rotation, bool getAll = false)
 		{
 			List<Faces> faces = new List<Faces>();
