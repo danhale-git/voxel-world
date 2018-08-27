@@ -12,7 +12,6 @@ public class Column
 	public bool sizeCalculated = false;
 	public int[,] heightMap;
 	public FastNoise.EdgeData[,] edgeMap;
-	public int[,][] cuts;
 	public TerrainLibrary.BiomeLayer[,] biomeLayers;
 
 	public int highestPoint = 0;
@@ -25,7 +24,6 @@ public class Column
 	
 	public Column(Vector3 position, TerrainGenerator terrain, World world)
 	{
-		cuts = new int[chunkSize,chunkSize][];
 		biomeLayers = new TerrainLibrary.BiomeLayer[chunkSize,chunkSize];
 
 		this.position = position;

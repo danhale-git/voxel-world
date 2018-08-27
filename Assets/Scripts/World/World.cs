@@ -34,7 +34,9 @@ public class World : MonoBehaviour
 	public static Dictionary<Vector3, Chunk> chunks = new Dictionary<Vector3, Chunk>();
 	public static Dictionary<Vector3, Column> columns = new Dictionary<Vector3, Column>();
 
-	Coroutine chunkDrawCoroutine;
+	Coroutine currentCoroutine;
+	List<IEnumerator> coroutines = new List<IEnumerator>();
+	bool coroutineRunning = false;
 
 	public PlayerController player;
 
@@ -57,38 +59,61 @@ public class World : MonoBehaviour
 
 	#region World Generation
 
+	void AddCoroutine(IEnumerator coroutine)
+	{
+		coroutines.Add(coroutine);
+		if(coroutines.Count == 1)
+		{
+			coroutineRunning = true;
+			currentCoroutine = StartCoroutine(coroutines[0]);
+		}
+	}
+	void CoroutineComplete()
+	{
+		if(currentCoroutine != null) StopCoroutine(currentCoroutine);
+		coroutines.RemoveAt(0);
+		if(coroutines.Count == 0)
+		{
+			coroutineRunning = false;
+		}
+		else
+		{
+			currentCoroutine = StartCoroutine(coroutines[0]);
+		}
+	}
+
 	//	Generate and draw chunks in a cube radius of veiwDistance around player
 	//	Called in PlayerController
 	public void LoadChunks(Vector3 centerChunk, int radius)
 	{
 		if(disableChunkGeneration)
 		{ Debug.Log("Chunk generation disabled!"); return; }
+		if(coroutineRunning) return;
 
-		//	Prevent multiple instances of chunk drawing coroutines
 		centerChunk = new Vector3(centerChunk.x, 0, centerChunk.z);
 
 		//	Generate terrain in raduis +2
-		for(int x = -radius-1; x < radius+2; x++)
+		/*for(int x = -radius-1; x < radius+2; x++)
 			for(int z = -radius-1; z < radius+2; z++)
 			{
 				Vector3 offset = new Vector3(x,0,z) * chunkSize;
 				Vector3 position = centerChunk + offset;
 
 				GenerateColumnData(position);
-			}
+			}*/
 
 		//	Get column size in radius +1
-		for(int x = -radius; x < radius+1; x++)
+		/*for(int x = -radius; x < radius+1; x++)
 			for(int z = -radius; z < radius+1; z++)
 			{
 				Vector3 offset = new Vector3(x,0,z) * chunkSize;
 				Vector3 position = centerChunk + offset;
 
 				GetColumnSize(position);
-			}
+			}*/
 
 		//	Create chunks in radius + 1
-		for(int x = -radius; x < radius+1; x++)
+		/*for(int x = -radius; x < radius+1; x++)
 			for(int z = -radius; z < radius+1; z++)
 			{
 				Vector3 offset = new Vector3(x, 0, z) * chunkSize;
@@ -96,9 +121,9 @@ public class World : MonoBehaviour
 
 				CreateColumn((int)position.x,
 						  	 (int)position.z);
-			}
+			}*/
 
-		//	Generate block data in radius +1
+		/*//	Generate block data in radius +1
 		for(int x = -radius; x < radius+1; x++)
 			for(int z = -radius; z < radius+1; z++)
 			{
@@ -107,9 +132,9 @@ public class World : MonoBehaviour
 				
 				GenerateColumn(	(int)position.x,
 								(int)position.z);
-			}
+			}*/
 
-		for(int x = -radius + 1; x < radius; x++)
+		/*for(int x = -radius + 1; x < radius; x++)
 			for(int z = -radius + 1; z < radius; z++)
 			{
 				Vector3 offset = new Vector3(x, 0, z) * chunkSize;
@@ -117,15 +142,25 @@ public class World : MonoBehaviour
 
 				SmoothColumn(	(int)position.x,
 								(int)position.z);
-			}
+			}*/
 
 		//	Draw chunks spiralling out from player in radius
-		if(chunkDrawCoroutine != null) StopCoroutine(chunkDrawCoroutine);
-
-
-		chunkDrawCoroutine = StartCoroutine(ChunksInSpiral(centerChunk, radius, DrawColumn));
+		//if(chunkDrawCoroutine != null) StopCoroutine(chunkDrawCoroutine);
+		//chunkDrawCoroutine = StartCoroutine(ChunksInSpiral(centerChunk, radius, DrawColumn));
 
 		//chunkDrawCoroutine = StartCoroutine(DrawChunksInSpiral(centerChunk, radius));
+
+		AddCoroutine(ChunksInSquare(centerChunk, radius+1, GenerateColumnData, 20));
+
+		AddCoroutine(ChunksInSquare(centerChunk, radius, GetColumnSize, 20));
+
+		AddCoroutine(ChunksInSquare(centerChunk, radius, CreateColumn, 20));
+
+		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumn, 20));
+
+		AddCoroutine(ChunksInSquare(centerChunk, radius-1, SmoothColumn, 20));
+
+		AddCoroutine(ChunksInSpiral(centerChunk, radius-1, DrawColumn, 2));
 	}
 
 	#endregion
@@ -145,10 +180,10 @@ public class World : MonoBehaviour
 	}
 
 	//	Determine which chunks should generated and drawn
-	void GetColumnSize(Vector3 position)
+	bool GetColumnSize(Vector3 position)
 	{
 		Column column = Column.Get(position);
-		if(column.sizeCalculated) return;
+		if(column.sizeCalculated) return false;
 
 		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position, chunkSize);
 
@@ -174,13 +209,14 @@ public class World : MonoBehaviour
 		column.topChunkGenerate = (Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize) + chunkSize;
 		column.bottomChunkGenerate = (Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize) - chunkSize;
 
-		debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2.5f);
-		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2.5f);
+		//debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2f);
+		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2f);
 
 		//debug.OutlineChunk(new Vector3(position.x, column.topChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
 		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
 
 		column.sizeCalculated = true;
+		return true;
 	}
 
 	#endregion
@@ -188,7 +224,24 @@ public class World : MonoBehaviour
 	#region Chunk Generation
 
 
-	//	Create Chunk class instance
+	//	Create column of Chunk class instances
+	bool CreateColumn(Vector3 position)
+	{
+		Column topol = columns[new Vector3(position.x, 0, position.z)];
+
+		//	Skip if already created
+		if(topol.spawnStatus != Chunk.Status.NONE) return false;
+
+		//	Create a column of Chunk class instances covering visible terrain + 1
+		bool aChunkWasCreated = false;
+		for(int y = topol.bottomChunkGenerate; y <= topol.topChunkGenerate; y+=chunkSize)
+		{
+			bool drawn = CreateChunk(new Vector3(position.x, y, position.z), skipDictCheck: true);
+			if(!aChunkWasCreated && drawn) aChunkWasCreated = true;
+		}
+		topol.spawnStatus = Chunk.Status.CREATED;
+		return aChunkWasCreated;
+	}
 	public bool CreateChunk(Vector3 position, bool skipDictCheck = false)
 	{
 		if(!skipDictCheck && chunks.ContainsKey(position)) return false;
@@ -202,43 +255,29 @@ public class World : MonoBehaviour
 
 		return true;
 	}
-	bool CreateColumn(int x, int z)
-	{
-		Column topol = columns[new Vector3(x, 0, z)];
-		if(topol.spawnStatus != Chunk.Status.NONE) return false;
-
-		//	Create a column of Chunk class instances covering visible terrain + 1
-		bool aChunkWasCreated = false;
-		for(int y = topol.bottomChunkGenerate; y <= topol.topChunkGenerate; y+=chunkSize)
-		{
-			bool drawn = CreateChunk(new Vector3(x, y, z), skipDictCheck: true);
-			if(!aChunkWasCreated && drawn) aChunkWasCreated = true;
-		}
-		topol.spawnStatus = Chunk.Status.CREATED;
-		return aChunkWasCreated;
-	}
-
+	
 	//	Generate blocks in chunk
 	public bool GenerateChunk(Vector3 position)
 	{
 		Chunk chunk = chunks[position];
+
 		if(chunk.status == Chunk.Status.GENERATED) return false;
 
-		debug.OutlineChunk(position, Color.green, sizeDivision: 4f);
+		debug.OutlineChunk(position, Color.white, sizeDivision: 2.5f);
 
 		chunk.GenerateBlocks();
 		return true;
 	}
-	bool GenerateColumn(int x, int z)
+	bool GenerateColumn(Vector3 position)
 	{
-		Column topol = columns[new Vector3(x, 0, z)];
+		Column topol = columns[new Vector3(position.x, 0, position.z)];
 		if((int)topol.spawnStatus > 1) return false;
 
 		//	Generate blocks in chunks covering visible terrain + 1
 		bool aChunkWasGenerated = false;
 		for(int y = topol.bottomChunkGenerate; y <= topol.topChunkGenerate; y+=chunkSize)
 		{
-			bool drawn = GenerateChunk(new Vector3(x, y, z));
+			bool drawn = GenerateChunk(new Vector3(position.x, y, position.z));
 			if(!aChunkWasGenerated && drawn) aChunkWasGenerated = true;
 		}
 		topol.spawnStatus = Chunk.Status.GENERATED;
@@ -251,17 +290,19 @@ public class World : MonoBehaviour
 		Chunk chunk = chunks[position];
 		if(chunk.status != Chunk.Status.GENERATED) { return false; }
 
+		debug.OutlineChunk(position, Color.cyan, sizeDivision: 4f);
+
 		chunk.SmoothBlocks();
 		return true;
 	}
-	bool SmoothColumn(int x, int z)
+	bool SmoothColumn(Vector3 position)
 	{
-		Column topol = columns[new Vector3(x, 0, z)];
+		Column topol = columns[new Vector3(position.x, 0, position.z)];
 		if(topol.spawnStatus != Chunk.Status.GENERATED) return false;
 
 		for(int y = topol.bottomChunkDraw; y <= topol.topChunkDraw; y+=chunkSize)
 		{
-			SmoothChunk(new Vector3(x, y, z));
+			SmoothChunk(new Vector3(position.x, y, position.z));
 		}
 		return true;
 	}
@@ -272,7 +313,7 @@ public class World : MonoBehaviour
 		Chunk chunk = chunks[position];
 		if(chunk.status == Chunk.Status.DRAWN) { return false; }
 		
-		debug.OutlineChunk(position, Color.red, sizeDivision: 3f);
+		debug.OutlineChunk(position, Color.red, sizeDivision: 3.5f);
 
 		chunk.Draw();
 		return true;
@@ -282,7 +323,6 @@ public class World : MonoBehaviour
 		Column topol = columns[new Vector3(position.x, 0, position.z)];
 		if(topol.spawnStatus != Chunk.Status.GENERATED) return false;
 		
-		//	Draw chunk meshes covering visible chunks
 		bool aChunkWasDrawn = false;
 		for(int y = topol.bottomChunkDraw; y <= topol.topChunkDraw; y+=chunkSize)
 		{
@@ -295,12 +335,36 @@ public class World : MonoBehaviour
 
 	delegate bool ChunkOperation(Vector3 position);
 
-	IEnumerator ChunksInSpiral(Vector3 center, int radius, ChunkOperation delegateOperation)
+	IEnumerator ChunksInSquare(Vector3 center, int radius, ChunkOperation delegateOperation, int iterationsPerFrame)
+	{
+		int iterationCount = 0;
+		for(int x = -radius; x < radius+1; x++)
+			for(int z = -radius; z < radius+1; z++)
+			{
+				Vector3 offset = new Vector3(x, 0, z) * chunkSize;
+				Vector3 position = center + offset;
+
+				if(delegateOperation(position))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
+			}
+		CoroutineComplete();		
+	}
+
+	IEnumerator ChunksInSpiral(Vector3 center, int radius, ChunkOperation delegateOperation, int iterationsPerFrame)
 	{
 		Vector3 position = center;
 		//	Trim radius to allow buffer of generated chunks
-		radius = radius - 2;
 		delegateOperation(position);
+
+		int iterationCount = 0;
+
 		int increment = 1;
 		for(int i = 0; i < radius; i++)
 		{
@@ -308,12 +372,28 @@ public class World : MonoBehaviour
 			for(int r = 0; r < increment; r++)
 			{
 				position += Vector3.right * chunkSize;
-				if(delegateOperation(position)) yield return null;
+				if(delegateOperation(position))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
 			}
 			for(int b = 0; b < increment; b++)
 			{
 				position += Vector3.back * chunkSize;
-				if(delegateOperation(position)) yield return null;
+				if(delegateOperation(position))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
 			}
 
 			increment++;
@@ -322,12 +402,28 @@ public class World : MonoBehaviour
 			for(int l = 0; l < increment; l++)
 			{
 				position += Vector3.left * chunkSize;
-				if(delegateOperation(position)) yield return null;
+				if(delegateOperation(position))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
 			}
 			for(int f = 0; f < increment; f++)
 			{
 				position += Vector3.forward * chunkSize;
-				if(delegateOperation(position)) yield return null;
+				if(delegateOperation(position))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
 			}
 
 			increment++;
@@ -336,12 +432,21 @@ public class World : MonoBehaviour
 		for(int r = 0; r < increment - 1; r++)
 		{
 			position += Vector3.right * chunkSize;
-			if(delegateOperation(position)) yield return null;
+			if(delegateOperation(position))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
 		}
+		CoroutineComplete();
 	}
 
 	//	Make a horizontal grid of chunks moving in a spiral out from the center
-	IEnumerator DrawChunksInSpiral(Vector3 center, int radius)
+	/*IEnumerator DrawChunksInSpiral(Vector3 center, int radius)
 	{
 		Vector3 position = center;
 
@@ -383,7 +488,7 @@ public class World : MonoBehaviour
 			position += Vector3.right * chunkSize;
 			if(DrawColumn(position)) yield return null;
 		}
-	}
+	}*/
 
 	#endregion
 
