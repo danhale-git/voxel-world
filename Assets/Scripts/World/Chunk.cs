@@ -287,7 +287,8 @@ public class Chunk
 																			blockPosition,
 														 					blockYRotation[x,y,z], 
 																			exposedFaces,
-																			vertexCount);
+																			vertexCount,
+																			(int)type);
 
 					//	Keep count of vertices to offset triangles
 					vertexCount += localVertCount;

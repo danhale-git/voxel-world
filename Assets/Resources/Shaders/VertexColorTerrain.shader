@@ -43,12 +43,12 @@
     {
         //half4 c = tex2D(_MainTex, IN.uv2_MainTex) * _Color;
         half3 c = IN.vertColors.rgb * _Color.rgb;               //half3 check to see that alpha works
-        c.rgb *= tex2D(_Detail,IN.uv_Detail).rgb*2;
+        c.rgb *= tex2D(_Detail,IN.uv_Detail).rgb*2;                 //  comment for NORMS
         o.Albedo = c.rgb;
         o.Gloss = tex2D(_Detail,IN.uv_Detail).a;
         //o.Alpha = c.a * _Color.a;
         o.Specular = _Shininess;
-        //o.Normal = UnpackNormal(tex2D(_Detail, IN.uv_Detail));
+        //o.Normal = UnpackNormal(tex2D(_Detail, IN.uv_Detail));    //  uncomment for NORMS
     }
     ENDCG
   }

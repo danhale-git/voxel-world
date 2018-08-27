@@ -32,9 +32,9 @@ public static class Shapes
 	readonly static Vector3 v11 = new Vector3( -0.5f,	0f,		 0f);		//	middle left
 	readonly static Vector3 v12 = new Vector3( 	0f, 	0f,		 0f);		//	middle
 
-	const float texSize = 0;
+	const float UVsize = 0.5f;
 	const float UVmin = 0;
-	const float UVmax = 1;
+	const float UVmax = 0.5f;
 	static Vector2 UVbl = new Vector2(UVmin, UVmin);
 	static Vector2 UVbr = new Vector2(UVmax, UVmin);
 	static Vector2 UVtl = new Vector2(UVmin, UVmax);
@@ -66,19 +66,19 @@ public static class Shapes
 		protected Vector3[][][] shapeVertices = new Vector3[rotations.Length][][];
 		protected Vector3[][][] shapeNormals = new Vector3[rotations.Length][][];
 		protected int[][][] shapeTriangles = new int[rotations.Length][][];
-		protected Vector2[][][] shapeUVs = new Vector2[rotations.Length][][];
+		protected Vector2[][][] shapeUVs = new Vector2[Blocks.numberOfTypes][][];
 
 		public virtual void GenerateMeshes()
 		{
+			List<Faces> faces = GetFaces(new bool[6], 0, true);
+
 			for(int r = 0; r < rotations.Length; r++)
 			{
 				Quaternion rotation = Quaternion.Euler(0, rotations[r], 0);
-				List<Faces> faces = GetFaces(new bool[6], 0, true);
 
 				shapeVertices[r] = new Vector3[numberOfFaces][];
 				shapeNormals[r] = new Vector3[numberOfFaces][];
 				shapeTriangles[r] = new int[numberOfFaces][];
-				shapeUVs[r] = new Vector2[numberOfFaces][];
 
 				for(int f = 0; f < faces.Count; f++)
 				{
@@ -90,7 +90,15 @@ public static class Shapes
 
 					shapeTriangles[r][(int)faces[f]] = Triangles(		faces[f], 0);
 
-					shapeUVs[r][(int)faces[f]] = UVs(faces[f]);
+				}
+			}
+
+			for(int t = 0; t < Blocks.numberOfTypes; t++)
+			{
+				shapeUVs[t] = new Vector2[numberOfFaces][];	
+				for(int f = 0; f < faces.Count; f++)
+				{
+					shapeUVs[t][(int)faces[f]] = OffsetVectors(UVs(faces[f]), Blocks.tileOffset[t] * UVsize);
 				}
 			}
 		}
@@ -99,7 +107,7 @@ public static class Shapes
 		{ return new List<Faces>(); }
 
 		public int Draw(List<Vector3> vertices, 	List<Vector3> normals, 	List<int> triangles, List<Vector2> UVs,
-						Vector3 position, 			int rotationIndex,	bool[] exposedFaces, 	int vertCount)
+						Vector3 position, 			int rotationIndex,	bool[] exposedFaces, 	int vertCount, int blockType)
 		{
 			//Quaternion qRotation = Quaternion.Euler(0, rotations[rotationIndex], 0);
 
@@ -122,7 +130,7 @@ public static class Shapes
 
 				triArrays[i] = Triangles(faces[i], vertCount + localVertCount);
 
-				UVArrays[i] = shapeUVs[rotationIndex][(int)faces[i]];
+				UVArrays[i] = shapeUVs[blockType][(int)faces[i]];
 				
 				localTriCount += triArrays[i].Length;
 				localVertCount += vertArrays[i].Length;
@@ -142,7 +150,7 @@ public static class Shapes
 
 				triArrays[i].CopyTo( allTris,  triIndexOffset);
 
-				UVArrays[i].CopyTo(	 allUVs, vertIndexOffset);
+				//UVArrays[i].CopyTo(	 allUVs, vertIndexOffset);
 
 				vertIndexOffset += vertArrays[i].Length;
 				triIndexOffset += triArrays[i].Length;
@@ -168,15 +176,16 @@ public static class Shapes
 		//	Override Generate meshes because cubes don't need rotation
 		public override void GenerateMeshes()
 		{
+			List<Faces> faces = GetFaces(new bool[6], 0, true);
+
 			for(int r = 0; r < rotations.Length; r++)
 			{
 				Quaternion rotation = Quaternion.Euler(0, rotations[r], 0);
-				List<Faces> faces = GetFaces(new bool[6], 0, true);
 
 				shapeVertices[r] = new Vector3[numberOfFaces][];
 				shapeNormals[r] = new Vector3[numberOfFaces][];
 				shapeTriangles[r] = new int[numberOfFaces][];
-				shapeUVs[r] = new Vector2[numberOfFaces][];
+				shapeUVs[r] = new Vector2[Blocks.numberOfTypes][];
 
 				for(int f = 0; f < faces.Count; f++)
 				{
@@ -185,8 +194,15 @@ public static class Shapes
 					shapeNormals[r][(int)faces[f]] = 	Normals(faces[f]);
 
 					shapeTriangles[r][(int)faces[f]] = 	Triangles(	faces[f], 0);
+				}
+			}
 
-					shapeUVs[r][(int)faces[f]] = UVs(faces[f]);
+			for(int t = 0; t < Blocks.numberOfTypes; t++)
+			{
+				shapeUVs[t] = new Vector2[numberOfFaces][];	
+				for(int f = 0; f < faces.Count; f++)
+				{
+					shapeUVs[t][(int)faces[f]] = OffsetVectors(UVs(faces[f]), Blocks.tileOffset[t] * UVsize);
 				}
 			}
 			
@@ -760,6 +776,16 @@ public static class Shapes
 	{
 		//	Apply adjusted values to new array to avoid editing the original shape
 		Vector3[] adjustedVectors = new Vector3[vectors.Length];
+		for(int i = 0; i < vectors.Length; i++)
+		{
+			adjustedVectors[i] = offset + vectors[i];
+		}
+		return adjustedVectors;
+	}
+	static Vector2[] OffsetVectors(Vector2[] vectors, Vector2 offset)
+	{
+		//	Apply adjusted values to new array to avoid editing the original shape
+		Vector2[] adjustedVectors = new Vector2[vectors.Length];
 		for(int i = 0; i < vectors.Length; i++)
 		{
 			adjustedVectors[i] = offset + vectors[i];
