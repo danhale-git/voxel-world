@@ -67,9 +67,14 @@ public class World : MonoBehaviour
 	{
 		if(disableChunkGeneration)
 		{ Debug.Log("Chunk generation disabled!"); return; }
+
+		//	Clear queue
 		if(coroutineRunning) ClearCoroutines();
 
+		// Zero out Y
 		centerChunk = new Vector3(centerChunk.x, 0, centerChunk.z);
+
+		//	Queue up chunk generation processes
 
 		//	Generate column class instances (heightmaps and other 2D terrain data)
 		//	+1 buffer allows adjacent column lookups without TryGetValue
