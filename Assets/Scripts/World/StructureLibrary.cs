@@ -8,14 +8,17 @@ public class StructureLibrary
 
 	public class StructureTest
 	{
-		public int height = 2;
+		public int wallHeight = 5;
+
+
+		public int divisor = 8;
 
 		FastNoise noise = new FastNoise();
 
 		public StructureTest()
 		{
 			noise.SetNoiseType(FastNoise.NoiseType.Value);
-			noise.SetFrequency(0.3f);
+			noise.SetFrequency(0.6f);
 			noise.SetInterp(FastNoise.Interp.Quintic);
 		}
 
@@ -26,7 +29,11 @@ public class StructureLibrary
 
 		public Tiles Tile(float noise)
 		{
-			if(noise < 0.7) return Tiles.WALL;
+			if(noise > 0.8f && noise < .95f ||
+				noise > 0.2 && noise < 0.4f ) return Tiles.WALL;
+			else if(noise > 0.75f && noise < 1f ||
+				noise > 0.15 && noise < 0.45f ) return Tiles.PATH;
+
 			else return Tiles.NONE;
 		}
 	}
