@@ -89,7 +89,7 @@ public class NoiseTesting : MonoBehaviour
 	[System.Serializable]
 	public struct Highlight
 	{
-		public float min;
+		public float max;
 		public Color color;
 	}
 	public List<Highlight> highlights;
@@ -125,7 +125,7 @@ public class NoiseTesting : MonoBehaviour
 
 	public float GetPixelNoise(int x, int y)
 	{
-		return Mathf.InverseLerp(-1, 1, fastNoise.GetNoise(x, y));
+		return fastNoise.GetNoise01(x, y);
 		//return fastNoise.GetNoise(x, y);
 	}
 
@@ -146,6 +146,18 @@ public class NoiseTesting : MonoBehaviour
 		SaveSettings();
 		Noise();
 	}
+
+	Color GetColor(float noise)
+	{
+		for(int i = 0; i < highlights.Count; i++)
+		{
+			if(noise < highlights[i].max)
+			{
+				return highlights[i].color;
+			}
+		}
+		return Color.black;
+	}
     
 	public void Noise()
 	{
@@ -156,20 +168,20 @@ public class NoiseTesting : MonoBehaviour
 		for(int x = 0; x < size; x++)
 			for(int y = 0; y < size; y++)
 			{
-				bool highlighted = false;
+				//bool highlighted = true;
 
 				float noise = GetPixelNoise(x+(int)offset.x, y+(int)offset.y) ;
 
 				int _x = x;
 				int _y = y;
 	
-				Color noiseColor = new Color(noise, noise, noise, 1);
+				Color noiseColor = Color.white;// = new Color(noise, noise, noise, 1);
 				
 				if((x % gridSize == 0 || y % gridSize == 0) && showGrid)
 					texture.SetPixel(_x, _y, new Color(0, 1, 0, 1) * noiseColor);
 				else
 				{
-					for(int i = 0; i < highlights.Count; i++)
+					/*for(int i = 0; i < highlights.Count; i++)
 					{
 						Highlight hl = highlights[i];
 						float max;
@@ -184,7 +196,9 @@ public class NoiseTesting : MonoBehaviour
 						}
 					}
 					if(!highlighted)
-						texture.SetPixel(_x, _y, noiseColor);
+						texture.SetPixel(_x, _y, noiseColor);*/
+
+					texture.SetPixel(_x, _y, GetColor(noise));
 				} 
 			}
 		

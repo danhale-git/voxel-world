@@ -19,7 +19,7 @@ public class World : MonoBehaviour
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 4;
+	public static int viewDistance = 8;
 	//	Size of all chunks
 	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
@@ -30,8 +30,10 @@ public class World : MonoBehaviour
 	TerrainGenerator terrain;
 	public static Shapes.Meshes shapeMeshes;
 
-	//	Chunk and terrain data
+	//	All block data for a chunkSize/chunkSize area
 	public static Dictionary<Vector3, Chunk> chunks = new Dictionary<Vector3, Chunk>();
+
+	//	2D terrain data such as heightmaps
 	public static Dictionary<Vector3, Column> columns = new Dictionary<Vector3, Column>();
 
 	Coroutine currentCoroutine;
@@ -59,6 +61,36 @@ public class World : MonoBehaviour
 
 	#region World Generation
 
+	//	Generate and draw chunks in a of veiwDistance around player
+	//	Called in PlayerController and World.Start()
+	public void LoadChunks(Vector3 centerChunk, int radius)
+	{
+		if(disableChunkGeneration)
+		{ Debug.Log("Chunk generation disabled!"); return; }
+		if(coroutineRunning) ClearCoroutines();
+
+		centerChunk = new Vector3(centerChunk.x, 0, centerChunk.z);
+
+		//	Generate column class instances (heightmaps and other 2D terrain data)
+		//	+1 buffer allows adjacent column lookups without TryGetValue
+		AddCoroutine(ChunksInSquare(centerChunk, radius+1, GenerateColumnData, 20));
+
+		//	Determine the highest and lowest chunk in each column that must be generated/drawn
+		AddCoroutine(ChunksInSquare(centerChunk, radius, GetColumnSize, 20));
+
+		//	Create chunk instances for all chunks that will be generated
+		AddCoroutine(ChunksInSquare(centerChunk, radius, CreateColumnChunks, 20));
+
+		//	Generate block data for all chunks to be generated
+		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumnChunks, 20));
+
+		//	Process surface blocks for smoothed block types and apply shape types and rotation
+		AddCoroutine(ChunksInSquare(centerChunk, radius-1, SmoothColumnChunks, 20));
+
+		//	Collect mesh data and generate chunk meshes in a spiral starting at the player
+		AddCoroutine(ChunksInSpiral(centerChunk, radius-1, DrawColumnChunks, 2));
+	}
+
 	//	Add coroutine to list, start if necessary
 	void AddCoroutine(IEnumerator coroutine)
 	{
@@ -84,198 +116,17 @@ public class World : MonoBehaviour
 		}
 		debug.Output("Active coroutines", coroutines.Count.ToString());
 	}
+	//	Clear all coroutines
 	void ClearCoroutines()
 	{
 		coroutines.Clear();
 		if(currentCoroutine != null) StopCoroutine(currentCoroutine);
 	}
 
-	//	Generate and draw chunks in a cube radius of veiwDistance around player
-	//	Called in PlayerController and World.Start()
-	public void LoadChunks(Vector3 centerChunk, int radius)
-	{
-		if(disableChunkGeneration)
-		{ Debug.Log("Chunk generation disabled!"); return; }
-		if(coroutineRunning) ClearCoroutines();
-
-		centerChunk = new Vector3(centerChunk.x, 0, centerChunk.z);
-
-		AddCoroutine(ChunksInSquare(centerChunk, radius+1, GenerateColumnData, 20));
-
-		AddCoroutine(ChunksInSquare(centerChunk, radius, GetColumnSize, 20));
-
-		AddCoroutine(ChunksInSquare(centerChunk, radius, CreateColumn, 20));
-
-		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumn, 20));
-
-		AddCoroutine(ChunksInSquare(centerChunk, radius-1, SmoothColumn, 20));
-
-		AddCoroutine(ChunksInSpiral(centerChunk, radius-1, DrawColumn, 2));
-	}
-
 	#endregion
 
-	#region Column
+	#region IEnumerators
 
-	//	Generate terrain and store highest/lowest points
-	bool GenerateColumnData(Vector3 position)
-	{
-		Column column;
-		if(columns.TryGetValue(position, out column)) return false;
-
-		column = new Column(position, terrain, this);
-		columns[position] = column;
-
-		return true;
-	}
-
-	//	Determine which chunks should generated and drawn
-	bool GetColumnSize(Vector3 position)
-	{
-		Column column = Column.Get(position);
-		if(column.sizeCalculated) return false;
-
-		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position, chunkSize);
-
-		int highestVoxel = column.highestPoint;
-		int lowestVoxel = column.lowestPoint;
-
-		//	Set top and bottom chunks to draw
-		column.topChunkDraw = Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize;
-		column.bottomChunkDraw = Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize;
-
-		//	Find highest and lowest in 3x3 columns around chunk
-		for(int i = 0; i < adjacent.Length; i++)
-		{
-			Column adjacentColumn = Column.Get(adjacent[i]);	//	DEBUG
-			int adjacentHighestVoxel = adjacentColumn.highestPoint;
-			int adjacentLowestVoxel = adjacentColumn.lowestPoint;
-
-			if(adjacentHighestVoxel > highestVoxel) highestVoxel = adjacentHighestVoxel;
-			if(adjacentLowestVoxel < lowestVoxel) lowestVoxel = adjacentLowestVoxel;		
-		}
-
-		//	Set top and bottom chunks to generate
-		column.topChunkGenerate = (Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize) + chunkSize;
-		column.bottomChunkGenerate = (Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize) - chunkSize;
-
-		//debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2f);
-		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2f);
-
-		//debug.OutlineChunk(new Vector3(position.x, column.topChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
-		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
-
-		column.sizeCalculated = true;
-		return true;
-	}
-
-	#endregion
-
-	#region Chunk Generation
-
-	//	Create column of Chunk class instances
-	bool CreateColumn(Vector3 position)
-	{
-		Column topol = columns[new Vector3(position.x, 0, position.z)];
-
-		//	Skip if already created
-		if(topol.spawnStatus != Chunk.Status.NONE) return false;
-
-		//	Iterate over chunks defined by column's top and bottom visible blocks
-		for(int y = topol.bottomChunkGenerate; y <= topol.topChunkGenerate; y+=chunkSize)
-		{
-			CreateChunk(new Vector3(position.x, y, position.z), skipDictCheck: true);
-		}
-
-		//	Update column status to created
-		topol.spawnStatus = Chunk.Status.CREATED;
-		return true;
-	}
-	void CreateChunk(Vector3 position, bool skipDictCheck = false)
-	{
-		if(!skipDictCheck && chunks.ContainsKey(position)) return;
-
-		//	Track chunk metrics
-		chunksCreated++;
-		debug.Output("Chunks created", chunksCreated.ToString());
-
-		//	Create chunk
-		Chunk chunk = new Chunk(position, this);
-		chunks.Add(position, chunk);
-
-		//	Update chunk status to created
-		chunk.status = Chunk.Status.CREATED;
-	}
-	
-	//	Generate blocks in column of chunks
-	bool GenerateColumn(Vector3 position)
-	{
-		Column topol = columns[new Vector3(position.x, 0, position.z)];
-		if((int)topol.spawnStatus > 1) return false;
-
-		for(int y = topol.bottomChunkGenerate; y <= topol.topChunkGenerate; y+=chunkSize)
-		{
-			GenerateChunk(new Vector3(position.x, y, position.z));
-		}
-		topol.spawnStatus = Chunk.Status.GENERATED;
-		return true;
-	}
-	void GenerateChunk(Vector3 position)
-	{
-		Chunk chunk = chunks[position];
-
-		if(chunk.status == Chunk.Status.GENERATED) return;
-
-		//debug.OutlineChunk(position, Color.white, sizeDivision: 2.5f);
-
-		chunk.GenerateBlocks();
-	}
-	
-	//	Smooth terrain in column of chunks
-	bool SmoothColumn(Vector3 position)
-	{
-		Column topol = columns[new Vector3(position.x, 0, position.z)];
-		if(topol.spawnStatus != Chunk.Status.GENERATED) return false;
-
-		for(int y = topol.bottomChunkDraw; y <= topol.topChunkDraw; y+=chunkSize)
-		{
-			SmoothChunk(new Vector3(position.x, y, position.z));
-		}
-		return true;
-	}
-	void SmoothChunk(Vector3 position)
-	{
-		Chunk chunk = chunks[position];
-		if(chunk.status != Chunk.Status.GENERATED) return;
-
-		//debug.OutlineChunk(position, Color.cyan, sizeDivision: 4f);
-
-		chunk.SmoothBlocks();
-	}
-	
-	//	Draw chunk meshes in column of chunks
-	bool DrawColumn(Vector3 position)
-	{
-		Column topol = columns[new Vector3(position.x, 0, position.z)];
-		if(topol.spawnStatus != Chunk.Status.GENERATED) return false;
-		
-		for(int y = topol.bottomChunkDraw; y <= topol.topChunkDraw; y+=chunkSize)
-		{
-			DrawChunk(new Vector3(position.x, y, position.z));
-		}
-		topol.spawnStatus = Chunk.Status.DRAWN;
-		return true;
-	}
-	void DrawChunk(Vector3 position)
-	{
-		Chunk chunk = chunks[position];
-		if(chunk.status == Chunk.Status.DRAWN) return;
-		
-		//debug.OutlineChunk(position, Color.red, sizeDivision: 3.5f);
-
-		chunk.Draw();
-	}
-	
 	delegate bool ChunkOperation(Vector3 position);
 
 	IEnumerator ChunksInSquare(Vector3 center, int radius, ChunkOperation delegateOperation, int iterationsPerFrame)
@@ -386,6 +237,169 @@ public class World : MonoBehaviour
 				}
 		}
 		CoroutineComplete();
+	}
+
+	#endregion
+
+	#region Column Generation
+
+	//	Generate terrain and store highest/lowest points
+	bool GenerateColumnData(Vector3 position)
+	{
+		Column column;
+		if(columns.TryGetValue(position, out column)) return false;
+
+		column = new Column(position, terrain, this);
+		columns[position] = column;
+
+		return true;
+	}
+
+	//	Determine which chunks in the column should generated and drawn
+	bool GetColumnSize(Vector3 position)
+	{
+		Column column = Column.Get(position);
+		if(column.sizeCalculated) return false;
+
+		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position, chunkSize);
+
+		int highestVoxel = column.highestPoint;
+		int lowestVoxel = column.lowestPoint;
+
+		//	Set top and bottom chunks to draw
+		column.topChunkDraw = Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize;
+		column.bottomChunkDraw = Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize;
+
+		//	Find highest and lowest in 3x3 columns around chunk
+		for(int i = 0; i < adjacent.Length; i++)
+		{
+			Column adjacentColumn = Column.Get(adjacent[i]);	//	DEBUG
+			int adjacentHighestVoxel = adjacentColumn.highestPoint;
+			int adjacentLowestVoxel = adjacentColumn.lowestPoint;
+
+			if(adjacentHighestVoxel > highestVoxel) highestVoxel = adjacentHighestVoxel;
+			if(adjacentLowestVoxel < lowestVoxel) lowestVoxel = adjacentLowestVoxel;		
+		}
+
+		//	Set top and bottom chunks to generate
+		column.topChunkGenerate = (Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize) + chunkSize;
+		column.bottomChunkGenerate = (Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize) - chunkSize;
+
+		//debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2f);
+		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2f);
+
+		//debug.OutlineChunk(new Vector3(position.x, column.topChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
+		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
+
+		column.sizeCalculated = true;
+		return true;
+	}
+
+	#endregion
+
+	#region Chunk Generation
+
+	//	Create column of Chunk class instances
+	bool CreateColumnChunks(Vector3 position)
+	{
+		Column topol = columns[new Vector3(position.x, 0, position.z)];
+
+		//	Skip if already created
+		if(topol.spawnStatus != Chunk.Status.NONE) return false;
+
+		//	Iterate over chunks defined by column's top and bottom visible blocks
+		for(int y = topol.bottomChunkGenerate; y <= topol.topChunkGenerate; y+=chunkSize)
+		{
+			CreateChunk(new Vector3(position.x, y, position.z), skipDictCheck: true);
+		}
+
+		//	Update column status to created
+		topol.spawnStatus = Chunk.Status.CREATED;
+		return true;
+	}
+	void CreateChunk(Vector3 position, bool skipDictCheck = false)
+	{
+		if(!skipDictCheck && chunks.ContainsKey(position)) return;
+
+		//	Track chunk metrics
+		chunksCreated++;
+		debug.Output("Chunks created", chunksCreated.ToString());
+
+		//	Create chunk
+		Chunk chunk = new Chunk(position, this);
+		chunks.Add(position, chunk);
+
+		//	Update chunk status to created
+		chunk.status = Chunk.Status.CREATED;
+	}
+	
+	//	Generate blocks in column of chunks
+	bool GenerateColumnChunks(Vector3 position)
+	{
+		Column topol = columns[new Vector3(position.x, 0, position.z)];
+		if((int)topol.spawnStatus > 1) return false;
+
+		for(int y = topol.bottomChunkGenerate; y <= topol.topChunkGenerate; y+=chunkSize)
+		{
+			GenerateChunk(new Vector3(position.x, y, position.z));
+		}
+		topol.spawnStatus = Chunk.Status.GENERATED;
+		return true;
+	}
+	void GenerateChunk(Vector3 position)
+	{
+		Chunk chunk = chunks[position];
+
+		if(chunk.status == Chunk.Status.GENERATED) return;
+
+		//debug.OutlineChunk(position, Color.white, sizeDivision: 2.5f);
+
+		chunk.GenerateBlocks();
+	}
+	
+	//	Smooth terrain in column of chunks
+	bool SmoothColumnChunks(Vector3 position)
+	{
+		Column topol = columns[new Vector3(position.x, 0, position.z)];
+		if(topol.spawnStatus != Chunk.Status.GENERATED) return false;
+
+		for(int y = topol.bottomChunkDraw; y <= topol.topChunkDraw; y+=chunkSize)
+		{
+			SmoothChunk(new Vector3(position.x, y, position.z));
+		}
+		return true;
+	}
+	void SmoothChunk(Vector3 position)
+	{
+		Chunk chunk = chunks[position];
+		if(chunk.status != Chunk.Status.GENERATED) return;
+
+		//debug.OutlineChunk(position, Color.cyan, sizeDivision: 4f);
+
+		chunk.SmoothBlocks();
+	}
+	
+	//	Draw chunk meshes in column of chunks
+	bool DrawColumnChunks(Vector3 position)
+	{
+		Column topol = columns[new Vector3(position.x, 0, position.z)];
+		if(topol.spawnStatus != Chunk.Status.GENERATED) return false;
+		
+		for(int y = topol.bottomChunkDraw; y <= topol.topChunkDraw; y+=chunkSize)
+		{
+			DrawChunk(new Vector3(position.x, y, position.z));
+		}
+		topol.spawnStatus = Chunk.Status.DRAWN;
+		return true;
+	}
+	void DrawChunk(Vector3 position)
+	{
+		Chunk chunk = chunks[position];
+		if(chunk.status == Chunk.Status.DRAWN) return;
+		
+		//debug.OutlineChunk(position, Color.red, sizeDivision: 3.5f);
+
+		chunk.Draw();
 	}
 
 	#endregion
