@@ -19,7 +19,7 @@ public class World : MonoBehaviour
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 8;
+	public static int viewDistance = 6;
 	//	Size of all chunks
 	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
@@ -28,6 +28,7 @@ public class World : MonoBehaviour
 	public static bool drawEdges = true;
 
 	TerrainGenerator terrain;
+	StructureGenerator structures;
 	public static Shapes.Meshes shapeMeshes;
 
 	//	All block data for a chunkSize/chunkSize area
@@ -53,6 +54,7 @@ public class World : MonoBehaviour
 		debug.world = this;
 
 		terrain = new TerrainGenerator();
+		structures = new StructureGenerator();
 
 		//	Create initial chunks
 		//	Must always be multiple of ChunkSize
@@ -89,11 +91,14 @@ public class World : MonoBehaviour
 		//	Generate block data for all chunks to be generated
 		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumnChunks, 20));
 
+		//	Generate structure block data for column
+		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumnStructures, 2));
+
 		//	Process surface blocks for smoothed block types and apply shape types and rotation
-		AddCoroutine(ChunksInSquare(centerChunk, radius-1, SmoothColumnChunks, 20));
+		//AddCoroutine(ChunksInSquare(centerChunk, radius-1, SmoothColumnChunks, 20));
 
 		//	Collect mesh data and generate chunk meshes in a spiral starting at the player
-		AddCoroutine(ChunksInSpiral(centerChunk, radius-1, DrawColumnChunks, 2));
+		AddCoroutine(ChunksInSpiral(centerChunk, radius-2, DrawColumnChunks, 2));
 	}
 
 	//	Add coroutine to list, start if necessary
@@ -119,7 +124,7 @@ public class World : MonoBehaviour
 		{
 			currentCoroutine = StartCoroutine(coroutines[0]);
 		}
-		debug.Output("Active coroutines", coroutines.Count.ToString());
+		//debug.Output("Active coroutines", coroutines.Count.ToString());
 	}
 	//	Clear all coroutines
 	void ClearCoroutines()
@@ -254,7 +259,7 @@ public class World : MonoBehaviour
 		Column column;
 		if(columns.TryGetValue(position, out column)) return false;
 
-		column = new Column(position, terrain, this);
+		column = new Column(position, terrain, structures, this);
 		columns[position] = column;
 
 		return true;
@@ -274,6 +279,8 @@ public class World : MonoBehaviour
 		//	Set top and bottom chunks to draw
 		column.topChunkDraw = Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize;
 		column.bottomChunkDraw = Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize;
+
+		//column.topChunkDraw += chunkSize;//	DEBUGGING STRUCTURES
 
 		//	Find highest and lowest in 3x3 columns around chunk
 		for(int i = 0; i < adjacent.Length; i++)
@@ -360,6 +367,18 @@ public class World : MonoBehaviour
 		//debug.OutlineChunk(position, Color.white, sizeDivision: 2.5f);
 
 		chunk.GenerateBlocks();
+	}
+
+	//	Generate structure blocks in column
+	bool GenerateColumnStructures(Vector3 position)
+	{
+		Column topol = columns[new Vector3(position.x, 0, position.z)];
+		if(topol.spawnStatus != Chunk.Status.GENERATED) return false;
+
+		debug.Output("Chunk structures", chunksCreated.ToString());
+
+		structures.GenerateStructures(topol);
+		return true;
 	}
 	
 	//	Smooth terrain in column of chunks
