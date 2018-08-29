@@ -16,6 +16,7 @@ public class Column
 	public TerrainLibrary.BiomeLayer[,] biomeLayers;
 
 	public StructureLibrary.Tiles[,] structureMap;
+	public bool hasStructures = false;
 
 	public int highestPoint = 0;
 	public int topChunkGenerate;
@@ -25,7 +26,7 @@ public class Column
 	public int bottomChunkGenerate;
 	public int bottomChunkDraw;
 	
-	public Column(Vector3 position, TerrainGenerator terrain, StructureGenerator structures, World world)
+	public Column(Vector3 position, TerrainGenerator terrain, World world)
 	{
 		biomeLayers = new TerrainLibrary.BiomeLayer[chunkSize,chunkSize];
 
@@ -33,7 +34,6 @@ public class Column
 		this.world = world;	
 
 		terrain.GetTopologyData(this);
-		structures.GetStructureData(this);
 	}
 
 	public static Column Get(Vector3 position)

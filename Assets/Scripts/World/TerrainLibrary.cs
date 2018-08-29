@@ -15,6 +15,7 @@ public class TerrainLibrary
 		public bool handleSmoothOverlap = false;
 
 		public StructureLibrary.StructureTest structures;
+		public float spawnStructuresAtNoise;
 
 		public WorldBiomes()
 		{
@@ -269,7 +270,8 @@ public class TerrainLibrary
 
 			smoothRadius = 0.6f;
 			SetBiomeFrequency(0.01f);
-			//handleSmoothOverlap = true;
+			
+			spawnStructuresAtNoise = 0.8f;
 
 			biomes = new Biome[2]
 			{

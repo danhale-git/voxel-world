@@ -20,11 +20,14 @@ public class StructureLibrary
 			noise.SetNoiseType(FastNoise.NoiseType.Value);
 			noise.SetFrequency(0.6f);
 			noise.SetInterp(FastNoise.Interp.Quintic);
+			//noise.SetCellularJitter(0);
 		}
 
-		public float GetNoise(int x, int z)
+		public float GetNoise(float x, float z)
 		{
-			return noise.GetNoise(x, z);
+			int nx = Mathf.FloorToInt(x/divisor);
+			int nz = Mathf.FloorToInt(z/divisor);
+			return noise.GetNoise01(nx, nz);
 		}
 
 		public Tiles Tile(float noise)

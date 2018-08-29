@@ -135,8 +135,10 @@ public static class Util
 		};
 	}
 
-	public static Vector3[] HorizontalChunkNeighbours(Vector3 position, int chunkSize)
+	//	TODO: make this faster
+	public static Vector3[] HorizontalChunkNeighbours(Vector3 position)
 	{
+		int chunkSize = World.chunkSize;
 		return new Vector3[] { 	(Vector3.right * chunkSize) + position,
 								(Vector3.left * chunkSize) + position,
 								(Vector3.forward * chunkSize) + position,

@@ -28,7 +28,7 @@ public class World : MonoBehaviour
 	public static bool drawEdges = true;
 
 	TerrainGenerator terrain;
-	StructureGenerator structures;
+	StructureGenerator structureGenerator;
 	public static Shapes.Meshes shapeMeshes;
 
 	//	All block data for a chunkSize/chunkSize area
@@ -54,7 +54,7 @@ public class World : MonoBehaviour
 		debug.world = this;
 
 		terrain = new TerrainGenerator();
-		structures = new StructureGenerator();
+		structureGenerator = new StructureGenerator();
 
 		//	Create initial chunks
 		//	Must always be multiple of ChunkSize
@@ -80,7 +80,7 @@ public class World : MonoBehaviour
 
 		//	Generate column class instances (heightmaps and other 2D terrain data)
 		//	+1 buffer allows adjacent column lookups without TryGetValue
-		AddCoroutine(ChunksInSquare(centerChunk, radius+1, GenerateColumnData, 20));
+		AddCoroutine(CreateColumnsInSquare(centerChunk, radius+1, 20));
 
 		//	Determine the highest and lowest chunk in each column that must be generated/drawn
 		AddCoroutine(ChunksInSquare(centerChunk, radius, GetColumnSize, 20));
@@ -92,10 +92,10 @@ public class World : MonoBehaviour
 		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumnChunks, 20));
 
 		//	Generate structure block data for column
-		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumnStructures, 2));
+		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumnStructures, 10));
 
 		//	Process surface blocks for smoothed block types and apply shape types and rotation
-		//AddCoroutine(ChunksInSquare(centerChunk, radius-1, SmoothColumnChunks, 20));
+		AddCoroutine(ChunksInSquare(centerChunk, radius-1, SmoothColumnChunks, 20));
 
 		//	Collect mesh data and generate chunk meshes in a spiral starting at the player
 		AddCoroutine(ChunksInSpiral(centerChunk, radius-2, DrawColumnChunks, 2));
@@ -135,9 +135,74 @@ public class World : MonoBehaviour
 
 	#endregion
 
+	void ProcessStructures(List<Column> initialColumns)
+	{
+		//	Columns currently being checked
+		List<Column> columns = new List<Column>(initialColumns);
+
+		//	All columns with structures
+		List<Column> allColumns = new List<Column>(initialColumns);
+
+		//	All columns generated in this function
+		List<Column> notCreated = new List<Column>();
+
+
+		for(int i = 0; i < 10; i++)	//	recursive
+		{
+			List<Column> newNotCreated = new List<Column>();
+
+			foreach(Column column in columns)	//	check columns
+			{
+				foreach(Vector3 position in Util.HorizontalChunkNeighbours(column.position))	//	adjacent
+				{
+					if(GenerateColumnData(position, newNotCreated))
+					{
+						Column createdColumn = Column.Get(position);
+						if(createdColumn.hasStructures) newNotCreated.Add(createdColumn);
+					}
+				}
+			}
+			if(newNotCreated.Count == 0)
+			{
+				Debug.Log("broke recursive loop");
+				break;
+			}
+			columns = newNotCreated;
+			allColumns.AddRange(newNotCreated);
+			notCreated.AddRange(newNotCreated);
+		}
+		Debug.Log("finished with "+allColumns.Count+" columns containing structures.");
+
+	}
+
 	#region IEnumerators
 
 	delegate bool ChunkOperation(Vector3 position);
+
+	IEnumerator CreateColumnsInSquare(Vector3 center, int radius, int iterationsPerFrame)
+	{
+		List<Column> columnsWithStructures = new List<Column>();
+
+		int iterationCount = 0;
+		for(int x = -radius; x < radius+1; x++)
+			for(int z = -radius; z < radius+1; z++)
+			{
+				Vector3 offset = new Vector3(x, 0, z) * chunkSize;
+				Vector3 position = center + offset;
+
+				if(GenerateColumnData(position, columnsWithStructures))
+				{
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
+			}
+		if(columnsWithStructures.Count > 0) ProcessStructures(columnsWithStructures);
+		CoroutineComplete();		
+	}
 
 	IEnumerator ChunksInSquare(Vector3 center, int radius, ChunkOperation delegateOperation, int iterationsPerFrame)
 	{
@@ -254,12 +319,22 @@ public class World : MonoBehaviour
 	#region Column Generation
 
 	//	Generate terrain and store highest/lowest points
-	bool GenerateColumnData(Vector3 position)
+	bool GenerateColumnData(Vector3 position, List<Column> columnsWithStructures)
 	{
 		Column column;
 		if(columns.TryGetValue(position, out column)) return false;
 
-		column = new Column(position, terrain, structures, this);
+		column = new Column(position, terrain, this);
+
+		if(structureGenerator.GetStructureMap(column))
+		{
+			column.hasStructures = true;
+			columnsWithStructures.Add(column);
+			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.red, sizeDivision: 3.5f);	//	//	//
+		}
+		else
+			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.black, sizeDivision: 3f);	//	//	//
+
 		columns[position] = column;
 
 		return true;
@@ -271,7 +346,7 @@ public class World : MonoBehaviour
 		Column column = Column.Get(position);
 		if(column.sizeCalculated) return false;
 
-		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position, chunkSize);
+		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position);
 
 		int highestVoxel = column.highestPoint;
 		int lowestVoxel = column.lowestPoint;
@@ -356,6 +431,9 @@ public class World : MonoBehaviour
 			GenerateChunk(new Vector3(position.x, y, position.z));
 		}
 		topol.spawnStatus = Chunk.Status.GENERATED;
+
+		debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.white, sizeDivision: 2.5f);	//	//	//
+
 		return true;
 	}
 	void GenerateChunk(Vector3 position)
@@ -363,8 +441,6 @@ public class World : MonoBehaviour
 		Chunk chunk = chunks[position];
 
 		if(chunk.status == Chunk.Status.GENERATED) return;
-
-		//debug.OutlineChunk(position, Color.white, sizeDivision: 2.5f);
 
 		chunk.GenerateBlocks();
 	}
@@ -377,7 +453,10 @@ public class World : MonoBehaviour
 
 		debug.Output("Chunk structures", chunksCreated.ToString());
 
-		structures.GenerateStructures(topol);
+		structureGenerator.GenerateStructures(topol);
+
+		debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.cyan, sizeDivision: 2f);	//	//	//
+
 		return true;
 	}
 	
@@ -414,6 +493,7 @@ public class World : MonoBehaviour
 			DrawChunk(new Vector3(position.x, y, position.z));
 		}
 		topol.spawnStatus = Chunk.Status.DRAWN;
+
 		return true;
 	}
 	void DrawChunk(Vector3 position)
@@ -510,7 +590,7 @@ public class World : MonoBehaviour
 
 	void UpdateAdjacentChunks(Vector3 position)
 	{
-		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position, chunkSize);
+		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position);
 		for(int i = 0; i < adjacent.Length; i++)
 		{
 			UpdateChunk(adjacent[i]);

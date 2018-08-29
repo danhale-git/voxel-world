@@ -4,34 +4,38 @@ using UnityEngine;
 
 public class StructureGenerator
 {
-	public static StructureLibrary.StructureTest structures = new StructureLibrary.StructureTest();
+	public static StructureLibrary.StructureTest structures = TerrainGenerator.worldBiomes.structures;
 
 
-	public void GetStructureData(Column column)
+	public bool GetStructureMap(Column column)
 	{
 		column.structureMap = new StructureLibrary.Tiles[World.chunkSize,World.chunkSize];
+		bool structuresWereSpawned = false;
 
 		for(int x = 0; x < World.chunkSize; x++)
 			for(int z = 0; z < World.chunkSize; z++)
 			{
-				if(column.biomeLayers[x,z].surfaceBlock == Blocks.Types.LIGHTGRASS && column.edgeMap[x,z].distance2Edge > 1)
+				FastNoise.EdgeData edgeData = column.edgeMap[x,z];
+				if( edgeData.currentCellValue >= TerrainGenerator.worldBiomes.spawnStructuresAtNoise && edgeData.distance2Edge > 1)
 				{
-					int nx = Mathf.FloorToInt((x+column.position.x)/structures.divisor);
-					int nz = Mathf.FloorToInt((z+column.position.z)/structures.divisor);
+					Vector3 voxel = column.position + new Vector3(x, 0, z);
 
-					column.structureMap[x,z] = structures.Tile(structures.GetNoise(nx, nz));
+					column.structureMap[x,z] = structures.Tile(structures.GetNoise(voxel.x, voxel.z));
 
 					if(column.structureMap[x,z] > 0)
 					{
 						column.CheckHighest(column.heightMap[x,z] + structures.wallHeight);
+						if(!structuresWereSpawned) structuresWereSpawned = true;
 					}
 				}
 			}
+		return structuresWereSpawned;
 	}
 
 	public void GenerateStructures(Column column)
 	{
-
+		if(!column.hasStructures) return;
+		
 		for(int x = 0; x < World.chunkSize; x++)
 			for(int z = 0; z < World.chunkSize; z++)
 			{

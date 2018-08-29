@@ -248,7 +248,7 @@ public class PlayerController : MonoBehaviour {
 			
 			Dictionary<Blocks.Types, int> counts = new Dictionary<Blocks.Types, int>();
 			
-			for(int x = 0; x < World.chunkSize; x++)
+			/*for(int x = 0; x < World.chunkSize; x++)
 				for(int z = 0; z < World.chunkSize; z++)
 					for(int y = 0; y < World.chunkSize; y++)
 					{
@@ -262,8 +262,10 @@ public class PlayerController : MonoBehaviour {
 			foreach(KeyValuePair<Blocks.Types, int> kvp in counts)
 			{
 				Debug.Log(kvp.Key + ": " + kvp.Value);
-			}
-			Debug.Log(Column.Get(chunk.position).heightMap[(int)(voxel.x - chunk.position.x), (int)(voxel.z - chunk.position.z)]);
+			}*/
+			Debug.Log("structure noise: " + TerrainGenerator.worldBiomes.structures.GetNoise((int)voxel.x, (int)voxel.z));
+
+			//Debug.Log(Column.Get(chunk.position).edgeMap[(int)(voxel.x - chunk.position.x), (int)(voxel.z - chunk.position.z)].currentCellValue);
 
 		}
 	}
