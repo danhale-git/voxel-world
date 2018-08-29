@@ -71,7 +71,7 @@ public class World : MonoBehaviour
 		{ Debug.Log("Chunk generation disabled!"); return; }
 
 		//	Clear queue
-		if(coroutineRunning) ClearCoroutines();
+		//if(coroutineRunning) ClearCoroutines();
 
 		// Zero out Y
 		centerChunk = new Vector3(centerChunk.x, 0, centerChunk.z);
@@ -124,7 +124,7 @@ public class World : MonoBehaviour
 		{
 			currentCoroutine = StartCoroutine(coroutines[0]);
 		}
-		//debug.Output("Active coroutines", coroutines.Count.ToString());
+		debug.Output("Queued coroutines", coroutines.Count.ToString());
 	}
 	//	Clear all coroutines
 	void ClearCoroutines()
@@ -135,7 +135,7 @@ public class World : MonoBehaviour
 
 	#endregion
 
-	void ProcessStructures(List<Column> initialColumns)
+	List<Column> DiscoverStructures(List<Column> initialColumns)
 	{
 		//	Columns currently being checked
 		List<Column> columns = new List<Column>(initialColumns);
@@ -144,41 +144,50 @@ public class World : MonoBehaviour
 		List<Column> allColumns = new List<Column>(initialColumns);
 
 		//	All columns generated in this function
-		List<Column> notCreated = new List<Column>();
+		List<Column> allNewColumns = new List<Column>();
 
+		int iterationCount = 0;
 
-		for(int i = 0; i < 10; i++)	//	recursive
+		//	Continue until no more chunks need to be checked (should never need 500)
+		while(iterationCount < 500)	//	recursive
 		{
-			List<Column> newNotCreated = new List<Column>();
+			List<Column> newColumns = new List<Column>();
 
+			//	Process current column list
 			foreach(Column column in columns)	//	check columns
 			{
+				//	Check adjacent columns
 				foreach(Vector3 position in Util.HorizontalChunkNeighbours(column.position))	//	adjacent
 				{
-					if(GenerateColumnData(position, newNotCreated))
+					Column newColumn;
+					if(GenerateColumnData(position, out newColumn))
 					{
-						Column createdColumn = Column.Get(position);
-						if(createdColumn.hasStructures) newNotCreated.Add(createdColumn);
+						//	If adjacent column needed spawning and has structures, add to new list
+						if(newColumn.hasStructures) newColumns.Add(newColumn);
 					}
 				}
 			}
-			if(newNotCreated.Count == 0)
-			{
-				Debug.Log("broke recursive loop");
-				break;
-			}
-			columns = newNotCreated;
-			allColumns.AddRange(newNotCreated);
-			notCreated.AddRange(newNotCreated);
-		}
-		Debug.Log("finished with "+allColumns.Count+" columns containing structures.");
+			if(newColumns.Count == 0) break;
 
+			//	Check newly created columns with structures next
+			columns = newColumns;
+
+			//	Store new columns
+			allColumns.AddRange(newColumns);
+			allNewColumns.AddRange(newColumns);
+
+			//	Safety, maybe remove this later
+			iterationCount++;
+			if(iterationCount > 498) Debug.Log("Too many structure processing iterations!\nAbandoned while loop early");
+		}
+		return allColumns;
 	}
 
 	#region IEnumerators
 
 	delegate bool ChunkOperation(Vector3 position);
 
+	//	Special IEnumerator for handling structure post processing
 	IEnumerator CreateColumnsInSquare(Vector3 center, int radius, int iterationsPerFrame)
 	{
 		List<Column> columnsWithStructures = new List<Column>();
@@ -190,8 +199,13 @@ public class World : MonoBehaviour
 				Vector3 offset = new Vector3(x, 0, z) * chunkSize;
 				Vector3 position = center + offset;
 
-				if(GenerateColumnData(position, columnsWithStructures))
+				Column newColumn;
+
+				if(GenerateColumnData(position, out newColumn))
 				{
+					//	If column has structures in it, store it
+					if(newColumn.hasStructures) columnsWithStructures.Add(newColumn);
+
 					iterationCount++;
 					if(iterationCount >= iterationsPerFrame)
 					{
@@ -200,7 +214,12 @@ public class World : MonoBehaviour
 					}
 				}
 			}
-		if(columnsWithStructures.Count > 0) ProcessStructures(columnsWithStructures);
+
+		//	Send all columns with structures to be processed
+		if(columnsWithStructures.Count > 0)
+		{
+			structureGenerator.ProcessStructures(DiscoverStructures(columnsWithStructures));
+		}
 		CoroutineComplete();		
 	}
 
@@ -319,23 +338,27 @@ public class World : MonoBehaviour
 	#region Column Generation
 
 	//	Generate terrain and store highest/lowest points
-	bool GenerateColumnData(Vector3 position, List<Column> columnsWithStructures)
+	bool GenerateColumnData(Vector3 position, out Column thisColumn)
 	{
 		Column column;
-		if(columns.TryGetValue(position, out column)) return false;
+		if(columns.TryGetValue(position, out column))
+		{
+			thisColumn = null;
+			return false;
+		}
 
 		column = new Column(position, terrain, this);
 
 		if(structureGenerator.GetStructureMap(column))
 		{
 			column.hasStructures = true;
-			columnsWithStructures.Add(column);
 			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.red, sizeDivision: 3.5f);	//	//	//
 		}
 		else
 			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.black, sizeDivision: 3f);	//	//	//
 
 		columns[position] = column;
+		thisColumn = column;
 
 		return true;
 	}

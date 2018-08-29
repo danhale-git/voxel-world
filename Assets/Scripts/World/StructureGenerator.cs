@@ -84,4 +84,9 @@ public class StructureGenerator
 		owner.blockTypes[x,y - (int)owner.position.y,z] = Blocks.Types.DIRT;
 	}
 
+	public void ProcessStructures(List<Column> columns)
+	{
+		
+	}
+
 }
