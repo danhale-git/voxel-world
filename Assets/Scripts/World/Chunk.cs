@@ -378,6 +378,7 @@ public class Chunk
 		{
 			Chunk owner;
 			Vector3 pos;
+			//	TODO: Use out keyword in Blockowner and have it return bool instead of running InChunk for the if statement.
 			if(!Util.InChunk(neighbours[i]))
 			{
 				owner = BlockOwner(neighbours[i]);
