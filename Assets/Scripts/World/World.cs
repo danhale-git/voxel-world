@@ -187,7 +187,7 @@ public class World : MonoBehaviour
 
 	delegate bool ChunkOperation(Vector3 position);
 
-	//	Special IEnumerator for handling structure post processing
+	//	Special IEnumerator for handling structure post processing during column creation
 	IEnumerator CreateColumnsInSquare(Vector3 center, int radius, int iterationsPerFrame)
 	{
 		List<Column> columnsWithStructures = new List<Column>();
