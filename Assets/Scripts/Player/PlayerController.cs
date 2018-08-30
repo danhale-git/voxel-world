@@ -265,7 +265,8 @@ public class PlayerController : MonoBehaviour {
 			}*/
 			Debug.Log("structure noise: " + TerrainGenerator.worldBiomes.structures.GetNoise((int)voxel.x, (int)voxel.z));
 
-			//Debug.Log(Column.Get(chunk.position).edgeMap[(int)(voxel.x - chunk.position.x), (int)(voxel.z - chunk.position.z)].currentCellValue);
+			Debug.Log(chunk.GetBitMask(voxel - chunk.position));
+			Debug.Log(Column.Get(chunk.position).GetBitMask(voxel - chunk.position, StructureLibrary.Tiles.WALL));
 
 		}
 	}
