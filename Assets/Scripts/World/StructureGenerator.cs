@@ -6,6 +6,7 @@ public class StructureGenerator
 {
 	public static StructureLibrary.StructureTest structures = TerrainGenerator.worldBiomes.structures;
 
+	#region Mapping and Generation	
 
 	public bool GetStructureMap(Column column)
 	{
@@ -84,9 +85,28 @@ public class StructureGenerator
 		owner.blockTypes[x,y - (int)owner.position.y,z] = Blocks.Types.DIRT;
 	}
 
+	#endregion
+
+	#region Post Processing
+
 	public void ProcessStructures(List<Column> columns)
 	{
-		
+		foreach(Column column in columns)
+		{
+			for(int x = 0; x < World.chunkSize; x++)
+				for(int z = 0; z < World.chunkSize; z++)
+				{
+					if(column.structureMap[x,z] != 0)
+					{
+						
+					}
+				}
+		}
 	}
 
+	//	TEST THIS IN PLAYERCONTROLLER
+	
+
+	
+	#endregion
 }

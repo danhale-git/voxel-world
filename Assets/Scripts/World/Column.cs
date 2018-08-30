@@ -56,4 +56,63 @@ public class Column
 			highestPoint = value;
 		}
 	}
+
+	public byte GetBitMask(Vector3 voxel, StructureLibrary.Tiles tile)
+	{
+		Vector3[] neighbours = Util.HorizontalBlockNeighbours(voxel);
+		int value = 1;
+		int total = 0;
+
+		Column owner;
+
+		for(int i = 0; i < neighbours.Length; i++)
+		{
+			Vector3 pos;
+			
+			if(BlockOwner(neighbours[i], out owner))
+			{
+				pos = Util.WrapBlockIndex(neighbours[i]);
+			}
+			else
+			{
+				if(owner == null) owner = this;
+				pos = neighbours[i];
+			}		
+
+			int x = (int)pos.x, z = (int)pos.z;
+			
+			if(owner.structureMap[x,z] != tile)
+			{
+				total += value;
+			}
+			value *= 2;
+		}
+		return (byte)total;
+	}
+
+	bool BlockOwner(Vector3 pos, out Column column)
+	{
+		//	Get block's edge
+		int x = 0, z = 0;
+
+		if		(pos.x < 0) 				x = -1;
+		else if (pos.x > World.chunkSize-1) 	x = 1;
+
+		if		(pos.z < 0) 				z = -1;
+		else if (pos.z > World.chunkSize-1) 	z = 1;
+
+		//	Voxel is in this chunk
+		if(x == 0 && z == 0)
+		{	
+			column = null;
+			return false;
+		}
+
+		//	The edge 
+		Vector3 edge = new Vector3(x, 0, z);		
+
+		column = World.columns[this.position + (edge * World.chunkSize)];
+		return true;
+	}
+
 }
