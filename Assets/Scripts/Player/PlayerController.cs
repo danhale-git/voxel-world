@@ -263,10 +263,12 @@ public class PlayerController : MonoBehaviour {
 			{
 				Debug.Log(kvp.Key + ": " + kvp.Value);
 			}*/
-			Debug.Log("structure noise: " + TerrainGenerator.worldBiomes.structures.GetNoise((int)voxel.x, (int)voxel.z));
+			//Debug.Log("structure noise: " + TerrainGenerator.worldBiomes.structures.GetNoise((int)voxel.x, (int)voxel.z));
 
-			Debug.Log(chunk.GetBitMask(voxel - chunk.position));
-			Debug.Log(Column.Get(chunk.position).GetBitMask(voxel - chunk.position, StructureLibrary.Tiles.WALL));
+			//Debug.Log(chunk.GetBitMask(voxel - chunk.position));
+			//Debug.Log(Column.Get(chunk.position).GetBitMask(voxel - chunk.position, StructureLibrary.Tiles.WALL));
+
+			TerrainGenerator.worldBiomes.biomeNoiseGen.CellularTest(voxel.x, voxel.z);
 
 		}
 	}
