@@ -270,7 +270,7 @@ public class PlayerController : MonoBehaviour {
 			{
 				Debug.Log(v);
 			}
-			Debug.Log("-- "+Column.Get(chunk.position).structureEligible);
+			Debug.Log("-- "+Column.Get(chunk.position).IsPOI);
 
 			//TerrainGenerator.worldBiomes.biomeNoiseGen.CellularTest(voxel.x, voxel.z);
 

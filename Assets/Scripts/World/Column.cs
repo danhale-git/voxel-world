@@ -19,7 +19,8 @@ public class Column
 	public bool biomeBoundary = false;
 
 	public StructureLibrary.Tiles[,] structureMap;
-	public bool structureEligible = false;
+	public bool IsPOI = false;
+	public PointOfInterest.POIData POIdata;
 
 	public int highestPoint = 0;
 	public int topChunkGenerate;
@@ -38,7 +39,7 @@ public class Column
 
 		terrain.GetTopologyData(this);
 
-		structureEligible = SetStructureEligibility();
+		IsPOI = SetPOIEligibility();
 	}
 
 	public static Column Get(Vector3 position)
@@ -62,7 +63,7 @@ public class Column
 		}
 	}
 
-	bool SetStructureEligibility()
+	bool SetPOIEligibility()
 	{
 		//	Column includes the boundary between two biomes
 		if(biomeBoundary) return false;
@@ -70,10 +71,10 @@ public class Column
 		foreach(float cellValue in cellValues)
 		{
 			//	Column includes ineligible cells
-			if(cellValue < TerrainGenerator.worldBiomes.spawnStructuresAtNoise) return false;
+			if(cellValue >= TerrainGenerator.worldBiomes.spawnStructuresAtNoise) return true;
 		}
 			
-		return true;
+		return false;
 	}
 
 	public byte GetBitMask(Vector3 voxel, StructureLibrary.Tiles tile)

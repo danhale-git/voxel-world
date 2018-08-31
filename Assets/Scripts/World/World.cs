@@ -37,6 +37,9 @@ public class World : MonoBehaviour
 	//	2D terrain data such as heightmaps
 	public static Dictionary<Vector3, Column> columns = new Dictionary<Vector3, Column>();
 
+	//	Collections of columns containing post processed terrain or other elements
+	public static List<PointOfInterest> POIs = new List<PointOfInterest>();
+
 	Coroutine currentCoroutine;
 	List<IEnumerator> coroutines = new List<IEnumerator>();
 	bool coroutineRunning = false;
@@ -135,53 +138,7 @@ public class World : MonoBehaviour
 
 	#endregion
 
-	List<Column> DiscoverCells(List<Column> initialColumns)
-	{
-		//	Columns currently being checked
-		List<Column> columns = new List<Column>(initialColumns);
-
-		//	All columns with structures
-		List<Column> allColumns = new List<Column>(initialColumns);
-
-		//	All columns generated in this function
-		List<Column> allNewColumns = new List<Column>();
-
-		int iterationCount = 0;
-
-		//	Continue until no more chunks need to be checked (should never need 500)
-		while(iterationCount < 500)	//	recursive
-		{
-			List<Column> newColumns = new List<Column>();
-
-			//	Process current column list
-			foreach(Column column in columns)	//	check columns
-			{
-				//	Check adjacent columns
-				foreach(Vector3 position in Util.HorizontalChunkNeighbours(column.position))	//	adjacent
-				{
-					Column newColumn;
-					if(GenerateColumnData(position, out newColumn))
-					{
-						//	If adjacent column needed spawning and is eligible for structures
-						if(	newColumn.structureEligible) newColumns.Add(newColumn);
-					}
-				}
-			}
-			if(newColumns.Count == 0) break;
-
-			//	Check newly created columns with structures next
-			columns = newColumns;
-
-			//	Store new columns
-			allColumns.AddRange(newColumns);
-			allNewColumns.AddRange(newColumns);
-
-			//	Safety, maybe remove this later
-			iterationCount++;
-			if(iterationCount > 498) Debug.Log("Too many structure processing iterations!\nAbandoned while loop early");
-		}
-		return allColumns;
-	}
+	
 
 	#region IEnumerators
 
@@ -190,8 +147,6 @@ public class World : MonoBehaviour
 	//	Special IEnumerator for handling structure post processing during column creation
 	IEnumerator CreateColumnsInSquare(Vector3 center, int radius, int iterationsPerFrame)
 	{
-		List<Column> structureEligible = new List<Column>();
-
 		int iterationCount = 0;
 		for(int x = -radius; x < radius+1; x++)
 			for(int z = -radius; z < radius+1; z++)
@@ -203,8 +158,8 @@ public class World : MonoBehaviour
 
 				if(GenerateColumnData(position, out newColumn))
 				{
-					//	If column has structures in it, store it
-					if(newColumn.structureEligible) structureEligible.Add(newColumn);
+					//	If column is eligible for point of interest, discover all adjacent aligible columns before continuing
+					if(newColumn.IsPOI) POIs.Add(new PointOfInterest(newColumn, this));
 
 					iterationCount++;
 					if(iterationCount >= iterationsPerFrame)
@@ -214,12 +169,6 @@ public class World : MonoBehaviour
 					}
 				}
 			}
-
-		//	Send all columns with structures to be processed
-		if(structureEligible.Count > 0)
-		{
-			DiscoverCells(structureEligible);
-		}
 		CoroutineComplete();		
 	}
 
@@ -338,7 +287,7 @@ public class World : MonoBehaviour
 	#region Column Generation
 
 	//	Generate terrain and store highest/lowest points
-	bool GenerateColumnData(Vector3 position, out Column thisColumn)
+	public bool GenerateColumnData(Vector3 position, out Column thisColumn)
 	{
 		Column column;
 		if(columns.TryGetValue(position, out column))
@@ -349,12 +298,12 @@ public class World : MonoBehaviour
 
 		column = new Column(position, terrain, this);
 
-		if(column.structureEligible)
+		if(column.IsPOI)
 		{
-			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.red, sizeDivision: 3.5f);	//	//	//
+			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.red, sizeDivision: 1f);	//	//	//
 		}
 		else
-			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.black, sizeDivision: 3f);	//	//	//*/
+			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.grey, sizeDivision: 3f);	//	//	//
 
 		columns[position] = column;
 		thisColumn = column;
