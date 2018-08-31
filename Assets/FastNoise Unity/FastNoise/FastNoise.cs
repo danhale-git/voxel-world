@@ -2043,63 +2043,6 @@ public class FastNoise
 		}
 	}
 
-	public void CellularTest(FN_DECIMAL x, FN_DECIMAL y)
-	{
-		x *= m_frequency;
-		y *= m_frequency;
-
-		int xr = FastRound(x);
-		int yr = FastRound(y);
-
-		FN_DECIMAL distance = 999999;
-		int xc = 0, yc = 0;
-
-		float vecXtest = 0;
-		float vecYtest = 0;
-
-		switch (m_cellularDistanceFunction)
-		{
-			default:
-			case CellularDistanceFunction.Euclidean:
-				UnityEngine.Debug.Log("wrong noise type");
-				return;
-			case CellularDistanceFunction.Manhattan:
-				UnityEngine.Debug.Log("wrong noise type");
-				return;
-			case CellularDistanceFunction.Natural:
-				for (int xi = xr - 1; xi <= xr + 1; xi++)
-				{
-					for (int yi = yr - 1; yi <= yr + 1; yi++)
-					{
-						Float2 vec = CELL_2D[Hash2D(m_seed, xi, yi) & 255];
-
-						FN_DECIMAL vecX = xi - x + vec.x * m_cellularJitter;
-						FN_DECIMAL vecY = yi - y + vec.y * m_cellularJitter;
-
-						FN_DECIMAL newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
-
-						if (newDistance < distance)
-						{
-							distance = newDistance;
-							xc = xi;
-							yc = yi;
-
-							vecXtest = vecX;
-							vecYtest = vecY;
-						}
-					}
-				}
-				break;
-		}
-
-		UnityEngine.Debug.Log("indices " + xc + " " + yc);
-		UnityEngine.Debug.Log("indices / freq " + xc / m_frequency + " " + yc  / m_frequency);
-		UnityEngine.Debug.Log("ValCoord " + ValCoord2D(m_seed, xc, yc));
-		Float2 cell2D = CELL_2D[Hash2D(m_seed, xc, yc) & 255];
-		UnityEngine.Debug.Log("CELL2D " + cell2D.x + " " + cell2D.y);
-		UnityEngine.Debug.Log("Vecs " + vecXtest + " " + vecYtest);
-	}
-
 	public struct EdgeData
 	{
 		public readonly FN_DECIMAL currentCellValue, distance2Edge, adjacentCellValue;
@@ -2208,11 +2151,9 @@ public class FastNoise
 		}
 		
 		//	Data for use in terrain generation
-		EdgeData data = new EdgeData(	currentCellValue,
+		return new EdgeData(	currentCellValue,
 										adjacentEdgeDistance,
 										adjacentCellValue);
-				
-		return data;
 	}
 
 	private FN_DECIMAL SingleCellular(FN_DECIMAL x, FN_DECIMAL y)

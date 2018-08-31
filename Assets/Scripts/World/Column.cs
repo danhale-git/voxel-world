@@ -11,12 +11,15 @@ public class Column
 	public Chunk.Status spawnStatus;
 	public bool sizeCalculated = false;
 
-	public int[,] heightMap;
-	public FastNoise.EdgeData[,] edgeMap;
 	public TerrainLibrary.BiomeLayer[,] biomeLayers;
+	public int[,] heightMap;
+
+	public FastNoise.EdgeData[,] edgeMap;
+	public List<float> cellValues = new List<float>();
+	public bool biomeBoundary = false;
 
 	public StructureLibrary.Tiles[,] structureMap;
-	public bool hasStructures = false;
+	public bool structureEligible = false;
 
 	public int highestPoint = 0;
 	public int topChunkGenerate;
@@ -34,6 +37,8 @@ public class Column
 		this.world = world;	
 
 		terrain.GetTopologyData(this);
+
+		structureEligible = SetStructureEligibility();
 	}
 
 	public static Column Get(Vector3 position)
@@ -55,6 +60,20 @@ public class Column
 		{
 			highestPoint = value;
 		}
+	}
+
+	bool SetStructureEligibility()
+	{
+		//	Column includes the boundary between two biomes
+		if(biomeBoundary) return false;
+		
+		foreach(float cellValue in cellValues)
+		{
+			//	Column includes ineligible cells
+			if(cellValue < TerrainGenerator.worldBiomes.spawnStructuresAtNoise) return false;
+		}
+			
+		return true;
 	}
 
 	public byte GetBitMask(Vector3 voxel, StructureLibrary.Tiles tile)

@@ -91,8 +91,8 @@ public class World : MonoBehaviour
 		//	Generate block data for all chunks to be generated
 		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumnChunks, 20));
 
-		//	Generate structure block data for column
-		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumnStructures, 10));
+		/*//	Generate structure block data for column
+		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumnStructures, 10));*/
 
 		//	Process surface blocks for smoothed block types and apply shape types and rotation
 		AddCoroutine(ChunksInSquare(centerChunk, radius-1, SmoothColumnChunks, 20));
@@ -135,7 +135,7 @@ public class World : MonoBehaviour
 
 	#endregion
 
-	List<Column> DiscoverStructures(List<Column> initialColumns)
+	List<Column> DiscoverCells(List<Column> initialColumns)
 	{
 		//	Columns currently being checked
 		List<Column> columns = new List<Column>(initialColumns);
@@ -162,8 +162,8 @@ public class World : MonoBehaviour
 					Column newColumn;
 					if(GenerateColumnData(position, out newColumn))
 					{
-						//	If adjacent column needed spawning and has structures, add to new list
-						if(newColumn.hasStructures) newColumns.Add(newColumn);
+						//	If adjacent column needed spawning and is eligible for structures
+						if(	newColumn.structureEligible) newColumns.Add(newColumn);
 					}
 				}
 			}
@@ -190,7 +190,7 @@ public class World : MonoBehaviour
 	//	Special IEnumerator for handling structure post processing during column creation
 	IEnumerator CreateColumnsInSquare(Vector3 center, int radius, int iterationsPerFrame)
 	{
-		List<Column> columnsWithStructures = new List<Column>();
+		List<Column> structureEligible = new List<Column>();
 
 		int iterationCount = 0;
 		for(int x = -radius; x < radius+1; x++)
@@ -204,7 +204,7 @@ public class World : MonoBehaviour
 				if(GenerateColumnData(position, out newColumn))
 				{
 					//	If column has structures in it, store it
-					if(newColumn.hasStructures) columnsWithStructures.Add(newColumn);
+					if(newColumn.structureEligible) structureEligible.Add(newColumn);
 
 					iterationCount++;
 					if(iterationCount >= iterationsPerFrame)
@@ -216,9 +216,9 @@ public class World : MonoBehaviour
 			}
 
 		//	Send all columns with structures to be processed
-		if(columnsWithStructures.Count > 0)
+		if(structureEligible.Count > 0)
 		{
-			structureGenerator.ProcessStructures(DiscoverStructures(columnsWithStructures));
+			DiscoverCells(structureEligible);
 		}
 		CoroutineComplete();		
 	}
@@ -349,13 +349,12 @@ public class World : MonoBehaviour
 
 		column = new Column(position, terrain, this);
 
-		if(structureGenerator.GetStructureMap(column))
+		if(column.structureEligible)
 		{
-			column.hasStructures = true;
 			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.red, sizeDivision: 3.5f);	//	//	//
 		}
 		else
-			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.black, sizeDivision: 3f);	//	//	//
+			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.black, sizeDivision: 3f);	//	//	//*/
 
 		columns[position] = column;
 		thisColumn = column;
@@ -468,21 +467,7 @@ public class World : MonoBehaviour
 		chunk.GenerateBlocks();
 	}
 
-	//	Generate structure blocks in column
-	bool GenerateColumnStructures(Vector3 position)
-	{
-		Column topol = columns[new Vector3(position.x, 0, position.z)];
-		if(topol.spawnStatus != Chunk.Status.GENERATED) return false;
 
-		debug.Output("Chunk structures", chunksCreated.ToString());
-
-		structureGenerator.GenerateStructures(topol);
-
-		debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.cyan, sizeDivision: 2f);	//	//	//
-
-		return true;
-	}
-	
 	//	Smooth terrain in column of chunks
 	bool SmoothColumnChunks(Vector3 position)
 	{

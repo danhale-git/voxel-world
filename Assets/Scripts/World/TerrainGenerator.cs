@@ -110,6 +110,8 @@ public class TerrainGenerator
 		column.heightMap = new int[chunkSize,chunkSize];
 		column.edgeMap = new FastNoise.EdgeData[chunkSize,chunkSize];
 
+		float currentCellValue = 0;
+
 		//	Iterate over height map
 		for(int x = 0; x < chunkSize; x++)
 			for(int z = 0; z < chunkSize; z++)
@@ -121,6 +123,13 @@ public class TerrainGenerator
 				//	Get cellular noise data
 				FastNoise.EdgeData edgeData = worldBiomes.edgeNoiseGen.GetEdgeData(gx, gz);
 				column.edgeMap[x,z] = edgeData;
+
+				//	Store list of all cellValues present in this column
+				if(edgeData.currentCellValue != currentCellValue)
+				{
+					currentCellValue = edgeData.currentCellValue;
+					if(!column.cellValues.Contains(currentCellValue)) column.cellValues.Add(currentCellValue);
+				}
 
 				//	Get current biome type
 				TerrainLibrary.Biome currentBiome = worldBiomes.GetBiome(edgeData.currentCellValue);
@@ -136,6 +145,8 @@ public class TerrainGenerator
 				//	Within smoothing radius and adjacent biome is different
 				if(edgeData.distance2Edge < worldBiomes.smoothRadius && currentBiome != adjacentBiome)
 				{
+					if(!column.biomeBoundary) column.biomeBoundary = true;
+
 					float InterpValue = Mathf.InverseLerp(0, worldBiomes.smoothRadius, edgeData.distance2Edge);
 
 					//	Get topology for this pixel if adjacent biome type
