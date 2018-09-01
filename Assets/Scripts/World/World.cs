@@ -138,8 +138,6 @@ public class World : MonoBehaviour
 
 	#endregion
 
-	
-
 	#region IEnumerators
 
 	delegate bool ChunkOperation(Vector3 position);

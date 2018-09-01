@@ -20,7 +20,6 @@ public class Column
 
 	public StructureLibrary.Tiles[,] structureMap;
 	public bool IsPOI = false;
-	public PointOfInterest.POIData POIdata;
 
 	public int highestPoint = 0;
 	public int topChunkGenerate;

@@ -154,6 +154,16 @@ public static class Util
 		return System.Math.Round(value, decimalPlaces);
 	}
 
+	public static int MinInt(int[] values)
+	{
+		int min = values[0];
+		for(int i = 1; i < values.Length; i++)
+		{
+			if(values[i] < min) min = values[i];
+		}
+		return min;
+	}
+
 	static Color DebugBlockColor(int x, int z, Column column)
 	{
 		Color color;
