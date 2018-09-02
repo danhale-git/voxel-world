@@ -30,15 +30,7 @@ public class StructureLibrary
 			return noise.GetNoise01(nx, nz);
 		}
 
-		public Tiles Tile(float noise)
-		{
-			if(noise > 0.8f && noise < .95f ||
-				noise > 0.2 && noise < 0.4f ) return Tiles.WALL;
-			else if(noise > 0.75f && noise < 1f ||
-				noise > 0.15 && noise < 0.45f ) return Tiles.PATH;
 
-			else return Tiles.NONE;
-		}
 	}
 
 }
