@@ -328,7 +328,7 @@ public class TerrainLibrary
 		public TestLayer2(float minNoise) : base(minNoise)
 		{
 			maxHeight = 30;
-			surfaceBlock = Blocks.Types.LIGHTGRASS;
+			surfaceBlock = Blocks.Types.STONE;
 		}
 
 		public override float Noise(int x, int z)

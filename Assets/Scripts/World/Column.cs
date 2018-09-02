@@ -18,7 +18,7 @@ public class Column
 	public List<float> cellValues = new List<float>();
 	public bool biomeBoundary = false;
 
-	public StructureLibrary.Tiles[,] structureMap;
+	public int[,] POIMap;
 	public bool IsPOI = false;
 
 	public int highestPoint = 0;
@@ -100,7 +100,7 @@ public class Column
 
 			int x = (int)pos.x, z = (int)pos.z;
 			
-			if(owner.structureMap[x,z] != tile)
+			if(owner.POIMap[x,z] != (int)tile)
 			{
 				total += value;
 			}

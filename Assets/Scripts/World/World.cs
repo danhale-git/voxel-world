@@ -298,10 +298,10 @@ public class World : MonoBehaviour
 
 		if(column.IsPOI)
 		{
-			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.red, sizeDivision: 1f);	//	//	//
+			debug.OutlineChunk(new Vector3(position.x, column.topChunkDraw+chunkSize, position.z), Color.red, sizeDivision: 1f);	//	//	//
 		}
 		else
-			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.grey, sizeDivision: 3f);	//	//	//
+			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.grey, sizeDivision: 3.5f);	//	//	//
 
 		columns[position] = column;
 		thisColumn = column;
@@ -401,7 +401,7 @@ public class World : MonoBehaviour
 		}
 		topol.spawnStatus = Chunk.Status.GENERATED;
 
-		debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.white, sizeDivision: 2.5f);	//	//	//
+		//debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.white, sizeDivision: 2.5f);	//	//	//
 
 		return true;
 	}

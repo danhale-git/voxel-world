@@ -48,10 +48,10 @@ public class Chunk
 		//	Create GameObject
 		gameObject = new GameObject("chunk");
 		gameObject.layer = 9;
-		
+
 		world = _world;
 		position = _position;
-		
+
 		//	Apply chunk size
 		size = World.chunkSize;
 
@@ -80,7 +80,7 @@ public class Chunk
 		//	Iterate over all blocks in chunk
 		for(int x = 0; x < size; x++)
 			for(int z = 0; z < size; z++)
-			{		
+			{
 				//	Generate column
 				for(int y = 0; y < size; y++)
 				{
@@ -94,7 +94,7 @@ public class Chunk
 						blockTypes[x,y,z] = column.biomeLayers[x,z].surfaceBlock;
 
 						if(!hasBlocks)
-							hasBlocks = true;	
+							hasBlocks = true;
 					}
 					//	Air
 					else if(voxel > heightMap[x,z])
@@ -103,10 +103,10 @@ public class Chunk
 						if(!hasAir)
 							hasAir = true;
 					}
-					
+
 				}
 			}
-	
+
 		//	Record the composition of the chunk
 		if(hasAir && !hasBlocks)
 			composition = Composition.EMPTY;
@@ -210,7 +210,7 @@ public class Chunk
 	}
 
 	public void Draw(bool redraw = false)
-	{	
+	{
 		//bool debugging = false;
 
 		if(status == Status.DRAWN && !redraw ||
@@ -218,7 +218,7 @@ public class Chunk
 		{
 			return;
 		}
-		
+
 		Vector3[] offsets = Util.CubeFaceDirections();
 		int solidAdjacentChunkCount = 0;
 		for(int i = 0; i < 6; i++)
@@ -263,14 +263,14 @@ public class Chunk
 					Vector3 blockPosition = new Vector3(x,y,z);
 
 					Shapes.Types shape = blockShapes[x,y,z];
-				
+
 					//	Check if adjacent blocks are exposed
 					bool[] exposedFaces = new bool[6];
 					bool blockExposed = false;
 					for(int e = 0; e < 6; e++)
 					{
 						exposedFaces[e] = FaceExposed(offsets[e], blockPosition);
-						
+
 						if(exposedFaces[e] && !blockExposed) { blockExposed = true; }
 					}
 
@@ -282,10 +282,10 @@ public class Chunk
 					//	Check block shapes and generate mesh data
 					int localVertCount = 0;
 
-					
+
 					localVertCount = shapes[(int)blockShapes[x,y,z]].Draw(	verts, norms, tris, UVs,
 																			blockPosition,
-														 					blockYRotation[x,y,z], 
+														 					blockYRotation[x,y,z],
 																			exposedFaces,
 																			vertexCount,
 																			(int)type);
@@ -294,12 +294,13 @@ public class Chunk
 					vertexCount += localVertCount;
 
 					Color color = (Color)Blocks.colors[(int)blockTypes[x,y,z]];
-					//if(blockShapes[x,y,z] == Shapes.Types.WEDGECORNER) color = Color.red;
+
+					if(column.POIMap != null && column.POIMap[x,z] == 1) color = Color.black;
 
 					cols.AddRange(	Enumerable.Repeat(	color,
 														localVertCount));
 				}
-			
+
 		CreateMesh(verts, norms, tris, UVs, cols);
 		status = Status.DRAWN;
 	}
@@ -320,11 +321,11 @@ public class Chunk
 		filter = gameObject.AddComponent<MeshFilter>();
 		filter.mesh = mesh;
 
-		renderer = gameObject.AddComponent<MeshRenderer>();		
+		renderer = gameObject.AddComponent<MeshRenderer>();
 		renderer.sharedMaterial = world.defaultMaterial;
 		renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
 
-		
+
 
 		collider = gameObject.AddComponent<MeshCollider>();
 		collider.sharedMesh = filter.mesh;
@@ -332,10 +333,10 @@ public class Chunk
 
 	//	Player can see through adjacent block
 	bool FaceExposed(Vector3 offset, Vector3 blockPosition)
-	{	
+	{
 		//	Neighbour position
 		Vector3 neighbour = blockPosition + offset;
-		
+
 		Chunk neighbourOwner = BlockOwner(neighbour);
 
 		//	Neighbour is outside this chunk
@@ -344,7 +345,7 @@ public class Chunk
 			//	Convert local index to neighbouring chunk
 			neighbour = Util.WrapBlockIndex(neighbour);
 		}
-		//	Neighbour is in chunk being drawn		
+		//	Neighbour is in chunk being drawn
 		else
 		{
 			//	Block not at edge and chunk is solid
@@ -362,7 +363,7 @@ public class Chunk
 			int x = (int)neighbour.x, y = (int)neighbour.y, z = (int)neighbour.z;
 
 			Blocks.Types type = neighbourOwner.blockTypes[x, y, z];
-			
+
 
 			return (Blocks.seeThrough[(int)type] || (int)neighbourOwner.blockShapes[x, y, z] != 0);
 		}
@@ -388,10 +389,10 @@ public class Chunk
 			{
 				owner = this;
 				pos = neighbours[i];
-			}		
+			}
 
 			int x = (int)pos.x, y = (int)pos.y, z = (int)pos.z;
-			
+
 			Blocks.Types type = owner.blockTypes[x, y, z];
 
 			if(Blocks.seeThrough[(int)type])
@@ -417,7 +418,7 @@ public class Chunk
 		if		(pos.z < 0) 				z = -1;
 		else if (pos.z > World.chunkSize-1) 	z = 1;
 
-		//	The edge 
+		//	The edge
 		Vector3 edge = new Vector3(x, y, z);
 
 		//	Voxel is in this chunk
