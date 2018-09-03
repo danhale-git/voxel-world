@@ -46,8 +46,6 @@ public class PointOfInterest
 		//	Create integer matrix showing eligible columns as 1
 		MapMatrix();
 
-		Debug.Log("Matrix: "+width+" x "+height);
-
 		//	Generate noise to be used in pseudo random decision making
 		noise = Mathf.PerlinNoise(position.x, position.y);
 
@@ -265,92 +263,66 @@ public class PointOfInterest
 
 	#region Zone Processing
 
-	//	Square area for an L system to work on
-	public class Zone
-	{
-		//	Sides of the square
-		public enum Sides { BOTTOM, TOP, LEFT, RIGHT };
-
-		//	Positions
-		public int x, z, size, bottom, top, left, right;
-		//	Square as a matrix
-		public int[,] matrix;
-		//	Matrix of voxel coordinates within the square
-		public int[,] blockMatrix;
-
-		//	Most and least exposed sides of the square
-		public Sides front, back;
-		
-		public Zone(int x, int z, int size, int[,] matrix)
-		{
-			this.x = x;
-			this.z = z;
-			this.size = size;
-			this.matrix = matrix;
-
-			this.bottom = z;
-			this.top = z+size-1;
-			this.left = x;
-			this.right = x+size-1;
-		}
-	}
-
 	void ProcessZone(Zone e)
 	{
+	
+
 		int[,] testMatrix = new int[width,height];
 
-		int bottomScore = 0;
-		int topScore = 0;
-		int leftScore = 0;
 		int rightScore = 0;
+		int leftScore = 0;
+		int topScore = 0;
+		int bottomScore = 0;
 
-		for(int x = e.left; x <= e.right; x++)
-			{
-				int z = e.bottom;
-				if(exposedEdgeMatrix[x,z] == 1) bottomScore -= 1;	//	Exposed edge
-				else if(boundaryEdgeMatrix[x,z] == 1) bottomScore -= 2;	//	Boundary edge
-				else if(z-1 >= 0 && edgeMatrix[x,z-1] == 0) bottomScore += 2;	//	No edge or adjacent edge
-				else bottomScore += 1;	//	No edge
-
-				z = e.top;
-				if(exposedEdgeMatrix[x,z] == 1) topScore -= 1;
-				else if(boundaryEdgeMatrix[x,z] == 1) topScore -= 2;
-				else if(z+1 < height && edgeMatrix[x,z+1] == 0) topScore += 2;
-				else topScore += 1;
-			}
-		
 		for(int z = e.bottom; z <= e.top; z++)
 			{
-				int x = e.left;
-				if(exposedEdgeMatrix[x,z] == 1) leftScore -= 1;
-				else if(boundaryEdgeMatrix[x,z] == 1) leftScore -= 2;
-				else if(x-1 >= 0 && edgeMatrix[x-1,z] == 0) leftScore += 2;
-				else leftScore += 1;
-
-				x = e.right;
+				int x = e.right;
 				if(exposedEdgeMatrix[x,z] == 1) rightScore -= 1;
 				else if(boundaryEdgeMatrix[x,z] == 1) rightScore -= 2;
 				else if(x+1 < width && edgeMatrix[x+1,z] == 0) rightScore += 2;
 				else rightScore += 1;
+				
+				x = e.left;
+				if(exposedEdgeMatrix[x,z] == 1) leftScore -= 1;
+				else if(boundaryEdgeMatrix[x,z] == 1) leftScore -= 2;
+				else if(x-1 >= 0 && edgeMatrix[x-1,z] == 0) leftScore += 2;
+				else leftScore += 1;
 			}
 
-		int[] scores = new int[] { bottomScore, topScore, leftScore, rightScore };
+		for(int x = e.left; x <= e.right; x++)
+			{
+				int z = e.top;
+				if(exposedEdgeMatrix[x,z] == 1) topScore -= 1;
+				else if(boundaryEdgeMatrix[x,z] == 1) topScore -= 2;
+				else if(z+1 < height && edgeMatrix[x,z+1] == 0) topScore += 2;
+				else topScore += 1;
 
-		e.back = (Zone.Sides)Util.MinIntIndex(scores);
-		e.front = (Zone.Sides)Util.MaxIntIndex(scores);
+				z = e.bottom;
+				if(exposedEdgeMatrix[x,z] == 1) bottomScore -= 1;	//	Exposed edge
+				else if(boundaryEdgeMatrix[x,z] == 1) bottomScore -= 2;	//	Boundary edge
+				else if(z-1 >= 0 && edgeMatrix[x,z-1] == 0) bottomScore += 2;	//	No edge or adjacent edge
+				else bottomScore += 1;	//	No edge
+			}
+		
+		
+
+		int[] scores = new int[] { rightScore, leftScore, topScore, bottomScore };
+
+		e.back = (Zone.Side)Util.MinIntIndex(scores);
+		e.front = (Zone.Side)Util.MaxIntIndex(scores);
 
 		switch(e.front)
 		{
-			case Zone.Sides.BOTTOM:
+			case Zone.Side.BOTTOM:
 				for(int x = e.left; x <= e.right; x++) testMatrix[x,e.bottom] = 1;
 				break;
-			case Zone.Sides.TOP:
+			case Zone.Side.TOP:
 				for(int x = e.left; x <= e.right; x++) testMatrix[x,e.top] = 1;
 				break;
-			case Zone.Sides.LEFT:
+			case Zone.Side.LEFT:
 				for(int z = e.bottom; z <= e.top; z++) testMatrix[e.left,z] = 1;
 				break;
-			case Zone.Sides.RIGHT:
+			case Zone.Side.RIGHT:
 				for(int z = e.bottom; z <= e.top; z++) testMatrix[e.right,z] = 1;
 				break;
 		}

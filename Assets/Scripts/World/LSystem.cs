@@ -7,10 +7,10 @@ public class LSystem
 	FastNoise noiseGen = new FastNoise();
 
 	PointOfInterest POI;
-	PointOfInterest.Zone zone;
+	Zone zone;
 	float noise;
 
-	public LSystem(PointOfInterest POI, PointOfInterest.Zone zone, float noise)
+	public LSystem(PointOfInterest POI, Zone zone, float noise)
 	{
 		this.POI = POI;
 		this.zone = zone;
@@ -18,7 +18,8 @@ public class LSystem
 
 		noiseGen.SetNoiseType(FastNoise.NoiseType.Simplex);
 		noiseGen.SetInterp(FastNoise.Interp.Linear);
-		noiseGen.SetFrequency(1f);
+		noiseGen.SetFrequency(0.9f);
+		noiseGen.SetSeed(85646465);
 
 		DrawBlockMatrix();
 	}
@@ -29,22 +30,81 @@ public class LSystem
 		int width = zone.size * World.chunkSize;
 		int height = zone.size * World.chunkSize;
 
-		Int2 startPoint = RandomPointAtEdge(zone.back, width, height, noise);
-		Vector3 startGlobal = MatrixToGlobal(startPoint);
-		noise = noiseGen.GetNoise01(startPoint.x, startPoint.z);
-		Int2 endPoint = RandomPointAtEdge(zone.front, width, height, noise);
+		Int2 originPoint = RandomPointAtEdge(zone.back, width, height, noise);
+		Vector3 startGlobal = MatrixToGlobal(originPoint);
+		noise = noiseGen.GetNoise01(originPoint.x, originPoint.z);
+
 
 		
 		//	Create and build block matrix
 		zone.blockMatrix = new int[width,height];
-		zone.blockMatrix[startPoint.x,startPoint.z] = 1;
-		zone.blockMatrix[endPoint.x,endPoint.z] = 1;
+		zone.blockMatrix[originPoint.x,originPoint.z] = 1;
 
-		RoadBetweenPoints(startPoint, endPoint);
+		int[] bounds = GenerateRoom(originPoint, zone.back, true);
 
+		DrawRoom(bounds);
+
+		List<Int2> originPoints = new List<Int2>();
+		List<Zone.Side> originSides = new List<Zone.Side>();
+		List<int[]> roomBounds = new List<int[]>();
+
+		for(int i = 0; i < 10; i++)
+
+		
 
 		SetColumnMaps();
 	}
+
+	int[] GenerateRoom(Int2 originPoint, Zone.Side originSide, bool large = false)
+	{
+		int[] bounds = new int[4];
+		for(int i = 0; i < 1; i++)
+		{
+			for(int s = 0; s < 4; s++)
+			{
+				int min = s < 2 ? originPoint.x : originPoint.z;
+				int side = (int)originSide;
+				if(side == s)
+				{
+					bounds[s] = min;
+				}
+				else
+				{
+					bounds[s] = RandomRange(min, zone.bounds[s], large);
+				}
+			}
+		}
+		return bounds;
+	}
+
+	void DrawRoom(int[] bounds)
+	{
+		for(int x = bounds[1]; x <= bounds[0]; x++)
+		{
+			zone.blockMatrix[x, bounds[3]] = 1;
+			zone.blockMatrix[x, bounds[2]] = 1;
+		}
+
+		for(int z = bounds[3]; z <= bounds[2]; z++)
+		{
+			zone.blockMatrix[bounds[1], z] = 1;
+			zone.blockMatrix[bounds[0], z] = 1;
+		}
+	}
+
+	
+	int RandomRange(int a, int b, bool large = false)
+	{
+		float noise = noiseGen.GetNoise01(a, b);
+		if(large) noise = Mathf.Lerp(0.5f, 1f, noise);
+
+		if(a < b)
+			return Mathf.RoundToInt(a + ((b - a) * noise));
+		else
+			return Mathf.RoundToInt(b + ((a - b) * (1 - noise)));
+	}
+
+
 
 
 	void RoadBetweenPoints(Int2 startPoint, Int2 endPoint)
@@ -84,21 +144,20 @@ public class LSystem
 			return value >= compareTo;
 	}
 
-	Int2 RandomPointAtEdge(PointOfInterest.Zone.Sides edge, int width, int height, float noise)
+	Int2 RandomPointAtEdge(Zone.Side edge, int width, int height, float noise)
 	{
 		int top = height-1;
 		int right = width-1;
-		Debug.Log(edge+" "+(height-1*noise));
 		//	Pick starting point for main building
 		switch(edge)
 		{
-			case PointOfInterest.Zone.Sides.BOTTOM:
+			case Zone.Side.BOTTOM:
 				return new Int2(Mathf.FloorToInt(right * noise), 0);
-			case PointOfInterest.Zone.Sides.TOP:
+			case Zone.Side.TOP:
 				return new Int2(Mathf.FloorToInt(right * noise), top);
-			case PointOfInterest.Zone.Sides.LEFT:
+			case Zone.Side.LEFT:
 				return new Int2(0, Mathf.FloorToInt(top * noise));
-			case PointOfInterest.Zone.Sides.RIGHT:
+			case Zone.Side.RIGHT:
 				return new Int2(right, Mathf.FloorToInt(top * noise));
 			default:
 				return new Int2(0, 0);

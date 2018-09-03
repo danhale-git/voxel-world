@@ -167,20 +167,31 @@ public static class Util
 	public static int MinIntIndex(int[] values)
 	{
 		int minIndex = 0;
+		int minValue = values[0];
 		for(int i = 0; i < values.Length; i++)
 		{
-			if(values[i] < minIndex) minIndex = i;
+			if(values[i] <= minValue)
+			{
+				minValue = values[i];
+				minIndex = i;
+			}
 		}
 		return minIndex;
 	}
+
 	public static int MaxIntIndex(int[] values)
 	{
-		int minIndex = 0;
+		int maxIndex = 0;
+		int maxValue = values[0];
 		for(int i = 0; i < values.Length; i++)
 		{
-			if(values[i] > minIndex) minIndex = i;
+			if(values[i] >= maxValue)
+			{
+				maxValue = values[i];
+				maxIndex = i;
+			}
 		}
-		return minIndex;
+		return maxIndex;
 	}
 
 	static Color DebugBlockColor(int x, int z, Column column)
