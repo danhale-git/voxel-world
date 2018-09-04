@@ -30,50 +30,156 @@ public class LSystem
 		int width = zone.size * World.chunkSize;
 		int height = zone.size * World.chunkSize;
 
-		Int2 originPoint = RandomPointAtEdge(zone.back, width, height, noise);
-		Vector3 startGlobal = MatrixToGlobal(originPoint);
-		noise = noiseGen.GetNoise01(originPoint.x, originPoint.z);
+		Int2 startPoint = RandomPointAtEdge(zone.back, width, height, noise);
+		Vector3 startGlobal = MatrixToGlobal(startPoint);
+		noise = noiseGen.GetNoise01(startPoint.x, startPoint.z);
 
 
 		
 		//	Create and build block matrix
 		zone.blockMatrix = new int[width,height];
-		zone.blockMatrix[originPoint.x,originPoint.z] = 1;
+		zone.blockMatrix[startPoint.x,startPoint.z] = 1;
 
-		int[] bounds = GenerateRoom(originPoint, zone.back, true);
+		//int[] bounds = GenerateRoom(originPoint, zone.back, true);
 
-		DrawRoom(bounds);
 
 		List<Int2> originPoints = new List<Int2>();
 		List<Zone.Side> originSides = new List<Zone.Side>();
 		List<int[]> roomBounds = new List<int[]>();
 
-		for(int i = 0; i < 10; i++)
+		originPoints.Add(startPoint);
+		originSides.Add(zone.back);
+
+		for(int i = 0; i < 4; i++)
+		{
+			if(i == originSides.Count) break;
+
+			roomBounds.Add(GenerateRoom(originPoints, originSides, roomBounds, i));
+		}
+
+		foreach(int[] room in roomBounds)
+		{
+			DrawRoom(room);
+		}
 
 		
 
 		SetColumnMaps();
 	}
 
-	int[] GenerateRoom(Int2 originPoint, Zone.Side originSide, bool large = false)
+	/*//	TODO does this need the side checks?
+	int[] MaxRoomBounds(int[] bounds, Zone.Side originSide, List<int[]> other, int index)
 	{
-		int[] bounds = new int[4];
-		for(int i = 0; i < 1; i++)
+		int side = (int)originSide;
+
+		for(int i = 0; i < index; i++)
 		{
-			for(int s = 0; s < 4; s++)
+			if(other[i][3] < bounds[2] || other[i][2] > bounds[3])	//	other room overlap horizontal
 			{
-				int min = s < 2 ? originPoint.x : originPoint.z;
-				int side = (int)originSide;
-				if(side == s)
+				if(side != 1 && other[i][0] > bounds[1] && other[i][1] < bounds[0])			//	other right > left
+					bounds[1] = other[i][0];
+
+				else if(side != 0 && other[i][1] < bounds[0] && other[i][0] > bounds[1])		//	left < right
+					bounds[0] = other[i][1];
+			}
+			if(other[i][1] < bounds[0] || other[i][0] > bounds[1])	//	other room overlap vertical
+			{
+				if(side != 3 && other[i][2] > bounds[3] && other[i][3] < bounds[2])		//	other top > bottom
 				{
-					bounds[s] = min;
+					Debug.Log("top > bottom");
+					bounds[3] = other[i][2];
 				}
-				else
+
+				else if(side != 2 && other[i][3] < bounds[2] && other[i][2] > bounds[3])	//	other bottom < top
 				{
-					bounds[s] = RandomRange(min, zone.bounds[s], large);
+					Debug.Log("bottom < top");
+					bounds[2] = other[i][3]; 
 				}
 			}
 		}
+
+		return bounds;
+	}*/
+
+	//	How to detect if overlapping room is above/below/left/right?
+	void CorrectBounds(int[] bounds, Zone.Side originSide, Int2 originPoint, List<int[]> other, int index)
+	{
+		int side = (int)originSide;
+
+		for(int i = 0; i < index; i++)
+		{
+			if(index == 3) Debug.Log(": "+i);
+			if(InOrEitherSide(other[i][1], other[i][0], bounds[1], bounds[0]))
+			{
+				Debug.Log("vertical overlap");
+				if(side != 3 && other[i][2] > bounds[3])
+				{
+					Debug.Log("other top > bottom");
+					bounds[3] = other[i][2];
+				}
+				else if(side != 2 && other[i][3] < bounds[2])
+					bounds[2] = other[i][3];
+				
+			}
+			else if(InOrEitherSide(other[i][2], other[i][3], bounds[2], bounds[3]))		//	wrong order?
+			{
+
+				//	vertical overlap
+			}
+		}
+	}
+
+	bool InOrEitherSide(int a1, int a2, int b1, int b2)
+	{
+		if(	(a1 > b1 && a1 < b2)||
+			(a2 > b1 && a2 < b2)||
+			(a1 < b2 && a2 > b2) ) return true;
+
+		return false;
+	}
+
+
+
+	int[] GenerateRoom(List<Int2> originPoints, List<Zone.Side> originSides, List<int[]> allBounds, int index, bool large = false)
+	{
+		int[] bounds = zone.bounds.Clone() as int[];
+		int side = (int)originSides[index];
+		bounds[side] = side < 2 ? originPoints[index].x : originPoints[index].z;
+
+		int farthestValue = 0;
+		int farthestSide = 0;
+		for(int s = 0; s < 4; s++)
+		{
+			int min = s < 2 ? originPoints[index].x : originPoints[index].z;
+			
+			if(side != s)	// swap this for readability
+			{
+				int max = zone.bounds[s];
+				int distance = min < max ? max - min : min - max;
+
+				if(distance > farthestValue)
+				{
+					farthestValue = distance;
+					farthestSide = s;
+				}
+				bounds[s] = RandomRange(min, max, large);
+			}
+		}
+
+		CorrectBounds(bounds, originSides[index], originPoints[index], allBounds, index);
+
+		foreach(int b in bounds)
+		{
+			Debug.Log(b);
+		}
+		
+		
+		if(farthestSide < 2)
+			originPoints.Add(new Int2(bounds[farthestSide], RandomRange(bounds[2], bounds[3])));
+		else
+			originPoints.Add(new Int2(RandomRange(bounds[0], bounds[1]), bounds[farthestSide]));
+
+		originSides.Add(Zone.Opposite((Zone.Side)farthestSide));
 		return bounds;
 	}
 

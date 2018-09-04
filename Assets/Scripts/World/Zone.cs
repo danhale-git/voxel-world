@@ -32,4 +32,21 @@ public class Zone
 
 		bounds = new int[] { (size * World.chunkSize) - 1, 0, (size * World.chunkSize) - 1, 0 };
 	}
+
+	public static Side Opposite(Side side)
+	{
+		switch(side)
+		{
+			case Side.RIGHT:
+				return Side.LEFT;
+			case Side.LEFT:
+				return Side.RIGHT;
+			case Side.TOP:
+				return Side.BOTTOM;
+			case Side.BOTTOM:
+				return Side.TOP;
+			default:
+				return Side.RIGHT;
+		}
+	}
 }
