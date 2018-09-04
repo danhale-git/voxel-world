@@ -10,6 +10,10 @@ public class LSystem
 	Zone zone;
 	float noise;
 
+	List<Int2> originPoints = new List<Int2>();
+	List<Zone.Side> originSides = new List<Zone.Side>();
+	List<int[]> allBounds = new List<int[]>();
+
 	public LSystem(PointOfInterest POI, Zone zone, float noise)
 	{
 		this.POI = POI;
@@ -19,7 +23,8 @@ public class LSystem
 		noiseGen.SetNoiseType(FastNoise.NoiseType.Simplex);
 		noiseGen.SetInterp(FastNoise.Interp.Linear);
 		noiseGen.SetFrequency(0.9f);
-		noiseGen.SetSeed(85646465);
+		noiseGen.SetSeed(7425356);
+		//noiseGen.SetSeed(85646465); works
 
 		DrawBlockMatrix();
 	}
@@ -40,24 +45,18 @@ public class LSystem
 		zone.blockMatrix = new int[width,height];
 		zone.blockMatrix[startPoint.x,startPoint.z] = 1;
 
-		//int[] bounds = GenerateRoom(originPoint, zone.back, true);
-
-
-		List<Int2> originPoints = new List<Int2>();
-		List<Zone.Side> originSides = new List<Zone.Side>();
-		List<int[]> roomBounds = new List<int[]>();
 
 		originPoints.Add(startPoint);
 		originSides.Add(zone.back);
 
-		for(int i = 0; i < 4; i++)
+		for(int i = 0; i < 5; i++)
 		{
 			if(i == originSides.Count) break;
 
-			roomBounds.Add(GenerateRoom(originPoints, originSides, roomBounds, i));
+			allBounds.Add(Generate(originSides[i], originPoints[i], i));
 		}
 
-		foreach(int[] room in roomBounds)
+		foreach(int[] room in allBounds)
 		{
 			DrawRoom(room);
 		}
@@ -67,120 +66,213 @@ public class LSystem
 		SetColumnMaps();
 	}
 
-	/*//	TODO does this need the side checks?
-	int[] MaxRoomBounds(int[] bounds, Zone.Side originSide, List<int[]> other, int index)
+	int[] Generate(Zone.Side originSide, Int2 originPoint, int index)
 	{
-		int side = (int)originSide;
+		int rightMax;
+		int leftMax;
+		int topMax;
+		int bottomMax;
 
-		for(int i = 0; i < index; i++)
+		int[] bounds = new int[4];
+
+		if((int)originSide < 2)
 		{
-			if(other[i][3] < bounds[2] || other[i][2] > bounds[3])	//	other room overlap horizontal
-			{
-				if(side != 1 && other[i][0] > bounds[1] && other[i][1] < bounds[0])			//	other right > left
-					bounds[1] = other[i][0];
+			Debug.Log("vertical overlap");
+			VerticalOverlap(originPoint, out topMax, out bottomMax, index);
 
-				else if(side != 0 && other[i][1] < bounds[0] && other[i][0] > bounds[1])		//	left < right
-					bounds[0] = other[i][1];
+			if(originSide == Zone.Side.LEFT)
+			{
+				leftMax = originPoint.x;
+				rightMax = HorizontalBlocker(originSide, originPoint, bounds, index);
 			}
-			if(other[i][1] < bounds[0] || other[i][0] > bounds[1])	//	other room overlap vertical
+			else
 			{
-				if(side != 3 && other[i][2] > bounds[3] && other[i][3] < bounds[2])		//	other top > bottom
-				{
-					Debug.Log("top > bottom");
-					bounds[3] = other[i][2];
-				}
+				rightMax = originPoint.x;
+				leftMax = HorizontalBlocker(originSide, originPoint, bounds, index);
+			}
 
-				else if(side != 2 && other[i][3] < bounds[2] && other[i][2] > bounds[3])	//	other bottom < top
-				{
-					Debug.Log("bottom < top");
-					bounds[2] = other[i][3]; 
-				}
+		}
+		else
+		{
+			Debug.Log("horizontal overlap");
+			HorizontalOverlap(originPoint, out rightMax, out leftMax, index);
+
+			if(originSide == Zone.Side.BOTTOM)
+			{
+				bottomMax = originPoint.z;
+				topMax = VerticalBlocker(originSide, originPoint, bounds, index);
+			}
+			else
+			{
+				topMax = originPoint.z;
+				bottomMax = VerticalBlocker(originSide, originPoint, bounds, index);
 			}
 		}
 
-		return bounds;
-	}*/
+		bounds[0] = rightMax == 0 ? RandomRange(originPoint.x, zone.bounds[0]) : rightMax;
+		bounds[1] = leftMax == 0 ? RandomRange(originPoint.x, zone.bounds[1]) : leftMax;
+		bounds[2] = topMax == 0 ? RandomRange(originPoint.z, zone.bounds[2]) : topMax;
+		bounds[3] = bottomMax == 0 ? RandomRange(originPoint.z, zone.bounds[3]) : bottomMax;
 
-	//	How to detect if overlapping room is above/below/left/right?
-	void CorrectBounds(int[] bounds, Zone.Side originSide, Int2 originPoint, List<int[]> other, int index)
-	{
-		int side = (int)originSide;
-
-		for(int i = 0; i < index; i++)
+		/*for(int i = 0; i < 2; i++)
 		{
-			if(index == 3) Debug.Log(": "+i);
-			if(InOrEitherSide(other[i][1], other[i][0], bounds[1], bounds[0]))
-			{
-				Debug.Log("vertical overlap");
-				if(side != 3 && other[i][2] > bounds[3])
-				{
-					Debug.Log("other top > bottom");
-					bounds[3] = other[i][2];
-				}
-				else if(side != 2 && other[i][3] < bounds[2])
-					bounds[2] = other[i][3];
-				
-			}
-			else if(InOrEitherSide(other[i][2], other[i][3], bounds[2], bounds[3]))		//	wrong order?
-			{
-
-				//	vertical overlap
-			}
+			Debug.Log((Zone.Side)i+" "+ bounds[i]);
 		}
-	}
+		Debug.Log("--");*/
 
-	bool InOrEitherSide(int a1, int a2, int b1, int b2)
-	{
-		if(	(a1 > b1 && a1 < b2)||
-			(a2 > b1 && a2 < b2)||
-			(a1 < b2 && a2 > b2) ) return true;
+		bounds[(int)originSide] = (int)originSide < 2 ? originPoint.x : originPoint.z;
 
-		return false;
-	}
+		/*for(int i = 0; i < 2; i++)
+		{
+			Debug.Log((Zone.Side)i+" "+ bounds[i]);
+		}
+		Debug.Log("--__--__--");*/
 
-
-
-	int[] GenerateRoom(List<Int2> originPoints, List<Zone.Side> originSides, List<int[]> allBounds, int index, bool large = false)
-	{
-		int[] bounds = zone.bounds.Clone() as int[];
-		int side = (int)originSides[index];
-		bounds[side] = side < 2 ? originPoints[index].x : originPoints[index].z;
-
-		int farthestValue = 0;
 		int farthestSide = 0;
-		for(int s = 0; s < 4; s++)
+		int farthestDistance = 0;
+		for(int i = 0; i < 4; i++)
 		{
-			int min = s < 2 ? originPoints[index].x : originPoints[index].z;
-			
-			if(side != s)	// swap this for readability
+			if(i == (int)originSide) continue;
+			int distance = Mathf.Max(bounds[i], zone.bounds[i]) - Mathf.Min(bounds[i], zone.bounds[i]);
+			if(distance > farthestDistance)
 			{
-				int max = zone.bounds[s];
-				int distance = min < max ? max - min : min - max;
-
-				if(distance > farthestValue)
-				{
-					farthestValue = distance;
-					farthestSide = s;
-				}
-				bounds[s] = RandomRange(min, max, large);
+				farthestDistance = distance;
+				farthestSide = i;
 			}
 		}
 
-		CorrectBounds(bounds, originSides[index], originPoints[index], allBounds, index);
-
-		foreach(int b in bounds)
-		{
-			Debug.Log(b);
-		}
-		
-		
 		if(farthestSide < 2)
 			originPoints.Add(new Int2(bounds[farthestSide], RandomRange(bounds[2], bounds[3])));
 		else
 			originPoints.Add(new Int2(RandomRange(bounds[0], bounds[1]), bounds[farthestSide]));
 
 		originSides.Add(Zone.Opposite((Zone.Side)farthestSide));
+
+		Debug.Log(Zone.Opposite((Zone.Side)farthestSide)); 
+
 		return bounds;
+	}
+
+	void VerticalOverlap(Int2 originPoint, out int topClosest, out int bottomClosest, int index)
+	{
+		topClosest = 0;
+		bottomClosest = 0;
+
+		for(int b = 0; b < index; b++)
+		{		
+			if(allBounds[b][1] <= originPoint.x && allBounds[b][0] >= originPoint.x)		//	Point between left + right bounds
+			{
+				if(allBounds[b][3] > originPoint.z)										//	Point below bottom bounds
+				{
+					if(topClosest == 0 || allBounds[b][3] < topClosest)				//	topClosest unassigned or new value is closer
+						topClosest = allBounds[b][3];
+				}
+				else if(allBounds[b][2] < originPoint.z)								//	Point above top bounds
+				{
+					if(bottomClosest == 0 || allBounds[b][2] > bottomClosest)		//	bottomClosest unassigned or new value is closer
+						bottomClosest = allBounds[b][2];
+				}
+			}
+		}
+	}
+
+	void HorizontalOverlap(Int2 originPoint, out int rightClosest, out int leftClosest, int index)
+	{
+		rightClosest = 0;
+		leftClosest = 0;
+
+		for(int b = 0; b < index; b++)
+		{
+			if(allBounds[b][3] <= originPoint.z && allBounds[b][2] >= originPoint.z)		//	Point between top + bottom bounds
+			{
+				if(allBounds[b][1] > originPoint.x)										//	Point to the left of left bounds
+				{
+					if(rightClosest == 0 || allBounds[b][1] < rightClosest)			//	rightClosest unassigned or new value is closer
+						rightClosest = allBounds[b][1];
+				}
+				else if(allBounds[b][0] < originPoint.x)								//	Point to the right of right bounds
+				{
+					if(leftClosest == 0 || allBounds[b][0] > leftClosest)			//	leftClosest unassigned or new value is closer
+						leftClosest = allBounds[b][0];
+				}
+			}
+		}
+	}
+
+	int VerticalBlocker(Zone.Side originSide, Int2 originPoint, int[] bounds, int index)
+	{
+		int closest = 0;
+		
+		for(int b = 0; b < index; b++)
+		{
+			if(BlockingBounds(allBounds[b][1], allBounds[b][0], bounds[1], bounds[0]))	//	Check other left and right against current left and right bounds
+			{
+				switch(originSide)
+				{
+					case Zone.Side.TOP:
+						if(closest == 0 || allBounds[b][2] < closest)						//	closest unassigned or new value is closer
+							closest = allBounds[b][2];
+						break;
+					case Zone.Side.BOTTOM:
+						if(closest == 0 || allBounds[b][3] < closest)						//	closest unassigned or new value is closer
+							closest = allBounds[b][3];
+						break;
+					case Zone.Side.RIGHT:
+					case Zone.Side.LEFT:
+
+						Debug.Log("USE OTHER FUNCTION, WRONG ORIGIN SIDE");
+						break;
+
+				}
+			}
+		}
+
+		return closest;
+	}
+
+	int HorizontalBlocker(Zone.Side originSide, Int2 originPoint, int[] bounds, int index)
+	{
+		int closest = 0;
+		
+		for(int b = 0; b < index; b++)
+		{
+			//Debug.Log(BlockingBounds(allBounds[b][3], allBounds[b][2], bounds[3], bounds[2]));
+			if(BlockingBounds(allBounds[b][3], allBounds[b][2], bounds[3], bounds[2]))	//	Check other bottom and top against current bottom and top bounds
+			{
+				switch(originSide)
+				{
+					case Zone.Side.RIGHT:
+						Debug.Log("left side");
+						//if(allBounds[b][0] >= originPoint.x) continue;
+						if(closest == 0 || allBounds[b][0] < closest)						//	closest unassigned or new value is closer
+							closest = allBounds[b][0];
+						break;
+					case Zone.Side.LEFT:
+						Debug.Log("right side");
+						//if(allBounds[b][1] <= originPoint.x) continue;
+						if(closest == 0 || allBounds[b][1] < closest)						//	closest unassigned or new value is closer
+							closest = allBounds[b][1];
+						break;
+					case Zone.Side.TOP:
+					case Zone.Side.BOTTOM:
+						Debug.Log("USE OTHER FUNCTION, WRONG ORIGIN SIDE");
+						break;
+
+				}
+			}
+		}
+
+		return closest;
+	}
+
+	//	Check if a is overlapping b
+	bool BlockingBounds(int a1, int a2, int b1, int b2)
+	{
+		if(	(a1 > b1 && a1 < b2)||
+			(a2 > b1 && a2 < b2)||
+			(a1 < b1 && a2 > b2) ) return true;
+
+		return false;
 	}
 
 	void DrawRoom(int[] bounds)
