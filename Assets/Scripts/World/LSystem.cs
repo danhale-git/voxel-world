@@ -25,9 +25,12 @@ public class LSystem
 		noiseGen.SetFrequency(0.9f);
 		//noiseGen.SetSeed(7425356); works
 		//noiseGen.SetSeed(85646465);
-		int seed = Random.Range(0,10000);
-		Debug.Log("SEED: "+ seed);
-		noiseGen.SetSeed(seed);
+		noiseGen.SetSeed(9434);
+		
+		//int seed = Random.Range(0,10000);
+		//Debug.Log("SEED: "+ seed);
+		//noiseGen.SetSeed(seed);
+
 		DrawBlockMatrix();
 	}
 
@@ -51,7 +54,7 @@ public class LSystem
 		originPoints.Add(startPoint);
 		originSides.Add(zone.back);
 
-		for(int i = 0; i < 8; i++)
+		for(int i = 0; i < 5; i++)
 		{
 			if(i == originSides.Count) break;
 
@@ -63,6 +66,11 @@ public class LSystem
 			DrawRoom(room);
 		}
 
+		for(int i = 0; i < allBounds.Count; i++)
+		{
+			DebugRooms(i);
+		}
+
 		
 
 		SetColumnMaps();
@@ -70,66 +78,45 @@ public class LSystem
 
 	int[] Generate(Zone.Side originSide, Int2 originPoint, int index)
 	{
-		int rightMax;
-		int leftMax;
-		int topMax;
-		int bottomMax;
+		Debug.Log(originSide);
+		int side = (int)originSide;
+
+		bool horizontalFacing = side < 2;
+
+		//	Set adjacent sides depending on origin side
+		int adjacentA;
+		int indexA = horizontalFacing ? 2 : 0;
+		int adjacentB;
+		int indexB = horizontalFacing ? 3 : 1;
+
+		//	Set outward side - opposide to origin side
+		int outward;
+		int indexO = Zone.Opposite(side);
+
+		//	Set adjacent axis - perpendicular to origin side
+		int adjacentAxis = horizontalFacing ? originPoint.z : originPoint.x;
+		//	Set outward access
+		int outwardAxis = horizontalFacing ? originPoint.x : originPoint.z;
 
 		int[] bounds = new int[4];
 
-		if((int)originSide < 2)
-		{
-			Debug.Log("vertical overlap");
-			CheckAdjacency(originPoint, out topMax, out bottomMax, index);
+		//	Check whether objects exist perpendicular to origin point and choose width
+		CheckAdjacency(out adjacentA, out adjacentB, index);
 
-			if(originSide == Zone.Side.LEFT)
-			{
-				leftMax = originPoint.x;
-				rightMax = CheckOutward(originSide, originPoint, bounds, index);
-			}
-			else
-			{
-				rightMax = originPoint.x;
-				leftMax = CheckOutward(originSide, originPoint, bounds, index);
-			}
+		//	Assign bounds width
+		bounds[indexA] = adjacentA == 0 ? RandomRange(adjacentAxis, zone.bounds[indexA]) : adjacentA;
+		bounds[indexB] = adjacentB == 0 ? RandomRange(adjacentAxis, zone.bounds[indexB]) : adjacentB;
 
-		}
-		else
-		{
-			Debug.Log("horizontal overlap");
-			CheckAdjacency(originPoint, out rightMax, out leftMax, index);
+		//	Check if objects are blocking the chosen width outward from the origin side
+		outward = CheckOutward(bounds, index);
 
-			if(originSide == Zone.Side.BOTTOM)
-			{
-				bottomMax = originPoint.z;
-				topMax = CheckOutward(originSide, originPoint, bounds, index);
-			}
-			else
-			{
-				topMax = originPoint.z;
-				bottomMax = CheckOutward(originSide, originPoint, bounds, index);
-			}
-		}
 
-		bounds[0] = rightMax == 0 ? RandomRange(originPoint.x, zone.bounds[0]) : rightMax;
-		bounds[1] = leftMax == 0 ? RandomRange(originPoint.x, zone.bounds[1]) : leftMax;
-		bounds[2] = topMax == 0 ? RandomRange(originPoint.z, zone.bounds[2]) : topMax;
-		bounds[3] = bottomMax == 0 ? RandomRange(originPoint.z, zone.bounds[3]) : bottomMax;
+		
+		//	Assign bounds origin and outward limit
+		bounds[indexO] = outward == 0 ? RandomRange(outwardAxis, zone.bounds[indexO]) : outward;
+		bounds[side] = outwardAxis;
 
-		/*for(int i = 0; i < 2; i++)
-		{
-			Debug.Log((Zone.Side)i+" "+ bounds[i]);
-		}
-		Debug.Log("--");*/
-
-		bounds[(int)originSide] = (int)originSide < 2 ? originPoint.x : originPoint.z;
-
-		/*for(int i = 0; i < 2; i++)
-		{
-			Debug.Log((Zone.Side)i+" "+ bounds[i]);
-		}
-		Debug.Log("--__--__--");*/
-
+		//	Find side with the most space ahead of it
 		int farthestSide = 0;
 		int farthestDistance = 0;
 		for(int i = 0; i < 4; i++)
@@ -143,6 +130,8 @@ public class LSystem
 			}
 		}
 
+		//	Assign next rooms
+
 		if(farthestSide < 2)
 			originPoints.Add(new Int2(bounds[farthestSide], RandomRange(bounds[2], bounds[3])));
 		else
@@ -150,12 +139,10 @@ public class LSystem
 
 		originSides.Add(Zone.Opposite((Zone.Side)farthestSide));
 
-		Debug.Log(Zone.Opposite((Zone.Side)farthestSide)); 
-
 		return bounds;
 	}
 
-	void CheckAdjacency(Int2 originPoint, out int topClosest, out int bottomClosest, int index)
+	void CheckAdjacency(out int topClosest, out int bottomClosest, int index)
 	{
 		topClosest = 0;
 		bottomClosest = 0;
@@ -195,11 +182,15 @@ public class LSystem
 		}
 	}
 
-	int CheckOutward(Zone.Side originSide, Int2 originPoint, int[] bounds, int index)
+	int CheckOutward(int[] bounds, int index)
 	{
 		int closest = 0;
 
+		int side = (int)originSides[index];
+
 		bool horizontalBlocker = (int)originSides[index] < 2;
+
+		int point = horizontalBlocker ? originPoints[index].x : originPoints[index].z;
 
 		int c1 = horizontalBlocker ? 2 : 0;
 		int c2 = horizontalBlocker ? 3 : 1;
@@ -208,26 +199,19 @@ public class LSystem
 		{
 			if(BoundsBlockingBounds(allBounds[b][c2], allBounds[b][c1], bounds[c2], bounds[c1]))	//	Check other left and right against current left and right bounds
 			{
-				switch(originSide)
+				switch(originSides[index])
 				{
 					case Zone.Side.RIGHT:
-						if(closest == 0 || allBounds[b][0] < closest)						//	closest unassigned or new value is closer
-							closest = allBounds[b][0];
-						break;
-
-					case Zone.Side.LEFT:
-						if(closest == 0 || allBounds[b][1] < closest)						//	closest unassigned or new value is closer
-							closest = allBounds[b][1];
-						break;
-
 					case Zone.Side.TOP:
-						if(closest == 0 || allBounds[b][2] < closest)						//	closest unassigned or new value is closer
-							closest = allBounds[b][2];
+						if(allBounds[b][side] < point)
+							if(closest == 0 || allBounds[b][side] > closest)
+								closest = allBounds[b][side];
 						break;
-
+					case Zone.Side.LEFT:
 					case Zone.Side.BOTTOM:
-						if(closest == 0 || allBounds[b][3] < closest)						//	closest unassigned or new value is closer
-							closest = allBounds[b][3];
+						if(allBounds[b][side] > point)
+							if(closest == 0 || allBounds[b][side] < closest)
+								closest = allBounds[b][side];
 						break;
 				}
 			}
@@ -273,6 +257,17 @@ public class LSystem
 		}
 	}
 
+	void DebugRooms(int index)
+	{
+		int[] bounds = allBounds[index];
+		int middleX = ((bounds[0] - bounds[1]) / 2) + bounds[1];
+		int middleZ = ((bounds[2] - bounds[3]) / 2) + bounds[3];
+
+		zone.blockMatrix[middleX, middleZ] = 2;
+
+		zone.blockMatrix[originPoints[index].x, originPoints[index].z] = 3;
+	}
+
 	
 	int RandomRange(int a, int b, bool large = false)
 	{
@@ -288,7 +283,7 @@ public class LSystem
 
 
 
-	void RoadBetweenPoints(Int2 startPoint, Int2 endPoint)
+	/*void RoadBetweenPoints(Int2 startPoint, Int2 endPoint)
 	{
 		Vector2 differenceVector = new Vector2(endPoint.x, endPoint.z) - new Vector2(startPoint.x, startPoint.z);
 
@@ -323,7 +318,7 @@ public class LSystem
 			return value <= compareTo;
 		else
 			return value >= compareTo;
-	}
+	}*/
 
 	Int2 RandomPointAtEdge(Zone.Side edge, int width, int height, float noise)
 	{
