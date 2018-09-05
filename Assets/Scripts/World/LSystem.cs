@@ -23,8 +23,9 @@ public class LSystem
 		noiseGen.SetNoiseType(FastNoise.NoiseType.Simplex);
 		noiseGen.SetInterp(FastNoise.Interp.Linear);
 		noiseGen.SetFrequency(0.9f);
-		noiseGen.SetSeed(7425356);
+		//noiseGen.SetSeed(7425356); works
 		//noiseGen.SetSeed(85646465); works
+		noiseGen.SetSeed(Random.Range(0,10000));
 
 		DrawBlockMatrix();
 	}
@@ -49,7 +50,7 @@ public class LSystem
 		originPoints.Add(startPoint);
 		originSides.Add(zone.back);
 
-		for(int i = 0; i < 5; i++)
+		for(int i = 0; i < 8; i++)
 		{
 			if(i == originSides.Count) break;
 
@@ -132,7 +133,7 @@ public class LSystem
 		int farthestDistance = 0;
 		for(int i = 0; i < 4; i++)
 		{
-			if(i == (int)originSide) continue;
+			if(i == (int)originSide || SideBlocked(bounds[i], i)) continue;
 			int distance = Mathf.Max(bounds[i], zone.bounds[i]) - Mathf.Min(bounds[i], zone.bounds[i]);
 			if(distance > farthestDistance)
 			{
@@ -205,7 +206,7 @@ public class LSystem
 		
 		for(int b = 0; b < index; b++)
 		{
-			if(BlockingBounds(allBounds[b][1], allBounds[b][0], bounds[1], bounds[0]))	//	Check other left and right against current left and right bounds
+			if(BoundsBlockingBounds(allBounds[b][1], allBounds[b][0], bounds[1], bounds[0]))	//	Check other left and right against current left and right bounds
 			{
 				switch(originSide)
 				{
@@ -237,7 +238,7 @@ public class LSystem
 		for(int b = 0; b < index; b++)
 		{
 			//Debug.Log(BlockingBounds(allBounds[b][3], allBounds[b][2], bounds[3], bounds[2]));
-			if(BlockingBounds(allBounds[b][3], allBounds[b][2], bounds[3], bounds[2]))	//	Check other bottom and top against current bottom and top bounds
+			if(BoundsBlockingBounds(allBounds[b][3], allBounds[b][2], bounds[3], bounds[2]))	//	Check other bottom and top against current bottom and top bounds
 			{
 				switch(originSide)
 				{
@@ -266,12 +267,24 @@ public class LSystem
 	}
 
 	//	Check if a is overlapping b
-	bool BlockingBounds(int a1, int a2, int b1, int b2)
+	bool BoundsBlockingBounds(int a1, int a2, int b1, int b2)
 	{
 		if(	(a1 > b1 && a1 < b2)||
 			(a2 > b1 && a2 < b2)||
 			(a1 < b1 && a2 > b2) ) return true;
 
+		return false;
+	}
+
+	//	Check if point is in bounds
+	bool SideBlocked(int bound, int side)
+	{
+		int otherSide = (int)Zone.Opposite(side);
+
+		foreach(int[] bounds in allBounds)
+		{
+			if(bounds[otherSide] == bound) return true;
+		}
 		return false;
 	}
 
