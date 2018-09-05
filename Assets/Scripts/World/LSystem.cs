@@ -25,11 +25,11 @@ public class LSystem
 		noiseGen.SetFrequency(0.9f);
 		//noiseGen.SetSeed(7425356); works
 		//noiseGen.SetSeed(85646465);
-		noiseGen.SetSeed(9434);
+		//noiseGen.SetSeed(9434);
 		
-		//int seed = Random.Range(0,10000);
-		//Debug.Log("SEED: "+ seed);
-		//noiseGen.SetSeed(seed);
+		int seed = Random.Range(0,10000);
+		Debug.Log("SEED: "+ seed);
+		noiseGen.SetSeed(seed);
 
 		DrawBlockMatrix();
 	}
@@ -50,16 +50,7 @@ public class LSystem
 		zone.blockMatrix = new int[width,height];
 		zone.blockMatrix[startPoint.x,startPoint.z] = 1;
 
-
-		originPoints.Add(startPoint);
-		originSides.Add(zone.back);
-
-		for(int i = 0; i < 5; i++)
-		{
-			if(i == originSides.Count) break;
-
-			allBounds.Add(Generate(originSides[i], originPoints[i], i));
-		}
+		GenerateBuilding(startPoint, zone.back, 16, 4);
 
 		foreach(int[] room in allBounds)
 		{
@@ -69,16 +60,73 @@ public class LSystem
 		for(int i = 0; i < allBounds.Count; i++)
 		{
 			DebugRooms(i);
-		}
-
-		
+		}	
 
 		SetColumnMaps();
 	}
 
-	int[] Generate(Zone.Side originSide, Int2 originPoint, int index)
+	void GenerateBuilding(Int2 startPoint, Zone.Side startSide, int iterations, int minSize)
 	{
-		Debug.Log(originSide);
+		originPoints.Add(startPoint);
+		originSides.Add(startSide);
+
+		for(int i = 0; i < iterations; i++)
+		{
+			if(i == originSides.Count)
+			{
+				Debug.Log("Room generation out of sync");
+				break;
+			}
+
+			//	out keyword for new point and new side?
+			bool[] eligibleSides;
+
+			int[] newBounds = GenerateRoom(originSides[i], originPoints[i], i, out eligibleSides);
+
+			int boundsWidth = newBounds[0] - newBounds[1];
+			int boundsHeight = newBounds[2] - newBounds[3];
+
+			if(boundsWidth < minSize || boundsHeight < minSize) break;
+			else
+			{
+				allBounds.Add(newBounds);
+				int chosenSide = MostOpenSide(newBounds, eligibleSides);
+				originPoints.Add(RandomPointOnSide(chosenSide, newBounds));
+				originSides.Add(Zone.Opposite((Zone.Side)chosenSide));
+			}
+		}
+
+		Debug.Log(iterations);
+
+	}
+
+	int MostOpenSide(int[] bounds, bool[] eligibleSides)
+	{
+		int farthestSide = 0;
+		int farthestDistance = 0;
+		for(int i = 0; i < 4; i++)
+		{
+			if(!eligibleSides[i]) continue;
+			int distance = Mathf.Max(bounds[i], zone.bounds[i]) - Mathf.Min(bounds[i], zone.bounds[i]);
+			if(distance > farthestDistance)
+			{
+				farthestDistance = distance;
+				farthestSide = i;
+			}
+		}
+		return farthestSide;
+	}
+
+	Int2 RandomPointOnSide(int side, int[] bounds)
+	{
+		if(side < 2)
+			return new Int2(bounds[side], RandomRange(bounds[2], bounds[3]));
+		else
+			return new Int2(RandomRange(bounds[0], bounds[1]), bounds[side]);
+	}
+
+	int[] GenerateRoom(Zone.Side originSide, Int2 originPoint, int index, out bool[] eligibleSides)
+	{
 		int side = (int)originSide;
 
 		bool horizontalFacing = side < 2;
@@ -110,34 +158,16 @@ public class LSystem
 		//	Check if objects are blocking the chosen width outward from the origin side
 		outward = CheckOutward(bounds, index);
 
-
-		
 		//	Assign bounds origin and outward limit
 		bounds[indexO] = outward == 0 ? RandomRange(outwardAxis, zone.bounds[indexO]) : outward;
 		bounds[side] = outwardAxis;
 
-		//	Find side with the most space ahead of it
-		int farthestSide = 0;
-		int farthestDistance = 0;
+		eligibleSides = new bool[4];
 		for(int i = 0; i < 4; i++)
 		{
 			if(i == (int)originSide || SideBlocked(bounds[i], i)) continue;
-			int distance = Mathf.Max(bounds[i], zone.bounds[i]) - Mathf.Min(bounds[i], zone.bounds[i]);
-			if(distance > farthestDistance)
-			{
-				farthestDistance = distance;
-				farthestSide = i;
-			}
+			else eligibleSides[i] = true;
 		}
-
-		//	Assign next rooms
-
-		if(farthestSide < 2)
-			originPoints.Add(new Int2(bounds[farthestSide], RandomRange(bounds[2], bounds[3])));
-		else
-			originPoints.Add(new Int2(RandomRange(bounds[0], bounds[1]), bounds[farthestSide]));
-
-		originSides.Add(Zone.Opposite((Zone.Side)farthestSide));
 
 		return bounds;
 	}
