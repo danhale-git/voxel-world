@@ -24,9 +24,10 @@ public class LSystem
 		noiseGen.SetInterp(FastNoise.Interp.Linear);
 		noiseGen.SetFrequency(0.9f);
 		//noiseGen.SetSeed(7425356); works
-		//noiseGen.SetSeed(85646465); works
-		noiseGen.SetSeed(Random.Range(0,10000));
-
+		//noiseGen.SetSeed(85646465);
+		int seed = Random.Range(0,10000);
+		Debug.Log("SEED: "+ seed);
+		noiseGen.SetSeed(seed);
 		DrawBlockMatrix();
 	}
 
@@ -79,34 +80,34 @@ public class LSystem
 		if((int)originSide < 2)
 		{
 			Debug.Log("vertical overlap");
-			VerticalOverlap(originPoint, out topMax, out bottomMax, index);
+			CheckAdjacency(originPoint, out topMax, out bottomMax, index);
 
 			if(originSide == Zone.Side.LEFT)
 			{
 				leftMax = originPoint.x;
-				rightMax = HorizontalBlocker(originSide, originPoint, bounds, index);
+				rightMax = CheckOutward(originSide, originPoint, bounds, index);
 			}
 			else
 			{
 				rightMax = originPoint.x;
-				leftMax = HorizontalBlocker(originSide, originPoint, bounds, index);
+				leftMax = CheckOutward(originSide, originPoint, bounds, index);
 			}
 
 		}
 		else
 		{
 			Debug.Log("horizontal overlap");
-			HorizontalOverlap(originPoint, out rightMax, out leftMax, index);
+			CheckAdjacency(originPoint, out rightMax, out leftMax, index);
 
 			if(originSide == Zone.Side.BOTTOM)
 			{
 				bottomMax = originPoint.z;
-				topMax = VerticalBlocker(originSide, originPoint, bounds, index);
+				topMax = CheckOutward(originSide, originPoint, bounds, index);
 			}
 			else
 			{
 				topMax = originPoint.z;
-				bottomMax = VerticalBlocker(originSide, originPoint, bounds, index);
+				bottomMax = CheckOutward(originSide, originPoint, bounds, index);
 			}
 		}
 
@@ -154,111 +155,80 @@ public class LSystem
 		return bounds;
 	}
 
-	void VerticalOverlap(Int2 originPoint, out int topClosest, out int bottomClosest, int index)
+	void CheckAdjacency(Int2 originPoint, out int topClosest, out int bottomClosest, int index)
 	{
 		topClosest = 0;
 		bottomClosest = 0;
 
-		for(int b = 0; b < index; b++)
-		{		
-			if(allBounds[b][1] <= originPoint.x && allBounds[b][0] >= originPoint.x)		//	Point between left + right bounds
-			{
-				if(allBounds[b][3] > originPoint.z)										//	Point below bottom bounds
-				{
-					if(topClosest == 0 || allBounds[b][3] < topClosest)				//	topClosest unassigned or new value is closer
-						topClosest = allBounds[b][3];
-				}
-				else if(allBounds[b][2] < originPoint.z)								//	Point above top bounds
-				{
-					if(bottomClosest == 0 || allBounds[b][2] > bottomClosest)		//	bottomClosest unassigned or new value is closer
-						bottomClosest = allBounds[b][2];
-				}
-			}
-		}
-	}
+		bool verticalAdjacency = (int)originSides[index] < 2;
 
-	void HorizontalOverlap(Int2 originPoint, out int rightClosest, out int leftClosest, int index)
-	{
-		rightClosest = 0;
-		leftClosest = 0;
+		//	Values to check if adjacent
+		int c1 = verticalAdjacency ? 0 : 2;
+		int c2 = verticalAdjacency ? 1 : 3;
+
+		//	Values for assignment checks
+		int a1 = verticalAdjacency ? 2 : 0;
+		int a2 = verticalAdjacency ? 3 : 1;
+
+		//	Origin point to check if adjacent
+		int originPointC = verticalAdjacency ? originPoints[index].x : originPoints[index].z;
+		//	Origin point for assignment
+		int originPointA = verticalAdjacency ? originPoints[index].z : originPoints[index].x;
 
 		for(int b = 0; b < index; b++)
 		{
-			if(allBounds[b][3] <= originPoint.z && allBounds[b][2] >= originPoint.z)		//	Point between top + bottom bounds
+			//	Check if other bounds is adjacent to point
+			if(allBounds[b][c2] <= originPointC && allBounds[b][c1] >= originPointC)		
 			{
-				if(allBounds[b][1] > originPoint.x)										//	Point to the left of left bounds
+				//	Check which side of point other bounds is on and assign max bounds
+				if(allBounds[b][a2] > originPointA)
 				{
-					if(rightClosest == 0 || allBounds[b][1] < rightClosest)			//	rightClosest unassigned or new value is closer
-						rightClosest = allBounds[b][1];
+					if(topClosest == 0 || allBounds[b][a2] < topClosest)
+						topClosest = allBounds[b][a2];
 				}
-				else if(allBounds[b][0] < originPoint.x)								//	Point to the right of right bounds
+				else if(allBounds[b][a1] < originPointA)
 				{
-					if(leftClosest == 0 || allBounds[b][0] > leftClosest)			//	leftClosest unassigned or new value is closer
-						leftClosest = allBounds[b][0];
+					if(bottomClosest == 0 || allBounds[b][a1] > bottomClosest)
+						bottomClosest = allBounds[b][a1];
 				}
 			}
 		}
 	}
 
-	int VerticalBlocker(Zone.Side originSide, Int2 originPoint, int[] bounds, int index)
+	int CheckOutward(Zone.Side originSide, Int2 originPoint, int[] bounds, int index)
 	{
 		int closest = 0;
+
+		bool horizontalBlocker = (int)originSides[index] < 2;
+
+		int c1 = horizontalBlocker ? 2 : 0;
+		int c2 = horizontalBlocker ? 3 : 1;
 		
 		for(int b = 0; b < index; b++)
 		{
-			if(BoundsBlockingBounds(allBounds[b][1], allBounds[b][0], bounds[1], bounds[0]))	//	Check other left and right against current left and right bounds
+			if(BoundsBlockingBounds(allBounds[b][c2], allBounds[b][c1], bounds[c2], bounds[c1]))	//	Check other left and right against current left and right bounds
 			{
 				switch(originSide)
 				{
+					case Zone.Side.RIGHT:
+						if(closest == 0 || allBounds[b][0] < closest)						//	closest unassigned or new value is closer
+							closest = allBounds[b][0];
+						break;
+
+					case Zone.Side.LEFT:
+						if(closest == 0 || allBounds[b][1] < closest)						//	closest unassigned or new value is closer
+							closest = allBounds[b][1];
+						break;
+
 					case Zone.Side.TOP:
 						if(closest == 0 || allBounds[b][2] < closest)						//	closest unassigned or new value is closer
 							closest = allBounds[b][2];
 						break;
+
 					case Zone.Side.BOTTOM:
 						if(closest == 0 || allBounds[b][3] < closest)						//	closest unassigned or new value is closer
 							closest = allBounds[b][3];
 						break;
-					case Zone.Side.RIGHT:
-					case Zone.Side.LEFT:
-
-						Debug.Log("USE OTHER FUNCTION, WRONG ORIGIN SIDE");
-						break;
-
-				}
-			}
-		}
-
-		return closest;
-	}
-
-	int HorizontalBlocker(Zone.Side originSide, Int2 originPoint, int[] bounds, int index)
-	{
-		int closest = 0;
-		
-		for(int b = 0; b < index; b++)
-		{
-			//Debug.Log(BlockingBounds(allBounds[b][3], allBounds[b][2], bounds[3], bounds[2]));
-			if(BoundsBlockingBounds(allBounds[b][3], allBounds[b][2], bounds[3], bounds[2]))	//	Check other bottom and top against current bottom and top bounds
-			{
-				switch(originSide)
-				{
-					case Zone.Side.RIGHT:
-						Debug.Log("left side");
-						//if(allBounds[b][0] >= originPoint.x) continue;
-						if(closest == 0 || allBounds[b][0] < closest)						//	closest unassigned or new value is closer
-							closest = allBounds[b][0];
-						break;
-					case Zone.Side.LEFT:
-						Debug.Log("right side");
-						//if(allBounds[b][1] <= originPoint.x) continue;
-						if(closest == 0 || allBounds[b][1] < closest)						//	closest unassigned or new value is closer
-							closest = allBounds[b][1];
-						break;
-					case Zone.Side.TOP:
-					case Zone.Side.BOTTOM:
-						Debug.Log("USE OTHER FUNCTION, WRONG ORIGIN SIDE");
-						break;
-
 				}
 			}
 		}
@@ -276,7 +246,7 @@ public class LSystem
 		return false;
 	}
 
-	//	Check if point is in bounds
+	//	Check if side is up against another side
 	bool SideBlocked(int bound, int side)
 	{
 		int otherSide = (int)Zone.Opposite(side);
