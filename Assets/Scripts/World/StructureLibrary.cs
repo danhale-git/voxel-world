@@ -33,6 +33,8 @@ public class StructureLibrary
 		public void Generate(LSystem lSystem)
 		{
 			lSystem.FirstRoom(positionOnStartSide: 0.5f, minWidth:40, maxWidth:60, minLength:50, maxLength:90);
+			lSystem.GenerateRooms(0, 1, parentSide:Zone.Side.RIGHT, bestSide:false, randomSide:false, minWidth:10, maxWidth:40, minLength:10, maxLength:40);
+
 
 
 

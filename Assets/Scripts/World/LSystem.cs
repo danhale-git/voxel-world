@@ -167,15 +167,9 @@ public class LSystem
 
 # endregion
 
-
 	public void DrawBlockMatrix()
 	{
-		
-
-
 		zone.blockMatrix = new int[width,height];
-
-		//GenerateRandomBuilding(startPoint, zone.back, 10, 5);
 
 		foreach(int[] room in allBounds)
 		{
@@ -189,40 +183,6 @@ public class LSystem
 
 		SetColumnMaps();
 	}
-
-	/*public void GenerateRandomBuilding(Int2 startPoint, Zone.Side startSide, int iterations, int minSize)
-	{
-		
-
-		for(int i = 0; i < iterations; i++)
-		{
-			if(i == originSides.Count)
-			{
-				Debug.Log("Room generation out of sync");
-				break;
-			}
-
-
-			int[] newBounds = CreateRoom(i);
-
-			int boundsWidth = newBounds[0] - newBounds[1];
-			int boundsHeight = newBounds[2] - newBounds[3];
-
-			bool[] eligibleSides = EligibleSides(back, newBounds);
-
-			if(boundsWidth < minSize || boundsHeight < minSize)
-			{
-				break;
-			}
-			else
-			{
-				allBounds.Add(newBounds);
-				int chosenSide = MostOpenSide(newBounds, eligibleSides);
-				//originPoints.Add(RandomPointOnSide(chosenSide, newBounds));
-				originSides.Add(Zone.Opposite((Zone.Side)chosenSide));
-			}
-		}
-	}*/
 
 	public void FirstRoom(bool startAtFront = false, float positionOnStartSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
 	{
@@ -239,11 +199,17 @@ public class LSystem
 		CreateRoom(0, 0, minWidth, maxWidth, minLength, maxLength);
 	}
 
-	public void GenerateRooms(int parentLayerIndex, int layerIndex, bool symmetrical = false, Zone.Side parentSide = 0, bool bestSide = true, bool randomSide = false, int minWidth = 2, int maxWidth = 0, int minLength = 0, int maxLength = 0)
+	public void GenerateRooms(int parentLayerIndex, int layerIndex, Zone.Side parentSide = 0, bool bestSide = true, bool randomSide = false, int minWidth = 2, int maxWidth = 0, int minLength = 0, int maxLength = 0)
 	{
+		//	Rotate given side to zone rotation
+		Rotate(zone.back);
+		parentSide = (Zone.Side)ZoneToCurrent(parentSide);
+
 		//	Run creation for all squares in layer
 		for(int p = 0; p < layers[parentLayerIndex].Count; p++)
 		{
+			Debug.Log(currentBack);
+			int index = allBounds.Count;
 			//	Get bounds and check which sides are unoccupied
 			int[] parent = allBounds[layers[parentLayerIndex][p]];
 			bool[] eligibleSides = EligibleSides((int)originSides[p], parent);
@@ -257,30 +223,25 @@ public class LSystem
 				Int2 pOrigin = originPoints[p];
 				parentSide = (Zone.Side)RandomRange(0, 3, noiseGen.GetNoise01(pOrigin.x+p, pOrigin.z+p));
 			}
-			else
-			{
-				//	Adjust given side to square rotation
-				parentSide = (Zone.Side)ZoneToCurrent(parentSide);
-			}
 
 			//	Chosen side is occupied, creating a square might cause overlaps
-			if(!eligibleSides[(int)parentSide]) return;
+			if(!eligibleSides[(int)parentSide])
+			{
+				Debug.Log("side ineligible "+parentSide);
+				return;
+			}
 
 			originPoints.Add(RandomPointOnSide((int)parentSide, parent, noise));
 			originSides.Add(Zone.Opposite(parentSide));
 			
-			CreateRoom(allBounds.Count, layerIndex, minWidth, maxWidth, minLength, maxLength);
+			CreateRoom(index, layerIndex, minWidth, maxWidth, minLength, maxLength);
 		}
-
-		//	add things to lists
-		//	increment number of rooms
 	}
 
 	public void CreateRoom(int index, int layer, int minWidth = 2, int maxWidth = 0, int minLength = 0, int maxLength = 0)
 	{
 		Vector3 global = MatrixToGlobal(originPoints[index]);
 		noise = noiseGen.GetNoise01(global.x, global.z);
-		Debug.Log("noise: "+noise);
 		//	Rotate script values to face the same way as this square
 		Rotate(originSides[index]);
 
@@ -328,8 +289,6 @@ public class LSystem
 		else
 			bounds[front] = RandomRange(minFront, maxFront, noise);
 
-		Debug.Log(axisFront+" "+maxFront);
-
 		//	Back is always the origin
 		bounds[back] = ForwardAxis(originPoints[index]);
 
@@ -345,36 +304,54 @@ public class LSystem
 		int squareWidth = Distance(bounds[left], bounds[right]);
 		int squareLength = Distance(bounds[front], bounds[back]);
 
-		Debug.Log("w/l: "+squareWidth+" "+squareLength);
+		AddNewBounds(bounds, layer, index);
+	}
 
+	/*int[] MirrorRoom(int[] originalBounds, Zone.Side originSide, Int2 originPoint, int[] parentBounds, int index, int layer)
+	{
+		//	Copy original bounds
+		int[] bounds = originalBounds.Clone() as int[];
+
+		//	Reverse origin side
+		Zone.Side side = Zone.Opposite(originSide);
+
+		//	Get opposide starting point on parent bounds
+		originPoint = OppositePoint(originPoint, (int)side, parentBounds);
+
+		originSides.Add(side);
+		originPoints.Add(originPoint);
+
+		//	Rotate script values to origin side
+		Rotate(side);
+
+		//	Get original length
+		int originalLength = Distance(originalBounds[back], originalBounds[front]);
+
+		int frontAxis = ForwardAxis(originPoint);
+
+		bounds[front] = AddTo(originalLength, frontAxis, front);
+
+		int closestInFront;
+
+		if(CheckForward(originPoint, bounds, index, out closestInFront))
+			bounds[front] = Mathf.Clamp(bounds[front], Mathf.Min(frontAxis, closestInFront), Mathf.Max(frontAxis, closestInFront));
+
+		bounds[back] = ForwardAxis(originPoint);
+
+		AddNewBounds(bounds, layer, index);
+
+		return bounds;
+	} */
+
+	//	Add bounds to list and set layer
+	void AddNewBounds(int[] bounds, int layer, int index)
+	{
 		//	Add bounds index to layer dict
 		if(!layers.ContainsKey(layer)) layers[layer] = new List<int>();
 		layers[layer].Add(index);
 
 		//	Add bounds to list
-		allBounds.Add(bounds);		
-	}
-
-	int[] MirrorRoom(int[] originalBounds, Zone.Side originSide, Int2 originPoint, int[] parentBounds, int index)
-	{
-		int[] bounds = originalBounds.Clone() as int[];
-
-		Zone.Side side = Zone.Opposite(originSide);
-
-		originPoint = OppositePoint(originPoint, (int)side, parentBounds);
-
-		Rotate(side);
-
-		int closestInFront;
-
-		if(CheckForward(originPoint, bounds, index, out closestInFront))
-			bounds[front] = closestInFront;
-		else
-			bounds[front] = RandomRange(ForwardAxis(originPoint), zone.bounds[front]);
-
-		bounds[back] = ForwardAxis(originPoint);
-
-		return bounds;
+		allBounds.Add(bounds);
 	}
 
 	//	Get bounds of squares to the right and left of originPoint
@@ -474,7 +451,7 @@ public class LSystem
 	//	Get opposite point from point on side in bounds
 	Int2 OppositePoint(Int2 point, int side, int[] bounds)
 	{
-		if(side == 0 || side == 2)
+		if(side > 1)
 			return new Int2(point.x, bounds[Zone.Opposite(side)]);
 		else
 			return new Int2(bounds[Zone.Opposite(side)], point.z);
