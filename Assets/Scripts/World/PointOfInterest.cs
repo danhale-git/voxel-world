@@ -55,7 +55,9 @@ public class PointOfInterest
 		UpdateOccupied(zones[0].matrix);
 		ProcessZone(zones[0]);
 
-		LSystem lSystem = new LSystem(this, zones[0], noise);
+		LSystem lSystem = new LSystem(this, zones[0]);
+
+		TerrainGenerator.worldBiomes.structures.Generate(lSystem);
 
 		DebugMatrix(zones[0].matrix, Color.yellow, 2f);
 		DebugMatrix(exposedEdgeMatrix, Color.green, 2.5f);

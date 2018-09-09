@@ -30,6 +30,15 @@ public class StructureLibrary
 			return noise.GetNoise01(nx, nz);
 		}
 
+		public void Generate(LSystem lSystem)
+		{
+			lSystem.FirstRoom(positionOnStartSide: 0.5f, minWidth:40, maxWidth:60, minLength:50, maxLength:90);
+
+
+
+			lSystem.DrawBlockMatrix();
+		}
+
 
 	}
 
