@@ -319,7 +319,7 @@ public class TerrainLibrary
 		}
 		public override float BaseNoise(int x, int z)
 		{
-			return 1;
+			return baseNoiseGen.GetNoise01(x, z);
 		}
 		
 	}

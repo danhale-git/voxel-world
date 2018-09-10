@@ -159,23 +159,6 @@ public class LSystem
 
 # endregion
 
-	public void DrawBlockMatrix()
-	{
-		zone.blockMatrix = new int[width,height];
-
-		foreach(int[] room in allBounds)
-		{
-			DrawRoom(room);
-		}
-
-		for(int i = 0; i < allBounds.Count; i++)
-		{
-			DebugRooms(i);
-		}	
-
-		SetColumnMaps();
-	}
-
 	public int SquareInBounds(int[] perimeterBounds, Zone.Side perimeterSide, float positionOnSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
 	{
 		Int2 originPoint;
@@ -486,6 +469,25 @@ public class LSystem
 							(int)POI.position.z + (zone.z*World.chunkSize) + local.z);
 	}
 
+	public void DrawBlockMatrix()
+	{
+		zone.blockMatrix = new int[width,height];
+		zone.heightGradientMatrix = new int[width,height];
+
+		foreach(int[] room in allBounds)
+		{
+			DrawRoom(room);
+			DrawHeightGradient(room);
+		}
+
+		for(int i = 0; i < allBounds.Count; i++)
+		{
+			DebugRooms(i);
+		}	
+
+		SetColumnMaps();
+	}
+
 	void DrawRoom(int[] bounds)
 	{
 		for(int x = bounds[1]; x <= bounds[0]; x++)
@@ -501,6 +503,41 @@ public class LSystem
 		}
 	}
 
+	void DrawHeightGradient(int[] bounds)
+	{
+		int spread = 10;
+		for(int i = spread; i > 0; i--)
+		{
+			int xLow = bounds[1]-i;
+			int xHigh = bounds[0]+i;
+
+			int zLow = bounds[3]-i;
+			int zHigh = bounds[2]+i;
+
+			int gradientValue = (spread - i) + 1;
+
+			for(int x = xLow; x <= xHigh; x++)
+			{
+				if(x < 0 || x >= width) continue;
+				if(zLow >= 0 && zone.heightGradientMatrix[x, zLow] <= gradientValue) zone.heightGradientMatrix[x, zLow] = gradientValue;
+				if(zHigh < height && zone.heightGradientMatrix[x, zHigh] <= gradientValue) zone.heightGradientMatrix[x, zHigh] = gradientValue;
+			}
+
+			for(int z = zLow; z <= zHigh; z++)
+			{
+				if(z < 0 || z >= height) continue;
+				if(xLow >= 0 && zone.heightGradientMatrix[xLow, z] <= gradientValue) zone.heightGradientMatrix[xLow, z] = gradientValue;
+				if(xHigh < width && zone.heightGradientMatrix[xHigh, z] <= gradientValue) zone.heightGradientMatrix[xHigh, z] = gradientValue;
+			}
+
+			for(int xm = bounds[1]; xm <= bounds[0]; xm++)
+				for(int zm = bounds[3]; zm <= bounds[2]; zm++)
+				{
+					zone.heightGradientMatrix[xm,zm] = 10;
+				}
+		}
+	}
+
 	void SetColumnMaps()
 	{
 		int chunkSize = World.chunkSize;
@@ -510,6 +547,7 @@ public class LSystem
 			{
 				Column column = POI.columnMatrix[x+zone.x,z+zone.z];
 				column.POIMap = new int[chunkSize,chunkSize];
+				column.POIHeightGradient = new int[chunkSize,chunkSize];
 
 				for(int cx = 0; cx < chunkSize; cx++)
 					for(int cz = 0; cz < chunkSize; cz++)
@@ -518,6 +556,7 @@ public class LSystem
 						int mz = cz + (z*chunkSize);
 	
 						column.POIMap[cx,cz] = zone.blockMatrix[mx,mz];
+						column.POIHeightGradient[cx,cz] = zone.heightGradientMatrix[mx,mz];
 					}
 			}
 	}

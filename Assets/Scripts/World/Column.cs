@@ -19,6 +19,7 @@ public class Column
 	public bool biomeBoundary = false;
 
 	public int[,] POIMap;
+	public int[,] POIHeightGradient;
 	public bool IsPOI = false;
 
 	public int highestPoint = 0;

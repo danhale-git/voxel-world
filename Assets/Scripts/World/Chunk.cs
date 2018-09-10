@@ -295,9 +295,14 @@ public class Chunk
 
 					Color color = (Color)Blocks.colors[(int)blockTypes[x,y,z]];
 
-					if(column.POIMap != null && column.POIMap[x,z] == 1) color = Color.black;
+					/*if(column.POIMap != null && column.POIMap[x,z] == 1) color = Color.black;
 					else if(column.POIMap != null && column.POIMap[x,z] == 2) color = Color.red;
 					else if(column.POIMap != null && column.POIMap[x,z] == 3) color = Color.green;
+					else*/ if(column.POIHeightGradient != null)
+					{
+						float colVal = ((float)column.POIHeightGradient[x,z])/10;
+						color = new Color(colVal,colVal,colVal);
+					}
 					
 
 					cols.AddRange(	Enumerable.Repeat(	color,

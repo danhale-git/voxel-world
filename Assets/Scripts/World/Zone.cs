@@ -13,6 +13,8 @@ public class Zone
 	//	Matrix of voxel coordinates within the square
 	public int[,] blockMatrix;
 
+	public int[,] heightGradientMatrix;
+
 	public int[] bounds;
 
 	//	Most and least exposed sides of the square
