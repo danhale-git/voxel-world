@@ -12,8 +12,7 @@ public class LSystem
 
 	List<Int2> originPoints = new List<Int2>();
 	List<Zone.Side> originSides = new List<Zone.Side>();
-	List<int[]> allBounds = new List<int[]>();
-	Dictionary<int, List<int>> layers = new Dictionary<int, List<int>>();
+	public List<int[]> allBounds = new List<int[]>();
 
 	int right = 0;
 	int left = 1;
@@ -40,17 +39,10 @@ public class LSystem
 		noiseGen.SetNoiseType(FastNoise.NoiseType.Simplex);
 		noiseGen.SetInterp(FastNoise.Interp.Linear);
 		noiseGen.SetFrequency(0.9f);
-		//noiseGen.SetSeed(7425356); works
-		//noiseGen.SetSeed(85646465);
-		//noiseGen.SetSeed(9434);
-		//noiseGen.SetSeed(1114);
-		//noiseGen.SetSeed(5281);	
-		//noiseGen.SetSeed(6999);	
-		//noiseGen.SetSeed(4727);	
-		//noiseGen.SetSeed(7071);		
-		//noiseGen.SetSeed(1658);	
-		//noiseGen.SetSeed(1435);		
+		//noiseGen.SetSeed(6825);
+		//noiseGen.SetSeed(230);
 		
+
 		int seed = Random.Range(0,10000);
 		Debug.Log("SEED: "+ seed);
 		noiseGen.SetSeed(seed);
@@ -89,26 +81,26 @@ public class LSystem
 	bool ToLeft(int compare, int to)
 	{
 		if(currentBack == Zone.Side.BOTTOM || currentBack == Zone.Side.RIGHT)
-			return (compare < to);
-		else return (compare > to);
+			return (compare <= to);
+		else return (compare >= to);
 	}
 	bool ToRight(int compare, int to)
 	{
 		if(currentBack == Zone.Side.BOTTOM || currentBack == Zone.Side.RIGHT)
-			return (compare > to);
-		else return (compare < to);
+			return (compare >= to);
+		else return (compare <= to);
 	}
 	bool InFront(int compare, int to)
 	{
 		if(currentBack == Zone.Side.BOTTOM || currentBack == Zone.Side.LEFT)
-			return (compare > to);
-		else return (compare < to);
+			return (compare >= to);
+		else return (compare <= to);
 	}
 	bool Behind(int compare, int to)
 	{
 		if(currentBack == Zone.Side.BOTTOM || currentBack == Zone.Side.LEFT)
-			return (compare < to);
-		else return (compare > to);
+			return (compare <= to);
+		else return (compare >= to);
 	}
 
 	int ZoneToCurrent(Zone.Side side)
@@ -184,80 +176,62 @@ public class LSystem
 		SetColumnMaps();
 	}
 
-	public void FirstRoom(bool startAtFront = false, float positionOnStartSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
+	public int SquareInBounds(int[] perimeterBounds, Zone.Side perimeterSide, float positionOnSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
 	{
-		Zone.Side startSide = startAtFront ? zone.front : zone.back;
-
-		//	Position specified from 0 - 1 on start side or random position
-		if(positionOnStartSide != 0)
-			originPoints.Add(PositionOnSide((int)startSide, zone.bounds, positionOnStartSide));
+		Int2 originPoint;
+		if(positionOnSide != 0)
+			originPoint = PositionOnSide((int)perimeterSide, perimeterBounds, positionOnSide);
 		else
-			originPoints.Add(RandomPointOnSide((int)startSide, zone.bounds, noise));
+			originPoint = RandomPointOnSide((int)perimeterSide, perimeterBounds, noise);
 
-		originSides.Add(startSide);
+		int[] newBounds = GenerateSquare(0, originPoint, perimeterSide, perimeterBounds, false, minWidth, maxWidth, minLength, maxLength);
+		return AddNewSquare(newBounds, originPoint, perimeterSide);
+	}
+	public int ConnectedSquare(int[] perimeterBounds, int parentIndex, Zone.Side parentSide = 0, bool bestSide = false, float positionOnSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
+	{
+		int index = allBounds.Count;
+		int[] newBounds;
+		Int2 originPoint;
+		Zone.Side originSide;
 
-		CreateRoom(0, 0, minWidth, maxWidth, minLength, maxLength);
+		int[] parentBounds = allBounds[parentIndex];
+
+		if(bestSide)
+			parentSide = MostOpenSide(parentBounds, EligibleSides((int)originSides[parentIndex], parentBounds));
+
+		if(positionOnSide != 0)
+			originPoint = PositionOnSide((int)parentSide, parentBounds, positionOnSide);
+		else
+			originPoint = RandomPointOnSide((int)parentSide, parentBounds, noise);
+
+		originSide = Zone.Opposite(parentSide);
+
+		newBounds = GenerateSquare(index, originPoint, originSide, perimeterBounds, false, minWidth, maxWidth, minLength, maxLength);
+		return AddNewSquare(newBounds, originPoint, originSide);
 	}
 
-	public void GenerateRooms(int parentLayerIndex, int layerIndex, Zone.Side parentSide = 0, bool bestSide = true, bool randomSide = false, int minWidth = 2, int maxWidth = 0, int minLength = 0, int maxLength = 0)
+	int[] GenerateSquare(int index, Int2 originPoint, Zone.Side originSide, int[] perimeterBounds, bool adjacentOverride, int minWidth, int maxWidth, int minLength, int maxLength)
 	{
-		//	Rotate given side to zone rotation
-		Rotate(zone.back);
-		parentSide = (Zone.Side)ZoneToCurrent(parentSide);
-
-		//	Run creation for all squares in layer
-		for(int p = 0; p < layers[parentLayerIndex].Count; p++)
-		{
-			Debug.Log(currentBack);
-			int index = allBounds.Count;
-			//	Get bounds and check which sides are unoccupied
-			int[] parent = allBounds[layers[parentLayerIndex][p]];
-			bool[] eligibleSides = EligibleSides((int)originSides[p], parent);
-
-			if(bestSide)
-			{
-				parentSide = (Zone.Side)MostOpenSide(parent, eligibleSides);
-			}
-			else if(randomSide)
-			{
-				Int2 pOrigin = originPoints[p];
-				parentSide = (Zone.Side)RandomRange(0, 3, noiseGen.GetNoise01(pOrigin.x+p, pOrigin.z+p));
-			}
-
-			//	Chosen side is occupied, creating a square might cause overlaps
-			if(!eligibleSides[(int)parentSide])
-			{
-				Debug.Log("side ineligible "+parentSide);
-				return;
-			}
-
-			originPoints.Add(RandomPointOnSide((int)parentSide, parent, noise));
-			originSides.Add(Zone.Opposite(parentSide));
-			
-			CreateRoom(index, layerIndex, minWidth, maxWidth, minLength, maxLength);
-		}
-	}
-
-	public void CreateRoom(int index, int layer, int minWidth = 2, int maxWidth = 0, int minLength = 0, int maxLength = 0)
-	{
-		Vector3 global = MatrixToGlobal(originPoints[index]);
+		Vector3 global = MatrixToGlobal(originPoint);
 		noise = noiseGen.GetNoise01(global.x, global.z);
 		//	Rotate script values to face the same way as this square
-		Rotate(originSides[index]);
+		Rotate(originSide);
+
+		Debug.Log(originSide + " "+originPoint.x+" "+originPoint.z);
 
 		int rightAdjacent;
 		int leftAdjacent;
 		int[] bounds = new int[4];
 
 		//	Get position of closest adjacent squares
-		bool adjacent = CheckAdjacent(originPoints[index], index, out rightAdjacent, out leftAdjacent);
+		bool adjacent = CheckAdjacent(originPoint, index, out rightAdjacent, out leftAdjacent);
 
 		//	Get perpendicular axis
-		int axisSides = SideAxis(originPoints[index]);
+		int axisSides = SideAxis(originPoint);
 
 		//	Assign zone bounds as max width if not set
-		int maxRight = maxWidth == 0 ? zone.bounds[right] : AddTo(maxWidth / 2, axisSides, right);
-		int maxLeft = maxWidth == 0 ? zone.bounds[left] : AddTo(maxWidth / 2, axisSides, left);
+		int maxRight = maxWidth == 0 ? perimeterBounds[right] : AddTo(maxWidth / 2, axisSides, right);
+		int maxLeft = maxWidth == 0 ? perimeterBounds[left] : AddTo(maxWidth / 2, axisSides, left);
 
 		//	Assign center point as min width if not set
 		int minRight = minWidth == 0 ? axisSides : AddTo(minWidth  / 2, axisSides, right);
@@ -268,7 +242,7 @@ public class LSystem
 		bounds[left] = leftAdjacent == 0 ? RandomRange(minLeft, maxLeft, noise) : leftAdjacent;
 
 		//	Clamp bounds if adjacent squares exist
-		if(adjacent)
+		if(adjacent && !adjacentOverride)
 		{
 			bounds[right] = Mathf.Clamp(bounds[right], Mathf.Min(minRight, maxRight), Mathf.Max(minRight, maxRight));
 			bounds[left] = Mathf.Clamp(bounds[left], Mathf.Min(minLeft, maxLeft), Mathf.Max(minLeft, maxLeft));
@@ -277,81 +251,51 @@ public class LSystem
 		int closestInFront;
 
 		//	Get forward axis
-		int axisFront = ForwardAxis(originPoints[index]);
+		int axisFront = ForwardAxis(originPoint);
 
 		//	Assign zone bounds as max legth if not set
-		int maxFront = maxLength == 0 ? zone.bounds[front] : AddTo(maxLength, axisFront, front);
+		int maxFront = maxLength == 0 ? perimeterBounds[front] : AddTo(maxLength, axisFront, front);
 		int minFront = minLength == 0 ? axisFront : AddTo(minLength, axisFront, front);
 
 		//	Randomly generate forward measurement if no square in front
-		if(CheckForward(originPoints[index], bounds, index, out closestInFront))
+		if(CheckForward(originPoint, bounds, index, out closestInFront))
+		{	
+			if(Behind(closestInFront, maxFront)) maxFront = closestInFront;
 			bounds[front] = Mathf.Clamp(closestInFront, Mathf.Min(minFront, maxFront), Mathf.Max(minFront, maxFront));
+		}
 		else
 			bounds[front] = RandomRange(minFront, maxFront, noise);
 
 		//	Back is always the origin
-		bounds[back] = ForwardAxis(originPoints[index]);
+		bounds[back] = ForwardAxis(originPoint);
 
 		//	Clamp all bounds to within zone
 		for(int s = 0; s < 4; s++)
 		{
 			if(s < 2)
-				bounds[s] = Mathf.Clamp(bounds[s], 0, width-1);
+				bounds[s] = Mathf.Clamp(bounds[s], perimeterBounds[1], perimeterBounds[0]);
 			else
-				bounds[s] = Mathf.Clamp(bounds[s], 0, height-1);
+				bounds[s] = Mathf.Clamp(bounds[s], perimeterBounds[3], perimeterBounds[2]);
 		}
 
 		int squareWidth = Distance(bounds[left], bounds[right]);
 		int squareLength = Distance(bounds[front], bounds[back]);
 
-		AddNewBounds(bounds, layer, index);
-	}
-
-	/*int[] MirrorRoom(int[] originalBounds, Zone.Side originSide, Int2 originPoint, int[] parentBounds, int index, int layer)
-	{
-		//	Copy original bounds
-		int[] bounds = originalBounds.Clone() as int[];
-
-		//	Reverse origin side
-		Zone.Side side = Zone.Opposite(originSide);
-
-		//	Get opposide starting point on parent bounds
-		originPoint = OppositePoint(originPoint, (int)side, parentBounds);
-
-		originSides.Add(side);
-		originPoints.Add(originPoint);
-
-		//	Rotate script values to origin side
-		Rotate(side);
-
-		//	Get original length
-		int originalLength = Distance(originalBounds[back], originalBounds[front]);
-
-		int frontAxis = ForwardAxis(originPoint);
-
-		bounds[front] = AddTo(originalLength, frontAxis, front);
-
-		int closestInFront;
-
-		if(CheckForward(originPoint, bounds, index, out closestInFront))
-			bounds[front] = Mathf.Clamp(bounds[front], Mathf.Min(frontAxis, closestInFront), Mathf.Max(frontAxis, closestInFront));
-
-		bounds[back] = ForwardAxis(originPoint);
-
-		AddNewBounds(bounds, layer, index);
+		Debug.Log(squareWidth+" x "+squareLength);
 
 		return bounds;
-	} */
+	}
 
-	//	Add bounds to list and set layer
-	void AddNewBounds(int[] bounds, int layer, int index)
+
+	//	Add bounds to list
+	int AddNewSquare(int[] bounds, Int2 originPoint, Zone.Side originSide)
 	{
-		//	Add bounds index to layer dict
-		if(!layers.ContainsKey(layer)) layers[layer] = new List<int>();
-		layers[layer].Add(index);
-
+		int index = allBounds.Count;
 		//	Add bounds to list
 		allBounds.Add(bounds);
+		originPoints.Add(originPoint);
+		originSides.Add(originSide);
+		return index;
 	}
 
 	//	Get bounds of squares to the right and left of originPoint
@@ -384,8 +328,8 @@ public class LSystem
 			}
 		}
 
-		if(leftBound != 0 || rightBound != 0) return false;
-		else return true;
+		if(leftBound != 0 || rightBound != 0) return true;
+		else return false;
 	}
 
 	//	Get closest square in front of bounds with width
@@ -401,7 +345,9 @@ public class LSystem
 			{
 				//	Store if closer than stored
 				if(InFront(allBounds[b][back], ForwardAxis(originPoint)) && (closest == 0 || Behind(allBounds[b][back], closest)))
+				{
 					closest = allBounds[b][back];
+				}
 			}	
 		}
 		if(closest == 0) return false;
@@ -425,13 +371,16 @@ public class LSystem
 
 		foreach(int[] bounds in allBounds)
 		{
-			if(bounds[otherSide] == bound) return true;
+			if(bounds[otherSide] == bound)
+			{	
+				return true;
+			}
 		}
 		return false;
 	}
 
 	//	Find eligible side that is farthest from zone bounds
-	int MostOpenSide(int[] bounds, bool[] eligibleSides)
+	Zone.Side MostOpenSide(int[] bounds, bool[] eligibleSides)
 	{
 		int farthestSide = 0;
 		int farthestDistance = 0;
@@ -445,7 +394,7 @@ public class LSystem
 				farthestSide = i;
 			}
 		}
-		return farthestSide;
+		return (Zone.Side)farthestSide;
 	}
 
 	//	Get opposite point from point on side in bounds
@@ -475,19 +424,54 @@ public class LSystem
 	//	Get pseudo random point on side of bounds using coherent noise
 	Int2 RandomPointOnSide(int side, int[] bounds, float noise)
 	{
+		int sideSize;
+		int boundsOffset;
+		int x;
+		int z;
+
 		if(side < 2)
-			return new Int2(bounds[side], RandomRange(bounds[2], bounds[3]));
+		{
+			sideSize = Distance(bounds[2], bounds[3]);
+			boundsOffset = Mathf.Min(bounds[2], bounds[3]);
+			x = bounds[side];
+			z = RandomRange(bounds[2], bounds[3]);
+			//return new Int2(bounds[side], Mathf.Clamp(Mathf.RoundToInt(height * position), 0, height));
+		}
 		else
-			return new Int2(RandomRange(bounds[0], bounds[1]), bounds[side]);
+		{
+			sideSize = Distance(bounds[0], bounds[1]);
+			boundsOffset = Mathf.Min(bounds[0], bounds[1]);
+			x =RandomRange(bounds[0], bounds[1]);
+			z = bounds[side];
+		}
+		return new Int2(x, z);
+
 	}
 
 	//	Get pseudo random point on side of bounds using coherent noise
 	Int2 PositionOnSide(int side, int[] bounds, float position)
 	{
+		int sideSize;
+		int boundsOffset;
+		int x;
+		int z;
+
 		if(side < 2)
-			return new Int2(bounds[side], Mathf.Clamp(Mathf.RoundToInt(height * position), 0, height));
+		{
+			sideSize = Distance(bounds[2], bounds[3]);
+			boundsOffset = Mathf.Min(bounds[2], bounds[3]);
+			x = bounds[side];
+			z = Mathf.Clamp(Mathf.RoundToInt(sideSize * position), 0, sideSize) + boundsOffset;
+			//return new Int2(bounds[side], Mathf.Clamp(Mathf.RoundToInt(height * position), 0, height));
+		}
 		else
-			return new Int2(Mathf.Clamp(Mathf.RoundToInt(height * position), 0, height), bounds[side]);
+		{
+			sideSize = Distance(bounds[0], bounds[1]);
+			boundsOffset = Mathf.Min(bounds[0], bounds[1]);
+			x = Mathf.Clamp(Mathf.RoundToInt(sideSize * position), 0, sideSize) + boundsOffset;
+			z = bounds[side];
+		}
+		return new Int2(x, z);
 	}
 
 	int Distance(int a, int b)

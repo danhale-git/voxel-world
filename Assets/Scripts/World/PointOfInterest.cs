@@ -57,7 +57,7 @@ public class PointOfInterest
 
 		LSystem lSystem = new LSystem(this, zones[0]);
 
-		TerrainGenerator.worldBiomes.structures.Generate(lSystem);
+		TerrainGenerator.worldBiomes.structures.Generate(lSystem, zones[0]);
 
 		DebugMatrix(zones[0].matrix, Color.yellow, 2f);
 		DebugMatrix(exposedEdgeMatrix, Color.green, 2.5f);

@@ -30,10 +30,19 @@ public class StructureLibrary
 			return noise.GetNoise01(nx, nz);
 		}
 
-		public void Generate(LSystem lSystem)
+		public void Generate(LSystem lSystem, Zone zone)
 		{
-			lSystem.FirstRoom(positionOnStartSide: 0.5f, minWidth:40, maxWidth:60, minLength:50, maxLength:90);
-			lSystem.GenerateRooms(0, 1, parentSide:Zone.Side.RIGHT, bestSide:false, randomSide:false, minWidth:10, maxWidth:40, minLength:10, maxLength:40);
+			lSystem.SquareInBounds(zone.bounds, zone.back, positionOnSide: 0.5f, minWidth:40, maxWidth:50, minLength:50, maxLength:80);
+			int sq1 = lSystem.ConnectedSquare(zone.bounds, 0, bestSide:true, minWidth:10, maxWidth:40, minLength:20, maxLength:80);
+			lSystem.ConnectedSquare(zone.bounds, 0, bestSide:true, minWidth:20, maxWidth:40, minLength:20, maxLength:40);
+
+			lSystem.SquareInBounds(lSystem.allBounds[sq1], Zone.Side.BOTTOM, minWidth:10, maxWidth:20, minLength:10, maxLength:20);
+
+	
+
+
+
+
 
 
 
