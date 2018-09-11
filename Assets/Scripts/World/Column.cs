@@ -30,14 +30,14 @@ public class Column
 	public int bottomChunkGenerate;
 	public int bottomChunkDraw;
 	
-	public Column(Vector3 position, TerrainGenerator terrain, World world)
+	public Column(Vector3 position, World world)
 	{
 		biomeLayers = new TerrainLibrary.BiomeLayer[chunkSize,chunkSize];
 
 		this.position = position;
 		this.world = world;	
 
-		terrain.GetTopologyData(this);
+		world.GetColumnCellularData(this);
 
 		IsPOI = SetPOIEligibility();
 	}

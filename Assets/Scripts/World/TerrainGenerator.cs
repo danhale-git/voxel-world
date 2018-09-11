@@ -108,9 +108,7 @@ public class TerrainGenerator
 	{	
 		int chunkSize = World.chunkSize;
 		column.heightMap = new int[chunkSize,chunkSize];
-		column.edgeMap = new FastNoise.EdgeData[chunkSize,chunkSize];
 
-		float currentCellValue = 0;
 
 		//	Iterate over height map
 		for(int x = 0; x < chunkSize; x++)
@@ -121,15 +119,7 @@ public class TerrainGenerator
 				int gz = (int)(z+column.position.z);
 
 				//	Get cellular noise data
-				FastNoise.EdgeData edgeData = worldBiomes.edgeNoiseGen.GetEdgeData(gx, gz);
-				column.edgeMap[x,z] = edgeData;
-
-				//	Store list of all cellValues present in this column
-				if(edgeData.currentCellValue != currentCellValue)
-				{
-					currentCellValue = edgeData.currentCellValue;
-					if(!column.cellValues.Contains(currentCellValue)) column.cellValues.Add(currentCellValue);
-				}
+				FastNoise.EdgeData edgeData = column.edgeMap[x,z];
 
 				//	Get current biome type
 				TerrainLibrary.Biome currentBiome = worldBiomes.GetBiome(edgeData.currentCellValue);
@@ -160,13 +150,52 @@ public class TerrainGenerator
 					finalTopology = currentTolopogy;
 				}
 
+				if(column.POIHeightGradient != null && column.POIHeightGradient[x,z] != 0)
+				{
+					/*float interpValue = (float)column.POIHeightGradient[x,z] / 10;
+					Topology POITopology = new Topology(0.5f, finalTopology.height / 2, 0.5f);
+					finalTopology = SmoothTopologys(POITopology, finalTopology, interpValue);*/
+
+					finalTopology = new Topology(0.5f, finalTopology.height / 2, 0.5f);
+
+				}
+
 				//	Generate final height value for chunk data
 				column.heightMap[x,z] = (int)Mathf.Lerp(0, finalTopology.height, finalTopology.baseNoise * finalTopology.noise);
 
 				//	Update highest and lowest block in chunk column
 				column.CheckHighest(column.heightMap[x,z]);
 				column.CheckLowest(column.heightMap[x,z]);
-			}					
+			}
+	}
+
+	public void GetCellData(Column column)
+	{
+		int chunkSize = World.chunkSize;
+
+		column.edgeMap = new FastNoise.EdgeData[chunkSize,chunkSize];
+
+		float currentCellValue = 0;
+
+		//	Iterate over height map
+		for(int x = 0; x < chunkSize; x++)
+			for(int z = 0; z < chunkSize; z++)
+			{
+				//	Global voxel column coordinates
+				int gx = (int)(x+column.position.x);
+				int gz = (int)(z+column.position.z);
+
+				//	Get cellular noise data
+				FastNoise.EdgeData edgeData = worldBiomes.edgeNoiseGen.GetEdgeData(gx, gz);
+				column.edgeMap[x,z] = edgeData;
+
+				//	Store list of all cellValues present in this column
+				if(edgeData.currentCellValue != currentCellValue)
+				{
+					currentCellValue = edgeData.currentCellValue;
+					if(!column.cellValues.Contains(currentCellValue)) column.cellValues.Add(currentCellValue);
+				}
+			}
 	}
 
 	

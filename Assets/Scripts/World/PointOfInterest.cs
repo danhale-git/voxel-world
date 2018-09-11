@@ -38,7 +38,7 @@ public class PointOfInterest
 		InitialiseBoundaries(initialColumn.position);
 
 		//	Load all connected POI eligible columns
-		DiscoverCells(initialColumn);
+		List<Column> allCreated = DiscoverCells(initialColumn);
 
 		Debug.Log("POI created with "+allColumns.Count+" columns");
 		Debug.Log("From X: "+left+" to "+right+"\nFrom: Z "+bottom+" to "+top);
@@ -51,6 +51,8 @@ public class PointOfInterest
 
 		entrance = ChooseEntrance();
 
+		
+
 		zones.Add(LargestSquare(occupiedMatrix));
 		UpdateOccupied(zones[0].matrix);
 		ProcessZone(zones[0]);
@@ -58,6 +60,12 @@ public class PointOfInterest
 		LSystem lSystem = new LSystem(this, zones[0]);
 
 		TerrainGenerator.worldBiomes.structures.Generate(lSystem, zones[0]);
+
+
+		foreach(Column column in allCreated)
+		{
+			world.GenerateColumnTopology(column);
+		}
 
 		DebugMatrix(zones[0].matrix, Color.yellow, 2f);
 		DebugMatrix(exposedEdgeMatrix, Color.green, 2.5f);
@@ -67,8 +75,11 @@ public class PointOfInterest
 	#region POI Processing
 
 	//	TODO: Are we sure this is deterministic - currently ChooseEntrance() is not
-	void DiscoverCells(Column initialColumn)
+	List<Column> DiscoverCells(Column initialColumn)
 	{
+		List<Column> allCreatedColumns = new List<Column>();
+		allCreatedColumns.Add(initialColumn);
+
 		allColumns.Add(initialColumn);
 
 		//	Columns currently being checked
@@ -96,7 +107,7 @@ public class PointOfInterest
 				for(int i = 0; i < neighbourPos.Length; i++)
 				{
 					Column newColumn;
-					if(world.GenerateColumnData(neighbourPos[i], out newColumn))
+					if(world.CreateColumn(neighbourPos[i], out newColumn))
 					{
 						//	If adjacent column needed spawning and is eligible for POI
 						if(newColumn.IsPOI)
@@ -106,6 +117,7 @@ public class PointOfInterest
 							//	Track outwardmost columns for matrix size
 							CheckBoundaries(newColumn.position);
 						}
+						allCreatedColumns.Add(newColumn);
 					}
 					else
 					{
@@ -144,6 +156,8 @@ public class PointOfInterest
 		//	Make sure ChooseEntrance() is deterministic
 		//exposedEdge.Sort();
 		//boundaryEdge.Sort();
+
+		return allCreatedColumns;
 	}
 
 	//	Initialise boundary values make sure Checkboundaries works

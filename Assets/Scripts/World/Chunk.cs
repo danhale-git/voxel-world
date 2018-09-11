@@ -301,6 +301,7 @@ public class Chunk
 					else*/ if(column.POIHeightGradient != null)
 					{
 						float colVal = ((float)column.POIHeightGradient[x,z])/10;
+						if(colVal == 0) colVal = 0.05f;
 						color = new Color(colVal,colVal,colVal);
 					}
 					

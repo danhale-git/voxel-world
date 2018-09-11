@@ -36,7 +36,7 @@ public class StructureLibrary
 			int sq1 = lSystem.ConnectedSquare(zone.bounds, 0, bestSide:true, minWidth:10, maxWidth:40, minLength:20, maxLength:80);
 			lSystem.ConnectedSquare(zone.bounds, 0, bestSide:true, minWidth:20, maxWidth:40, minLength:20, maxLength:40);
 
-			lSystem.SquareInBounds(lSystem.allBounds[sq1], Zone.Side.BOTTOM, minWidth:10, maxWidth:20, minLength:10, maxLength:20);
+			//lSystem.SquareInBounds(lSystem.allBounds[sq1], Zone.Side.BOTTOM, minWidth:10, maxWidth:20, minLength:10, maxLength:20);
 
 	
 

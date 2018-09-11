@@ -154,10 +154,12 @@ public class World : MonoBehaviour
 
 				Column newColumn;
 
-				if(GenerateColumnData(position, out newColumn))
+				if(CreateColumn(position, out newColumn))
 				{
 					//	If column is eligible for point of interest, discover all adjacent aligible columns before continuing
 					if(newColumn.IsPOI) POIs.Add(new PointOfInterest(newColumn, this));
+					//	If it's a POI columns will be generated after POI processing
+					else GenerateColumnTopology(newColumn);
 
 					iterationCount++;
 					if(iterationCount >= iterationsPerFrame)
@@ -285,7 +287,7 @@ public class World : MonoBehaviour
 	#region Column Generation
 
 	//	Generate terrain and store highest/lowest points
-	public bool GenerateColumnData(Vector3 position, out Column thisColumn)
+	public bool CreateColumn(Vector3 position, out Column thisColumn)
 	{
 		Column column;
 		if(columns.TryGetValue(position, out column))
@@ -294,7 +296,7 @@ public class World : MonoBehaviour
 			return false;
 		}
 
-		column = new Column(position, terrain, this);
+		column = new Column(position, this);
 
 		if(column.IsPOI)
 		{
@@ -307,6 +309,16 @@ public class World : MonoBehaviour
 		thisColumn = column;
 
 		return true;
+	}
+
+	public void GetColumnCellularData(Column column)
+	{
+		terrain.GetCellData(column);
+	}
+
+	public void GenerateColumnTopology(Column column)
+	{
+		terrain.GetTopologyData(column);
 	}
 
 	//	Determine which chunks in the column should generated and drawn
