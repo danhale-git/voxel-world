@@ -61,7 +61,6 @@ public class PointOfInterest
 
 		TerrainGenerator.worldBiomes.structures.Generate(lSystem, zones[0]);
 
-
 		foreach(Column column in allCreated)
 		{
 			world.GenerateColumnTopology(column);

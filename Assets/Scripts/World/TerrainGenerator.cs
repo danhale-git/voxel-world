@@ -31,6 +31,13 @@ public class TerrainGenerator
 								Mathf.Lerp(baseNoiseMedian, current.baseNoise, interpValue));
 	}
 
+	private Topology SmoothToPOI(Topology current, Topology other, float interpValue)
+	{
+		return new Topology(	Mathf.Lerp(other.noise, current.noise, interpValue),
+								Mathf.Lerp(other.height, current.height, interpValue),
+								Mathf.Lerp(other.baseNoise, current.baseNoise, interpValue));
+	}
+
 	//	Return 2 if outside margin
 	//	else return 0 - 1 value representing closeness to border
 	public static float EdgeGradient(float biomeNoise, float border = 0.5f, float margin = 0.05f)
@@ -152,12 +159,9 @@ public class TerrainGenerator
 
 				if(column.POIHeightGradient != null && column.POIHeightGradient[x,z] != 0)
 				{
-					/*float interpValue = (float)column.POIHeightGradient[x,z] / 10;
-					Topology POITopology = new Topology(0.5f, finalTopology.height / 2, 0.5f);
-					finalTopology = SmoothTopologys(POITopology, finalTopology, interpValue);*/
-
-					finalTopology = new Topology(0.5f, finalTopology.height / 2, 0.5f);
-
+					float interpValue = (float)column.POIHeightGradient[x,z] / 10;
+					Topology POITopology = new Topology(0.5f, finalTopology.height, 0.5f);
+					finalTopology = SmoothToPOI(POITopology, finalTopology, interpValue);
 				}
 
 				//	Generate final height value for chunk data
