@@ -145,7 +145,6 @@ public class Chunk
 	{
 		//	*This is not completely deterministic - the order in which chunks are processed could impact the final terrain in some cases
 		if(this.composition != Composition.MIX) return;
-
 		//	Remove unwanted blocks from surface
 		for(int x = 0; x < World.chunkSize; x++)
 			for(int z = 0; z < World.chunkSize; z++)

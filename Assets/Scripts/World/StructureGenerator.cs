@@ -4,5 +4,5 @@ using UnityEngine;
 
 public class StructureGenerator
 {
-	public static StructureLibrary.StructureTest structures = TerrainGenerator.worldBiomes.structures;
+	public static POILibrary.POI structures = TerrainGenerator.worldBiomes.structures;
 }

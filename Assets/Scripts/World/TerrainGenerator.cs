@@ -157,9 +157,10 @@ public class TerrainGenerator
 					finalTopology = currentTolopogy;
 				}
 
+				//	Where points of interest exist, flatten terrain
 				if(column.POIHeightGradient != null && column.POIHeightGradient[x,z] != 0)
 				{
-					float interpValue = (float)column.POIHeightGradient[x,z] / 10;
+					float interpValue = (float)column.POIHeightGradient[x,z] / chunkSize;
 					Topology POITopology = new Topology(0.5f, finalTopology.height, 0.5f);
 					finalTopology = SmoothToPOI(POITopology, finalTopology, interpValue);
 				}

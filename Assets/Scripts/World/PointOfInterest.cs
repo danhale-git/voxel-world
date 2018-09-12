@@ -21,8 +21,6 @@ public class PointOfInterest
 	int[,] occupiedMatrix;
 	public Column[,] columnMatrix;
 
-	Int2 entrance;
-
 	List<Zone> zones = new List<Zone>();
 
 	List<Column> allColumns = new List<Column>();
@@ -49,17 +47,12 @@ public class PointOfInterest
 		//	Generate noise to be used in pseudo random decision making
 		noise = Mathf.PerlinNoise(position.x, position.y);
 
-		entrance = ChooseEntrance();
-
-		
-
 		zones.Add(LargestSquare(occupiedMatrix));
 		UpdateOccupied(zones[0].matrix);
 		ProcessZone(zones[0]);
 
 		LSystem lSystem = new LSystem(this, zones[0]);
-
-		TerrainGenerator.worldBiomes.structures.Generate(lSystem, zones[0]);
+		TerrainGenerator.worldBiomes.structures.GenerateMatrixes(lSystem, zones[0]);
 
 		foreach(Column column in allCreated)
 		{
@@ -151,10 +144,6 @@ public class PointOfInterest
 			iterationCount++;
 			if(iterationCount > 498) Debug.Log("Too many structure processing iterations!\nAbandoned while loop early");
 		}
-
-		//	Make sure ChooseEntrance() is deterministic
-		//exposedEdge.Sort();
-		//boundaryEdge.Sort();
 
 		return allCreatedColumns;
 	}
@@ -280,8 +269,6 @@ public class PointOfInterest
 
 	void ProcessZone(Zone e)
 	{
-	
-
 		int[,] testMatrix = new int[width,height];
 
 		int rightScore = 0;
@@ -318,8 +305,6 @@ public class PointOfInterest
 				else if(z-1 >= 0 && edgeMatrix[x,z-1] == 0) bottomScore += 2;	//	No edge or adjacent edge
 				else bottomScore += 1;	//	No edge
 			}
-		
-		
 
 		int[] scores = new int[] { rightScore, leftScore, topScore, bottomScore };
 
@@ -379,7 +364,7 @@ public class PointOfInterest
 		return matrix;
 	}
 
-		Vector3 WorldPosition(int x, int z)
+	Vector3 WorldPosition(int x, int z)
 	{
 		return (new Vector3(x, 0, z) * World.chunkSize) + this.position;
 	}

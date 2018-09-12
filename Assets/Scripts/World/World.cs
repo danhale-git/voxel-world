@@ -158,7 +158,7 @@ public class World : MonoBehaviour
 				{
 					//	If column is eligible for point of interest, discover all adjacent aligible columns before continuing
 					if(newColumn.IsPOI) POIs.Add(new PointOfInterest(newColumn, this));
-					//	If it's a POI columns will be generated after POI processing
+					//	If it's a POI columns will be generated after POI processing in PointOfInterest
 					else GenerateColumnTopology(newColumn);
 
 					iterationCount++;
@@ -411,6 +411,9 @@ public class World : MonoBehaviour
 		{
 			GenerateChunk(new Vector3(position.x, y, position.z));
 		}
+
+		topol.GeneratePOIBlocks();
+
 		topol.spawnStatus = Chunk.Status.GENERATED;
 
 		//debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.white, sizeDivision: 2.5f);	//	//	//

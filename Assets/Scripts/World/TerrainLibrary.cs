@@ -14,7 +14,7 @@ public class TerrainLibrary
 		public float smoothRadius = 0.2f;
 		public bool handleSmoothOverlap = false;
 
-		public StructureLibrary.StructureTest structures;
+		public POILibrary.POI structures;
 		public float spawnStructuresAtNoise;
 
 		public WorldBiomes()
@@ -266,7 +266,7 @@ public class TerrainLibrary
 	{
 		public TestBiomes() : base()
 		{
-			structures = new StructureLibrary.StructureTest();
+			structures = new POILibrary.POI();
 
 			smoothRadius = 0.6f;
 			SetBiomeFrequency(0.01f);
@@ -328,7 +328,7 @@ public class TerrainLibrary
 		public TestLayer2(float minNoise) : base(minNoise)
 		{
 			maxHeight = 30;
-			surfaceBlock = Blocks.Types.STONE;
+			surfaceBlock = Blocks.Types.LIGHTGRASS;
 		}
 
 		public override float Noise(int x, int z)
