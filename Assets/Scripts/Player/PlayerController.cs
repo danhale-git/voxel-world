@@ -248,7 +248,8 @@ public class PlayerController : MonoBehaviour {
 
 			Column column = Column.Get(chunk.position);
 			
-			Debug.Log("-- "+column.IsPOI+" "+(float)column.POIHeightGradient[(int)(voxel.x - chunk.position.x),(int)(voxel.z - chunk.position.z)] / 10);
+			Debug.Log("-- "+column.IsPOI);
+			Debug.Log(column.LocalY((int)voxel.y));
 
 			//TerrainGenerator.worldBiomes.biomeNoiseGen.CellularTest(voxel.x, voxel.z);
 

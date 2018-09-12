@@ -93,15 +93,13 @@ public class Chunk
 					{
 						blockTypes[x,y,z] = column.biomeLayers[x,z].surfaceBlock;
 
-						if(!hasBlocks)
-							hasBlocks = true;
+						if(!hasBlocks) hasBlocks = true;
 					}
 					//	Air
 					else if(voxel > heightMap[x,z])
 					{
 						blockTypes[x,y,z] = Blocks.Types.AIR;
-						if(!hasAir)
-							hasAir = true;
+						if(!hasAir) hasAir = true;
 					}
 
 				}
@@ -147,58 +145,59 @@ public class Chunk
 	{
 		//	*This is not completely deterministic - the order in which chunks are processed could impact the final terrain in some cases
 		if(this.composition != Composition.MIX) return;
-			//	Remove unwanted blocks from surface
-			for(int x = 0; x < World.chunkSize; x++)
-				for(int z = 0; z < World.chunkSize; z++)
-				{
-					int y = column.heightMap[x,z] - (int)this.position.y;
 
+		//	Remove unwanted blocks from surface
+		for(int x = 0; x < World.chunkSize; x++)
+			for(int z = 0; z < World.chunkSize; z++)
+			{
+				int y = column.heightMap[x,z] - (int)this.position.y;
+
+				if(y > World.chunkSize-1 || y < 0) continue;
+
+				Blocks.Types type = blockTypes[x,y,z];
+
+				if(Blocks.smoothSurface[(int)type])
+				{
+					blockBytes[x,y,z] = GetBitMask(new Vector3(x,y,z));//, true, type);
+					Shapes.RemoveBlocks(this, x, y, z);
+				}
+			}
+
+		//	Assign shapes to smooth terrain
+		for(int x = 0; x < World.chunkSize; x++)
+			for(int z = 0; z < World.chunkSize; z++)
+			{
+				int height = column.heightMap[x,z] - (int)this.position.y;
+				Shapes.Types previousShape = 0;
+				int previousY = 0;
+
+				for(int y = height; y > height - 2; y-- )
+				{
 					if(y > World.chunkSize-1 || y < 0) continue;
 
 					Blocks.Types type = blockTypes[x,y,z];
-
+					Vector3 blockPosition = new Vector3(x,y,z);
 					if(Blocks.smoothSurface[(int)type])
 					{
-						blockBytes[x,y,z] = GetBitMask(new Vector3(x,y,z));//, true, type);
-						Shapes.RemoveBlocks(this, x, y, z);
+						blockBytes[x,y,z] = GetBitMask(blockPosition);
+						Shapes.SetSlopes(this, x, y, z);
 					}
-				}
 
-			//	Assign shapes to smooth terrain
-			for(int x = 0; x < World.chunkSize; x++)
-				for(int z = 0; z < World.chunkSize; z++)
-				{
-					int height = column.heightMap[x,z] - (int)this.position.y;
-					Shapes.Types previousShape = 0;
-					int previousY = 0;
-
-					for(int y = height; y > height - 2; y-- )
+					//	Avoid overhangs on steep slopes - does not handle iterating between two chunks
+					if(previousShape == Shapes.Types.CORNEROUT && (blockShapes[x,y,z] == Shapes.Types.CORNEROUT || blockShapes[x,y,z] == Shapes.Types.WEDGE))
 					{
-						if(y > World.chunkSize-1 || y < 0) continue;
-
-						Blocks.Types type = blockTypes[x,y,z];
-						Vector3 blockPosition = new Vector3(x,y,z);
-						if(Blocks.smoothSurface[(int)type])
-						{
-							blockBytes[x,y,z] = GetBitMask(blockPosition);
-							Shapes.SetSlopes(this, x, y, z);
-						}
-
-						//	Avoid overhangs on steep slopes - does not handle iterating between two chunks
-						if(previousShape == Shapes.Types.CORNEROUT && (blockShapes[x,y,z] == Shapes.Types.CORNEROUT || blockShapes[x,y,z] == Shapes.Types.WEDGE))
-						{
-							blockShapes[x,y+1,z] = Shapes.Types.CORNEROUT2;
-							blockShapes[x,y,z] = Shapes.Types.CUBE;
-						}
-						else if(previousShape == Shapes.Types.WEDGE)
-						{
-							blockShapes[x,y,z] = Shapes.Types.CUBE;
-						}
-
-						previousShape = blockShapes[x,y,z];
-						previousY = y;
+						blockShapes[x,y+1,z] = Shapes.Types.CORNEROUT2;
+						blockShapes[x,y,z] = Shapes.Types.CUBE;
 					}
+					else if(previousShape == Shapes.Types.WEDGE)
+					{
+						blockShapes[x,y,z] = Shapes.Types.CUBE;
+					}
+
+					previousShape = blockShapes[x,y,z];
+					previousY = y;
 				}
+			}
 	}
 
 	public void Redraw()
@@ -295,15 +294,15 @@ public class Chunk
 
 					Color color = (Color)Blocks.colors[(int)blockTypes[x,y,z]];
 
-					/*if(column.POIMap != null && column.POIMap[x,z] == 1) color = Color.black;
-					else if(column.POIMap != null && column.POIMap[x,z] == 2) color = Color.red;
-					else if(column.POIMap != null && column.POIMap[x,z] == 3) color = Color.green;
-					else*/ if(column.POIHeightGradient != null)
+					/*if(column.POIDebug != null && column.POIDebug[x,z] == 1) color = Color.black;
+					else if(column.POIDebug != null && column.POIDebug[x,z] == 2) color = Color.red;
+					else if(column.POIDebug != null && column.POIDebug[x,z] == 3) color = Color.green;
+					/*else if(column.POIHeightGradient != null)
 					{
 						float colVal = ((float)column.POIHeightGradient[x,z])/10;
 						if(colVal == 0) colVal = 0.05f;
 						color = new Color(colVal,colVal,colVal);
-					}
+					}*/
 					
 
 					cols.AddRange(	Enumerable.Repeat(	color,
