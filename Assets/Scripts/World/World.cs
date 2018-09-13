@@ -28,7 +28,6 @@ public class World : MonoBehaviour
 	public static bool drawEdges = true;
 
 	TerrainGenerator terrain;
-	StructureGenerator structureGenerator;
 	public static Shapes.Meshes shapeMeshes;
 
 	//	All block data for a chunkSize/chunkSize area
@@ -57,7 +56,6 @@ public class World : MonoBehaviour
 		debug.world = this;
 
 		terrain = new TerrainGenerator();
-		structureGenerator = new StructureGenerator();
 
 		//	Create initial chunks
 		//	Must always be multiple of ChunkSize

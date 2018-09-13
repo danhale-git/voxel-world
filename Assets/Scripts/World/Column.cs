@@ -92,38 +92,38 @@ public class Column
 
 		bool walls = POIWalls != null;
 
-			for(int x = 0; x < chunkSize; x++)
-				for(int z = 0; z < chunkSize; z++)
+		for(int x = 0; x < chunkSize; x++)
+			for(int z = 0; z < chunkSize; z++)
+			{
+
+				if(walls)
 				{
+					int ly = LocalY(heightMap[x,z]);
 
-					if(walls)
+					if(currentChunk == null)
 					{
-						int ly = LocalY(heightMap[x,z]);
+						int chunkY = Mathf.FloorToInt(heightMap[x,z] / chunkSize) * chunkSize;
+						currentChunk = World.chunks[new Vector3(position.x, chunkY, position.z)];
+					}
 
-						if(currentChunk == null)
+					if(POIWalls[x,z] == 1)
+					{
+						Chunk newChunk = null;
+						if(BlockOwnerChunk(new Vector3(x,ly,z), currentChunk, out newChunk))
 						{
-							int chunkY = Mathf.FloorToInt(heightMap[x,z] / chunkSize) * chunkSize;
-							currentChunk = World.chunks[new Vector3(position.x, chunkY, position.z)];
+							currentChunk = newChunk;
+							allAlteredChunks.Add(newChunk);
 						}
 
-						if(POIWalls[x,z] == 1)
+						for(int i = 0; i < POIType.wallHeight; i++)
 						{
-							Chunk newChunk = null;
-							if(BlockOwnerChunk(new Vector3(x,ly,z), currentChunk, out newChunk))
-							{
-								currentChunk = newChunk;
-								allAlteredChunks.Add(newChunk);
-							}
-
-							for(int i = 0; i < POIType.wallHeight; i++)
-							{
-								int y = ly + i;
-								currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
-								if(!hasBlocks) hasBlocks = true;
-							}
+							int y = ly + i;
+							currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
+							if(!hasBlocks) hasBlocks = true;
 						}
 					}
 				}
+			}
 
 		foreach(Chunk chunk in allAlteredChunks)
 		{

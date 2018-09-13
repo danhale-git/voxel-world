@@ -433,7 +433,6 @@ public class LSystem
 			boundsOffset = Mathf.Min(bounds[2], bounds[3]);
 			x = bounds[side];
 			z = Mathf.Clamp(Mathf.RoundToInt(sideSize * position), 0, sideSize) + boundsOffset;
-			//return new Int2(bounds[side], Mathf.Clamp(Mathf.RoundToInt(height * position), 0, height));
 		}
 		else
 		{
@@ -446,6 +445,41 @@ public class LSystem
 	}
 
 # endregion
+
+	public void SegmentBounds(int segmentWidth, int segmentLength, int[] bounds, Zone.Side backSide, out int[] horizontalDivides, out int[] verticalDivides)
+	{
+		Rotate(backSide);
+		int width = Distance(bounds[right], bounds[left]);
+		int length = Distance(bounds[front], bounds[back]);
+
+		horizontalDivides = new int[(width/segmentWidth) - 1];
+		verticalDivides = new int[(length/segmentLength) - 1];
+
+		int[] currentHorizontal;
+		int[] currentVertical;
+
+		//	Define length/width of segments relative to back side but return arrays relative to global orientation
+		if((int)currentBack > 1)
+		{
+			currentHorizontal = horizontalDivides;
+			currentVertical = verticalDivides;
+		}
+		else
+		{
+			currentHorizontal = verticalDivides;
+			currentVertical = horizontalDivides;
+		}
+
+
+		for(int i = 1; i <= horizontalDivides.Length; i++)
+		{
+			currentHorizontal[i-1] = Mathf.Min(bounds[right], bounds[left]) + (i * segmentWidth);
+		}
+		for(int i = 1; i <= verticalDivides.Length; i++)
+		{
+			currentVertical[i-1] = Mathf.Min(bounds[front], bounds[back]) + (i * segmentLength);			
+		}
+	}
 
 # region Drawing
 
@@ -479,6 +513,37 @@ public class LSystem
 		{
 			matrix[bounds[1], z] = 1;
 			matrix[bounds[0], z] = 1;
+		}
+	}
+
+	public void DrawBoundsBorderWithSegments(int[] bounds, int[] horizontalDivides, int[] verticalDivides, int[,] matrix, int value)
+	{
+		for(int x = bounds[1]; x <= bounds[0]; x++)
+		{
+			matrix[x, bounds[3]] = value;
+			matrix[x, bounds[2]] = value;
+
+			if(x > bounds[1] && x < bounds[0])
+			{
+				foreach(int divide in verticalDivides)
+				{
+					matrix[x, divide] = value;
+				}
+			}
+		}
+
+		for(int z = bounds[3]; z <= bounds[2]; z++)
+		{
+			matrix[bounds[1], z] = value;
+			matrix[bounds[0], z] = value;
+
+			if(z > bounds[3] && z < bounds[2])
+			{
+				foreach(int divide in horizontalDivides)
+				{
+					matrix[divide, z] = value;
+				}
+			}
 		}
 	}
 

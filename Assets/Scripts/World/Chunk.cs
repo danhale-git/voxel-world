@@ -293,7 +293,7 @@ public class Chunk
 
 					Color color = (Color)Blocks.colors[(int)blockTypes[x,y,z]];
 
-					/*if(column.POIDebug != null && column.POIDebug[x,z] == 1) color = Color.black;
+					if(column.POIDebug != null && column.POIDebug[x,z] == 1) color = Color.black;
 					else if(column.POIDebug != null && column.POIDebug[x,z] == 2) color = Color.red;
 					else if(column.POIDebug != null && column.POIDebug[x,z] == 3) color = Color.green;
 					/*else if(column.POIHeightGradient != null)

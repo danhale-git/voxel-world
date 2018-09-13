@@ -32,16 +32,22 @@ public class POILibrary
 		public void GenerateMatrixes(LSystem lSystem, Zone zone)
 		{
 			int mainArea = lSystem.SquareInBounds(zone.bufferedBounds, zone.back, positionOnSide: 0.5f, minWidth:40, maxWidth:50, minLength:50, maxLength:80);
-			int subArea1 = lSystem.ConnectedSquare(zone.bufferedBounds, 0, bestSide:true, minWidth:10, maxWidth:40, minLength:20, maxLength:80);
-			int subArea2 = lSystem.ConnectedSquare(zone.bufferedBounds, 0, bestSide:true, minWidth:20, maxWidth:40, minLength:20, maxLength:40);
+			int subArea1 = lSystem.ConnectedSquare(zone.bufferedBounds, 0, bestSide:true, positionOnSide:0.8f, minWidth:10, maxWidth:40, minLength:20, maxLength:80);
+			int subArea2 = lSystem.ConnectedSquare(zone.bufferedBounds, 0, bestSide:true, positionOnSide:0.8f, minWidth:20, maxWidth:40, minLength:20, maxLength:40);
+
+			
 
 			foreach(int[] bounds in lSystem.currentBounds)
 			{
-				lSystem.DrawBoundsBorder(bounds, zone.debugMatrix, 1);
-				lSystem.DrawPoint(lSystem.BoundsCenter(bounds), zone.debugMatrix, 2);
-				lSystem.DrawBoundsFill(bounds, zone.debugMatrix, 2);
+				int[] vert;
+				int[] horiz;
+				lSystem.SegmentBounds(12, 12, bounds, zone.back, out horiz, out vert);
+			
+				//lSystem.DrawBoundsBorderWithSegments(bounds, horiz, vert, zone.wallMatrix, 1);
 
-				lSystem.DrawBoundsBorder(bounds, zone.wallMatrix, 1);
+
+				lSystem.DrawPoint(lSystem.BoundsCenter(bounds), zone.debugMatrix, 2);
+				lSystem.DrawBoundsBorder(bounds, zone.debugMatrix, 1);
 			}
 			foreach(Int2 point in lSystem.originPoints)
 			{
