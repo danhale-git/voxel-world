@@ -2135,7 +2135,8 @@ public class FastNoise
 		{	
 			//	Find closest cell within smoothing radius
 			float dist2Edge = otherDist[i] - distance[0];
-			if(dist2Edge < biomes.smoothRadius &&  dist2Edge < adjacentEdgeDistance)
+			//if(dist2Edge < biomes.smoothRadius &&  dist2Edge < adjacentEdgeDistance)
+			if(dist2Edge < adjacentEdgeDistance)
 			{
 				float otherCellValue = To01(ValCoord2D(m_seed, otherX[i], otherY[i]));
 				int otherBiome = biomes.GetBiomeIndex(otherCellValue);
@@ -2150,11 +2151,9 @@ public class FastNoise
 		}
 		
 		//	Data for use in terrain generation
-		EdgeData data = new EdgeData(	currentCellValue,
+		return new EdgeData(	currentCellValue,
 										adjacentEdgeDistance,
 										adjacentCellValue);
-				
-		return data;
 	}
 
 	private FN_DECIMAL SingleCellular(FN_DECIMAL x, FN_DECIMAL y)

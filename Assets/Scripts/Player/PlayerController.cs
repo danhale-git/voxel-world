@@ -62,7 +62,7 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetButtonDown("Fire1") && !Input.GetKeyDown(KeyCode.LeftControl))
 		{
 			if(Input.GetKey(KeyCode.LeftShift))
-				DebugBitMask(Ray());
+				DebugChunk(Ray());
 			else if(Input.GetKey(KeyCode.LeftAlt))
 				Redraw(Ray());
 			else
@@ -245,7 +245,14 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = Util.RoundVector3(pointInCube);
 			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
-			Debug.Log(chunk.position);
+
+			Column column = Column.Get(chunk.position);
+			
+			Debug.Log("-- "+column.IsPOI);
+			Debug.Log(column.LocalY((int)voxel.y));
+
+			//TerrainGenerator.worldBiomes.biomeNoiseGen.CellularTest(voxel.x, voxel.z);
+
 		}
 	}
 

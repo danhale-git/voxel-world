@@ -5,7 +5,7 @@ using UnityEngine;
 public class TerrainGenerator
 {
 	//	Static reference for current world
-	public static TerrainLibrary.WorldBiomes worldBiomes = new TerrainLibrary.ExampleWorld();
+	public static TerrainLibrary.WorldBiomes worldBiomes = new TerrainLibrary.TestBiomes();
 
 	//	Hold values used in topology smoothing
 	private struct Topology
@@ -29,6 +29,13 @@ public class TerrainGenerator
 		return new Topology(	Mathf.Lerp(noiseMedian, current.noise, interpValue),
 								Mathf.Lerp(heightMedian, current.height, interpValue),
 								Mathf.Lerp(baseNoiseMedian, current.baseNoise, interpValue));
+	}
+
+	private Topology SmoothToPOI(Topology current, Topology other, float interpValue)
+	{
+		return new Topology(	Mathf.Lerp(other.noise, current.noise, interpValue),
+								Mathf.Lerp(other.height, current.height, interpValue),
+								Mathf.Lerp(other.baseNoise, current.baseNoise, interpValue));
 	}
 
 	//	Return 2 if outside margin
@@ -108,7 +115,7 @@ public class TerrainGenerator
 	{	
 		int chunkSize = World.chunkSize;
 		column.heightMap = new int[chunkSize,chunkSize];
-		column.edgeMap = new FastNoise.EdgeData[chunkSize,chunkSize];
+
 
 		//	Iterate over height map
 		for(int x = 0; x < chunkSize; x++)
@@ -119,8 +126,7 @@ public class TerrainGenerator
 				int gz = (int)(z+column.position.z);
 
 				//	Get cellular noise data
-				FastNoise.EdgeData edgeData = worldBiomes.edgeNoiseGen.GetEdgeData(gx, gz);
-				column.edgeMap[x,z] = edgeData;
+				FastNoise.EdgeData edgeData = column.edgeMap[x,z];
 
 				//	Get current biome type
 				TerrainLibrary.Biome currentBiome = worldBiomes.GetBiome(edgeData.currentCellValue);
@@ -136,6 +142,8 @@ public class TerrainGenerator
 				//	Within smoothing radius and adjacent biome is different
 				if(edgeData.distance2Edge < worldBiomes.smoothRadius && currentBiome != adjacentBiome)
 				{
+					if(!column.biomeBoundary) column.biomeBoundary = true;
+
 					float InterpValue = Mathf.InverseLerp(0, worldBiomes.smoothRadius, edgeData.distance2Edge);
 
 					//	Get topology for this pixel if adjacent biome type
@@ -149,13 +157,50 @@ public class TerrainGenerator
 					finalTopology = currentTolopogy;
 				}
 
+				//	Where points of interest exist, flatten terrain
+				if(column.POIHeightGradient != null && column.POIHeightGradient[x,z] != 0)
+				{
+					float interpValue = (float)column.POIHeightGradient[x,z] / chunkSize;
+					Topology POITopology = new Topology(0.5f, finalTopology.height, 0.5f);
+					finalTopology = SmoothToPOI(POITopology, finalTopology, interpValue);
+				}
+
 				//	Generate final height value for chunk data
 				column.heightMap[x,z] = (int)Mathf.Lerp(0, finalTopology.height, finalTopology.baseNoise * finalTopology.noise);
 
 				//	Update highest and lowest block in chunk column
 				column.CheckHighest(column.heightMap[x,z]);
 				column.CheckLowest(column.heightMap[x,z]);
-			}					
+			}
+	}
+
+	public void GetCellData(Column column)
+	{
+		int chunkSize = World.chunkSize;
+
+		column.edgeMap = new FastNoise.EdgeData[chunkSize,chunkSize];
+
+		float currentCellValue = 0;
+
+		//	Iterate over height map
+		for(int x = 0; x < chunkSize; x++)
+			for(int z = 0; z < chunkSize; z++)
+			{
+				//	Global voxel column coordinates
+				int gx = (int)(x+column.position.x);
+				int gz = (int)(z+column.position.z);
+
+				//	Get cellular noise data
+				FastNoise.EdgeData edgeData = worldBiomes.edgeNoiseGen.GetEdgeData(gx, gz);
+				column.edgeMap[x,z] = edgeData;
+
+				//	Store list of all cellValues present in this column
+				if(edgeData.currentCellValue != currentCellValue)
+				{
+					currentCellValue = edgeData.currentCellValue;
+					if(!column.cellValues.Contains(currentCellValue)) column.cellValues.Add(currentCellValue);
+				}
+			}
 	}
 
 	

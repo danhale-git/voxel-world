@@ -19,7 +19,7 @@ public class World : MonoBehaviour
 	//	DEBUG
 
 	//	Number of chunks that are generated around the player
-	public static int viewDistance = 8;
+	public static int viewDistance = 6;
 	//	Size of all chunks
 	public static int chunkSize = 16;
 	//	Maximum height of non-air blocks
@@ -35,6 +35,9 @@ public class World : MonoBehaviour
 
 	//	2D terrain data such as heightmaps
 	public static Dictionary<Vector3, Column> columns = new Dictionary<Vector3, Column>();
+
+	//	Collections of columns containing post processed terrain or other elements
+	public static List<PointOfInterest> POIs = new List<PointOfInterest>();
 
 	Coroutine currentCoroutine;
 	List<IEnumerator> coroutines = new List<IEnumerator>();
@@ -69,7 +72,7 @@ public class World : MonoBehaviour
 		{ Debug.Log("Chunk generation disabled!"); return; }
 
 		//	Clear queue
-		if(coroutineRunning) ClearCoroutines();
+		//if(coroutineRunning) ClearCoroutines();
 
 		// Zero out Y
 		centerChunk = new Vector3(centerChunk.x, 0, centerChunk.z);
@@ -78,7 +81,7 @@ public class World : MonoBehaviour
 
 		//	Generate column class instances (heightmaps and other 2D terrain data)
 		//	+1 buffer allows adjacent column lookups without TryGetValue
-		AddCoroutine(ChunksInSquare(centerChunk, radius+1, GenerateColumnData, 20));
+		AddCoroutine(CreateColumnsInSquare(centerChunk, radius+1, 20));
 
 		//	Determine the highest and lowest chunk in each column that must be generated/drawn
 		AddCoroutine(ChunksInSquare(centerChunk, radius, GetColumnSize, 20));
@@ -89,11 +92,14 @@ public class World : MonoBehaviour
 		//	Generate block data for all chunks to be generated
 		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumnChunks, 20));
 
+		/*//	Generate structure block data for column
+		AddCoroutine(ChunksInSquare(centerChunk, radius, GenerateColumnStructures, 10));*/
+
 		//	Process surface blocks for smoothed block types and apply shape types and rotation
 		AddCoroutine(ChunksInSquare(centerChunk, radius-1, SmoothColumnChunks, 20));
 
 		//	Collect mesh data and generate chunk meshes in a spiral starting at the player
-		AddCoroutine(ChunksInSpiral(centerChunk, radius-1, DrawColumnChunks, 2));
+		AddCoroutine(ChunksInSpiral(centerChunk, radius-2, DrawColumnChunks, 2));
 	}
 
 	//	Add coroutine to list, start if necessary
@@ -119,7 +125,7 @@ public class World : MonoBehaviour
 		{
 			currentCoroutine = StartCoroutine(coroutines[0]);
 		}
-		debug.Output("Active coroutines", coroutines.Count.ToString());
+		debug.Output("Queued coroutines", coroutines.Count.ToString());
 	}
 	//	Clear all coroutines
 	void ClearCoroutines()
@@ -133,6 +139,36 @@ public class World : MonoBehaviour
 	#region IEnumerators
 
 	delegate bool ChunkOperation(Vector3 position);
+
+	//	Special IEnumerator for handling structure post processing during column creation
+	IEnumerator CreateColumnsInSquare(Vector3 center, int radius, int iterationsPerFrame)
+	{
+		int iterationCount = 0;
+		for(int x = -radius; x < radius+1; x++)
+			for(int z = -radius; z < radius+1; z++)
+			{
+				Vector3 offset = new Vector3(x, 0, z) * chunkSize;
+				Vector3 position = center + offset;
+
+				Column newColumn;
+
+				if(CreateColumn(position, out newColumn))
+				{
+					//	If column is eligible for point of interest, discover all adjacent aligible columns before continuing
+					if(newColumn.IsPOI) POIs.Add(new PointOfInterest(newColumn, this));
+					//	If it's a POI columns will be generated after POI processing in PointOfInterest
+					else GenerateColumnTopology(newColumn);
+
+					iterationCount++;
+					if(iterationCount >= iterationsPerFrame)
+					{
+						iterationCount = 0;
+						yield return null;
+					}
+				}
+			}
+		CoroutineComplete();		
+	}
 
 	IEnumerator ChunksInSquare(Vector3 center, int radius, ChunkOperation delegateOperation, int iterationsPerFrame)
 	{
@@ -249,15 +285,38 @@ public class World : MonoBehaviour
 	#region Column Generation
 
 	//	Generate terrain and store highest/lowest points
-	bool GenerateColumnData(Vector3 position)
+	public bool CreateColumn(Vector3 position, out Column thisColumn)
 	{
 		Column column;
-		if(columns.TryGetValue(position, out column)) return false;
+		if(columns.TryGetValue(position, out column))
+		{
+			thisColumn = null;
+			return false;
+		}
 
-		column = new Column(position, terrain, this);
+		column = new Column(position, this);
+
+		if(column.IsPOI)
+		{
+			debug.OutlineChunk(new Vector3(position.x, column.topChunkDraw+chunkSize, position.z), Color.red, sizeDivision: 1f);	//	//	//
+		}
+		else
+			debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.grey, sizeDivision: 3.5f);	//	//	//
+
 		columns[position] = column;
+		thisColumn = column;
 
 		return true;
+	}
+
+	public void GetColumnCellularData(Column column)
+	{
+		terrain.GetCellData(column);
+	}
+
+	public void GenerateColumnTopology(Column column)
+	{
+		terrain.GetTopologyData(column);
 	}
 
 	//	Determine which chunks in the column should generated and drawn
@@ -266,7 +325,7 @@ public class World : MonoBehaviour
 		Column column = Column.Get(position);
 		if(column.sizeCalculated) return false;
 
-		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position, chunkSize);
+		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position);
 
 		int highestVoxel = column.highestPoint;
 		int lowestVoxel = column.lowestPoint;
@@ -274,6 +333,8 @@ public class World : MonoBehaviour
 		//	Set top and bottom chunks to draw
 		column.topChunkDraw = Mathf.FloorToInt((highestVoxel + 1) / chunkSize) * chunkSize;
 		column.bottomChunkDraw = Mathf.FloorToInt((lowestVoxel - 1) / chunkSize) * chunkSize;
+
+		//column.topChunkDraw += chunkSize;//	DEBUGGING STRUCTURES
 
 		//	Find highest and lowest in 3x3 columns around chunk
 		for(int i = 0; i < adjacent.Length; i++)
@@ -348,7 +409,13 @@ public class World : MonoBehaviour
 		{
 			GenerateChunk(new Vector3(position.x, y, position.z));
 		}
+
+		topol.GeneratePOIBlocks();
+
 		topol.spawnStatus = Chunk.Status.GENERATED;
+
+		//debug.OutlineChunk(new Vector3(position.x, 100, position.z), Color.white, sizeDivision: 2.5f);	//	//	//
+
 		return true;
 	}
 	void GenerateChunk(Vector3 position)
@@ -357,11 +424,10 @@ public class World : MonoBehaviour
 
 		if(chunk.status == Chunk.Status.GENERATED) return;
 
-		//debug.OutlineChunk(position, Color.white, sizeDivision: 2.5f);
-
 		chunk.GenerateBlocks();
 	}
-	
+
+
 	//	Smooth terrain in column of chunks
 	bool SmoothColumnChunks(Vector3 position)
 	{
@@ -395,6 +461,7 @@ public class World : MonoBehaviour
 			DrawChunk(new Vector3(position.x, y, position.z));
 		}
 		topol.spawnStatus = Chunk.Status.DRAWN;
+
 		return true;
 	}
 	void DrawChunk(Vector3 position)
@@ -491,7 +558,7 @@ public class World : MonoBehaviour
 
 	void UpdateAdjacentChunks(Vector3 position)
 	{
-		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position, chunkSize);
+		Vector3[] adjacent = Util.HorizontalChunkNeighbours(position);
 		for(int i = 0; i < adjacent.Length; i++)
 		{
 			UpdateChunk(adjacent[i]);

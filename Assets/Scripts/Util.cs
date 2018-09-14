@@ -135,8 +135,10 @@ public static class Util
 		};
 	}
 
-	public static Vector3[] HorizontalChunkNeighbours(Vector3 position, int chunkSize)
+	//	TODO: make this faster
+	public static Vector3[] HorizontalChunkNeighbours(Vector3 position)
 	{
+		int chunkSize = World.chunkSize;
 		return new Vector3[] { 	(Vector3.right * chunkSize) + position,
 								(Vector3.left * chunkSize) + position,
 								(Vector3.forward * chunkSize) + position,
@@ -150,6 +152,46 @@ public static class Util
 	public static double RoundToDP(float value, int decimalPlaces)
 	{
 		return System.Math.Round(value, decimalPlaces);
+	}
+
+	public static int MinInt(int[] values)
+	{
+		int min = values[0];
+		for(int i = 1; i < values.Length; i++)
+		{
+			if(values[i] < min) min = values[i];
+		}
+		return min;
+	}
+
+	public static int MinIntIndex(int[] values)
+	{
+		int minIndex = 0;
+		int minValue = values[0];
+		for(int i = 0; i < values.Length; i++)
+		{
+			if(values[i] <= minValue)
+			{
+				minValue = values[i];
+				minIndex = i;
+			}
+		}
+		return minIndex;
+	}
+
+	public static int MaxIntIndex(int[] values)
+	{
+		int maxIndex = 0;
+		int maxValue = values[0];
+		for(int i = 0; i < values.Length; i++)
+		{
+			if(values[i] >= maxValue)
+			{
+				maxValue = values[i];
+				maxIndex = i;
+			}
+		}
+		return maxIndex;
 	}
 
 	static Color DebugBlockColor(int x, int z, Column column)
