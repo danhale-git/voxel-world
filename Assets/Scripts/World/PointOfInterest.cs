@@ -51,7 +51,7 @@ public class PointOfInterest
 		UpdateOccupied(zones[0].matrix);
 		ProcessZone(zones[0]);
 
-		LSystem lSystem = new LSystem(this, zones[0]);
+		LSystem lSystem = new LSystem(zones[0]);
 		TerrainGenerator.worldBiomes.structures.GenerateMatrixes(lSystem, zones[0]);
 
 		foreach(Column column in allCreated)
@@ -247,7 +247,7 @@ public class PointOfInterest
 			{
 				resultMatrix[x,z] = 1;
 			}
-		return new Zone(resultX, resultZ, resultSize, resultMatrix);
+		return new Zone(this, resultX, resultZ, resultSize, resultMatrix);
 	}
 
 	// Track occupied columns

@@ -31,22 +31,40 @@ public class POILibrary
 
 		public void GenerateMatrixes(LSystem lSystem, Zone zone)
 		{
-			int mainArea = lSystem.SquareInBounds(zone.bufferedBounds, zone.back, positionOnSide: 0.5f, minWidth:40, maxWidth:50, minLength:50, maxLength:80);
-			int subArea1 = lSystem.ConnectedSquare(zone.bufferedBounds, 0, bestSide:true, positionOnSide:0.8f, minWidth:10, maxWidth:40, minLength:20, maxLength:80);
-			int subArea2 = lSystem.ConnectedSquare(zone.bufferedBounds, 0, bestSide:true, positionOnSide:0.8f, minWidth:20, maxWidth:40, minLength:20, maxLength:40);
+			List<int>[] layers = new List<int>[4];
 
-			
+			layers[0] = new List<int>();
+
+
+			if(lSystem.SquareInBounds(zone.bufferedBounds, zone.back, positionOnSide: 0.5f, minWidth:40, maxWidth:50, minLength:50, maxLength:80))
+				layers[0].Add(lSystem.CurrentIndex());
+			else
+			{
+				Debug.Log("initial square creation failed at " + zone.POI.position);
+				return;
+			}
+
+
+			int[] mainBounds = lSystem.currentBounds[layers[0][0]];
+
+			int[] hDivs;
+			int[] vDivs;
+
+			lSystem.SegmentBounds(5, 0, mainBounds, zone.back, out hDivs, out vDivs);
+
+			lSystem.DrawBoundsBorderWithSegments(mainBounds, hDivs, vDivs, zone.wallMatrix, 1);
+
+			lSystem.DefineArea();
+
+
+			if(lSystem.SquareInBounds(zone.bufferedBounds, zone.back, positionOnSide: 0.5f, minWidth:5, maxWidth:10, minLength:50, maxLength:0))
+			{
+
+			}
 
 			foreach(int[] bounds in lSystem.currentBounds)
 			{
-				int[] vert;
-				int[] horiz;
-				lSystem.SegmentBounds(12, 12, bounds, zone.back, out horiz, out vert);
-			
-				//lSystem.DrawBoundsBorderWithSegments(bounds, horiz, vert, zone.wallMatrix, 1);
-
-
-				lSystem.DrawPoint(lSystem.BoundsCenter(bounds), zone.debugMatrix, 2);
+				lSystem.DrawPoint(LSystem.BoundsCenter(bounds), zone.debugMatrix, 2);
 				lSystem.DrawBoundsBorder(bounds, zone.debugMatrix, 1);
 			}
 			foreach(Int2 point in lSystem.originPoints)
@@ -54,9 +72,7 @@ public class POILibrary
 				lSystem.DrawPoint(point, zone.debugMatrix, 3);
 			}
 
-			lSystem.DefineArea();
 
-			//lSystem.SquareInBounds(lSystem.allBounds[sq1], Zone.Side.BOTTOM, minWidth:10, maxWidth:20, minLength:10, maxLength:20);
 
 			lSystem.ApplyMaps(this);
 		}

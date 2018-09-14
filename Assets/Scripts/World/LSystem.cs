@@ -6,12 +6,12 @@ public class LSystem
 {
 	FastNoise noiseGen = new FastNoise();
 
-	//	Point of interest holding zone
-	PointOfInterest POI;
 	//	Zone represented by matrix
 	Zone zone;
 	//	Noise used for coherent randomisation
 	float noise;
+	int noiseX;
+	int noiseY;
 
 	//	Bounds, origin points and origin sides currently being generated
 	public List<Int2> originPoints = new List<Int2>();
@@ -34,9 +34,8 @@ public class LSystem
 	int width;
 	int height;
 	
-	public LSystem(PointOfInterest POI, Zone zone)
+	public LSystem(Zone zone)
 	{
-		this.POI = POI;
 		this.zone = zone;
 
 		width = zone.size * World.chunkSize;
@@ -47,13 +46,83 @@ public class LSystem
 		noiseGen.SetFrequency(0.9f);	
 
 		//	Randomise seed for debugging
-		/*int seed = Random.Range(0,10000);
+		int seed = Random.Range(0,10000);
 		Debug.Log("SEED: "+ seed);
-		noiseGen.SetSeed(seed);*/
+		noiseGen.SetSeed(2202);
+		//noiseGen.SetSeed(seed);
+
 
 		//	Base noise generated from POI position
-		this.noise = noiseGen.GetNoise01(POI.position.x, POI.position.z);
+		noiseX = (int)zone.POI.position.x;
+		noiseY = (int)zone.POI.position.z;
 	}
+
+	void ResetNoise()
+	{
+		noise = noiseGen.GetNoise01(noiseX, noiseY);
+		int increment = Mathf.RoundToInt(noise * 10);
+		noiseX += increment;
+		noiseY += increment;
+	}
+
+	public struct Line
+	{
+		public readonly Int2 start, end;
+		public Line(Int2 start, Int2 end)
+		{
+			this.start = start;
+			this.end = end;
+		}
+	}
+
+	/*public struct Building
+	{
+		public readonly List<int[]> bounds;
+		public readonly List<Int2> joints;
+		public readonly List<Zone.Side> jointSides;
+
+		public readonly List<int>[] layerIndices;
+		
+		public List<Line> lines;
+
+		public Building(List<int[]> bounds, List<Int2> joints, List<Zone.Side> jointSides, List<int>[] layerIndices)
+		{
+			this.bounds = bounds;
+			this.joints = joints;
+			this.jointSides = jointSides;
+			this.layerIndices = layerIndices;
+
+			Int2 centerMain = LSystem.BoundsCenter(bounds[0]);
+
+			lines = new List<Line>();
+
+			//	master line extends all the way
+			//	all other lines meet it
+			if(layerIndices.Length > 1)
+			{
+				foreach(int i in layerIndices[1])
+				{
+					Line line;
+					if((int)jointSides[i] < 2)
+					{
+						line = new Line(joints[i], new Int2(centerMain.x, joints[i].z));
+					}
+					else
+					{
+						line = new Line(joints[i], new Int2(joints[i].x, centerMain.z));
+					}
+					Debug.Log("drew line:"+i+" "+line.start.x+" "+line.end.x);
+					lines.Add(line);
+				}
+			}
+
+			foreach(Line l in lines)
+			{
+
+				
+			}
+		}
+	}*/
 
 	//	Operations and comparisons with regards to current square orientaion
 # region Rotation
@@ -148,21 +217,20 @@ public class LSystem
 
 # region Basic Bounds
 
-	public int SquareInBounds(int[] perimeterBounds, Zone.Side perimeterSide, float positionOnSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
+	public bool SquareInBounds(int[] perimeterBounds, Zone.Side perimeterSide, float positionOnSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
 	{
 		Int2 originPoint;
 		if(positionOnSide != 0)
 			originPoint = PositionOnSide((int)perimeterSide, perimeterBounds, positionOnSide);
 		else
-			originPoint = RandomPointOnSide((int)perimeterSide, perimeterBounds, noise);
+			originPoint = RandomPointOnSide((int)perimeterSide, perimeterBounds);
 
-		int[] newBounds = GenerateSquare(0, originPoint, perimeterSide, perimeterBounds, false, minWidth, maxWidth, minLength, maxLength);
-		return AddNewSquare(newBounds, originPoint, perimeterSide);
+		return GenerateSquare(0, originPoint, perimeterSide, perimeterBounds, false, minWidth, maxWidth, minLength, maxLength);
 	}
-	public int ConnectedSquare(int[] perimeterBounds, int parentIndex, Zone.Side parentSide = 0, bool bestSide = false, float positionOnSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
+	public bool ConnectedSquare(int[] perimeterBounds, int parentIndex, Zone.Side parentSide = 0, bool bestSide = false, float positionOnSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
 	{
 		int index = currentBounds.Count;
-		int[] newBounds;
+		//int[] newBounds;
 		Int2 originPoint;
 		Zone.Side originSide;
 
@@ -174,18 +242,18 @@ public class LSystem
 		if(positionOnSide != 0)
 			originPoint = PositionOnSide((int)parentSide, parentBounds, positionOnSide);
 		else
-			originPoint = RandomPointOnSide((int)parentSide, parentBounds, noise);
+			originPoint = RandomPointOnSide((int)parentSide, parentBounds);
 
 		originSide = Zone.Opposite(parentSide);
 
-		newBounds = GenerateSquare(index, originPoint, originSide, perimeterBounds, false, minWidth, maxWidth, minLength, maxLength);
-		return AddNewSquare(newBounds, originPoint, originSide);
+		return GenerateSquare(index, originPoint, originSide, perimeterBounds, false, minWidth, maxWidth, minLength, maxLength);
 	}
 
-	int[] GenerateSquare(int index, Int2 originPoint, Zone.Side originSide, int[] perimeterBounds, bool adjacentOverride, int minWidth, int maxWidth, int minLength, int maxLength)
+	bool GenerateSquare(int index, Int2 originPoint, Zone.Side originSide, int[] perimeterBounds, bool adjacentOverride, int minWidth, int maxWidth, int minLength, int maxLength)
 	{
 		Vector3 global = MatrixToGlobal(originPoint);
-		noise = noiseGen.GetNoise01(global.x, global.z);
+		ResetNoise();
+		Debug.Log(noise);
 		//	Rotate script values to face the same way as this square
 		Rotate(originSide);
 
@@ -210,8 +278,8 @@ public class LSystem
 		int minLeft = minWidth == 0 ? axisSides : AddTo(minWidth  / 2, axisSides, left);
 
 		//	Randomly generate right and left measurments if no adjacent squares exist
-		bounds[right] = rightAdjacent == 0 ? RandomRange(minRight, maxRight, noise) : rightAdjacent;
-		bounds[left] = leftAdjacent == 0 ? RandomRange(minLeft, maxLeft, noise) : leftAdjacent;
+		bounds[right] = rightAdjacent == 0 ? RandomRange(minRight, maxRight) : rightAdjacent;
+		bounds[left] = leftAdjacent == 0 ? RandomRange(minLeft, maxLeft) : leftAdjacent;
 
 		//	Clamp bounds if adjacent squares exist
 		if(adjacent && !adjacentOverride)
@@ -236,7 +304,7 @@ public class LSystem
 			bounds[front] = Mathf.Clamp(closestInFront, Mathf.Min(minFront, maxFront), Mathf.Max(minFront, maxFront));
 		}
 		else
-			bounds[front] = RandomRange(minFront, maxFront, noise);
+			bounds[front] = RandomRange(minFront, maxFront);
 
 		//	Back is always the origin
 		bounds[back] = ForwardAxis(originPoint);
@@ -255,18 +323,23 @@ public class LSystem
 
 		Debug.Log(squareWidth+" x "+squareLength);
 
-		return bounds;
+		if(squareWidth < minWidth || squareLength < minLength)
+			return false;
+		else
+		{
+			AddNewSquare(bounds, originPoint, originSide);
+			return true;
+		}
 	}
 
 	//	Add bounds to list
-	int AddNewSquare(int[] bounds, Int2 originPoint, Zone.Side originSide)
+	void AddNewSquare(int[] bounds, Int2 originPoint, Zone.Side originSide)
 	{
 		int index = currentBounds.Count;
 		//	Add bounds to list
 		currentBounds.Add(bounds);
 		originPoints.Add(originPoint);
 		originSides.Add(originSide);
-		return index;
 	}
 
 	//	Get bounds of squares to the right and left of originPoint
@@ -368,7 +441,12 @@ public class LSystem
 		return (Zone.Side)farthestSide;
 	}
 
-	//	Get opposite point from point on side in bounds
+
+# endregion
+
+# region Positions and points
+
+//	Get opposite point from point on side in bounds
 	Int2 OppositePoint(Int2 point, int side, int[] bounds)
 	{
 		if(side > 1)
@@ -378,12 +456,9 @@ public class LSystem
 	}
 
 	//	Get pseudo random number in range using coherent noise
-	int RandomRange(int a, int b, float noise = 0, bool large = false, bool debug = false)
+	int RandomRange(int a, int b, bool large = false, bool debug = false)
 	{
-		if(noise == 0) noise = noiseGen.GetNoise01(a, b);
-
-		if(debug) Debug.Log("noise: "+noise);
-
+		ResetNoise();
 		if(large) noise = Mathf.Lerp(0.5f, 1f, noise);
 
 		if(a < b)
@@ -393,33 +468,42 @@ public class LSystem
 	}
 
 	//	Get pseudo random point on side of bounds using coherent noise
-	Int2 RandomPointOnSide(int side, int[] bounds, float noise)
+	Int2 RandomPointOnSide(int side, int[] bounds, int lowOffset = 0, int highOffset = 0)
 	{
-		int sideSize;
-		int boundsOffset;
 		int x;
 		int z;
 
 		if(side < 2)
 		{
-			sideSize = Distance(bounds[2], bounds[3]);
-			boundsOffset = Mathf.Min(bounds[2], bounds[3]);
 			x = bounds[side];
-			z = RandomRange(bounds[2], bounds[3]);
-			//return new Int2(bounds[side], Mathf.Clamp(Mathf.RoundToInt(height * position), 0, height));
+			z = RandomRange(bounds[2]-highOffset, bounds[3]+lowOffset);
 		}
 		else
 		{
-			sideSize = Distance(bounds[0], bounds[1]);
-			boundsOffset = Mathf.Min(bounds[0], bounds[1]);
-			x =RandomRange(bounds[0], bounds[1]);
+			x =RandomRange(bounds[0]-highOffset, bounds[1]+lowOffset);
 			z = bounds[side];
 		}
 		return new Int2(x, z);
 
 	}
 
-	//	Get pseudo random point on side of bounds using coherent noise
+	Int2 RandomPointOnLine(Line line)
+	{
+		int x;
+		int z;
+		if(line.start.x == line.end.x)
+		{
+			z = RandomRange(line.start.z, line.end.z);
+			x = line.start.x;
+		}
+		else
+		{
+			x = RandomRange(line.start.x, line.end.x);
+			z = line.start.z;
+		}
+		return new Int2(x,z);
+	}
+
 	Int2 PositionOnSide(int side, int[] bounds, float position)
 	{
 		int sideSize;
@@ -444,7 +528,7 @@ public class LSystem
 		return new Int2(x, z);
 	}
 
-# endregion
+#endregion
 
 	public void SegmentBounds(int segmentWidth, int segmentLength, int[] bounds, Zone.Side backSide, out int[] horizontalDivides, out int[] verticalDivides)
 	{
@@ -483,6 +567,18 @@ public class LSystem
 
 # region Drawing
 
+	/*public void DrawBuilding(Building building, int[,] matrix)
+	{
+		foreach(int[] b in building.bounds)
+		{
+			DrawBoundsBorder(b, matrix, 1);
+		}
+		foreach(Line l in building.lines)
+		{
+			DrawLine(l, matrix, 1);
+		}
+	}*/
+
 	public void DefineArea()
 	{
 		areaBounds.AddRange(currentBounds);
@@ -499,6 +595,26 @@ public class LSystem
 		}
 
 		SetColumnMaps(poi);
+	}
+
+	public void DrawLine(Line line, int[,] matrix, int value)
+	{
+		if(line.start.x == line.end.x)
+		{
+			int sign = (int)Mathf.Sign(line.end.z - line.start.z);
+			for(int z = line.start.z; z != line.end.z; z+=sign)
+			{
+				matrix[line.start.x,z] = value;
+			}
+		}
+		else
+		{
+			int sign = (int)Mathf.Sign(line.end.x - line.start.x);
+			for(int x = line.start.x; x != line.end.x; x+=sign)
+			{
+				matrix[x,line.start.z] = value;
+			}
+		}
 	}
 
 	public void DrawBoundsBorder(int[] bounds, int[,] matrix, int value)
@@ -606,7 +722,7 @@ public class LSystem
 		for(int x = 0; x < zone.size; x++)
 			for(int z = 0; z < zone.size; z++)
 			{
-				Column column = POI.columnMatrix[x+zone.x,z+zone.z];
+				Column column = zone.POI.columnMatrix[x+zone.x,z+zone.z];
 				column.POIType = poi;
 
 				column.POIMap = new int[chunkSize,chunkSize];
@@ -630,7 +746,7 @@ public class LSystem
 
 # endregion
 
-	public Int2 BoundsCenter(int[] bounds)
+	public static Int2 BoundsCenter(int[] bounds)
 	{
 		int middleX = ((bounds[0] - bounds[1]) / 2) + bounds[1];
 		int middleZ = ((bounds[2] - bounds[3]) / 2) + bounds[3];
@@ -645,9 +761,14 @@ public class LSystem
 	
 	Vector3 MatrixToGlobal(Int2 local)
 	{
-		return new Vector3(	(int)POI.position.x + (zone.x*World.chunkSize) + local.x,
+		return new Vector3(	(int)zone.POI.position.x + (zone.x*World.chunkSize) + local.x,
 							0,
-							(int)POI.position.z + (zone.z*World.chunkSize) + local.z);
+							(int)zone.POI.position.z + (zone.z*World.chunkSize) + local.z);
+	}
+
+	public int CurrentIndex()
+	{
+		return currentBounds.Count - 1;
 	}
 
 }

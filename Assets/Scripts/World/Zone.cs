@@ -3,6 +3,8 @@
 //	Square area for an L system to work on
 public class Zone
 {
+	public PointOfInterest POI;
+
 	//	Sides of the square
 	public enum Side { RIGHT, LEFT, TOP, BOTTOM };
 
@@ -26,8 +28,9 @@ public class Zone
 	//	Most and least exposed sides of the square
 	public Side front, back;
 	
-	public Zone(int x, int z, int size, int[,] matrix)
+	public Zone(PointOfInterest POI, int x, int z, int size, int[,] matrix)
 	{
+		this.POI = POI;
 		int chunkSize = World.chunkSize;
 		this.x = x;
 		this.z = z;
