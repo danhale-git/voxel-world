@@ -31,48 +31,28 @@ public class POILibrary
 
 		public void GenerateMatrixes(LSystem lSystem, Zone zone)
 		{
-			List<int>[] layers = new List<int>[4];
-
-			layers[0] = new List<int>();
-
 
 			if(lSystem.SquareInBounds(zone.bufferedBounds, zone.back, positionOnSide: 0.5f, minWidth:40, maxWidth:50, minLength:50, maxLength:80))
-				layers[0].Add(lSystem.CurrentIndex());
-			else
-			{
-				Debug.Log("initial square creation failed at " + zone.POI.position);
-				return;
-			}
+				//lSystem.DrawBoundsBorder(lSystem.currentBounds[0], zone.debugMatrix, 1);
+
+			if(lSystem.ConnectedSquare(zone.bufferedBounds, 0, bestSide:true, minWidth:10, maxWidth:20, minLength:10, maxLength:20))
+				//lSystem.DrawBoundsBorder(lSystem.currentBounds[1], zone.debugMatrix, 1);
 
 
-			int[] mainBounds = lSystem.currentBounds[layers[0][0]];
-
-			int[] hDivs;
-			int[] vDivs;
-
-			lSystem.SegmentBounds(5, 0, mainBounds, zone.back, out hDivs, out vDivs);
-
-			lSystem.DrawBoundsBorderWithSegments(mainBounds, hDivs, vDivs, zone.wallMatrix, 1);
-
-			lSystem.DefineArea();
-
-
-			if(lSystem.SquareInBounds(zone.bufferedBounds, zone.back, positionOnSide: 0.5f, minWidth:5, maxWidth:10, minLength:50, maxLength:0))
-			{
-
-			}
+			if(lSystem.ConnectedSquare(zone.bufferedBounds, 0, bestSide:true, minWidth:10, maxWidth:20, minLength:10, maxLength:20))
+				//lSystem.DrawBoundsBorder(lSystem.currentBounds[2], zone.debugMatrix, 1);
 
 			foreach(int[] bounds in lSystem.currentBounds)
 			{
-				lSystem.DrawPoint(LSystem.BoundsCenter(bounds), zone.debugMatrix, 2);
+				//lSystem.DrawPoint(LSystem.BoundsCenter(bounds), zone.debugMatrix, 2);
 				lSystem.DrawBoundsBorder(bounds, zone.debugMatrix, 1);
 			}
 			foreach(Int2 point in lSystem.originPoints)
 			{
-				lSystem.DrawPoint(point, zone.debugMatrix, 3);
+				//lSystem.DrawPoint(point, zone.debugMatrix, 3);
 			}
 
-
+			lSystem.DefineArea();
 
 			lSystem.ApplyMaps(this);
 		}

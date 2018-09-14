@@ -45,18 +45,19 @@ public class LSystem
 		noiseGen.SetInterp(FastNoise.Interp.Linear);
 		noiseGen.SetFrequency(0.9f);	
 
-		//	Randomise seed for debugging
+		/*//	Randomise seed for debugging
 		int seed = Random.Range(0,10000);
 		Debug.Log("SEED: "+ seed);
-		noiseGen.SetSeed(2202);
-		//noiseGen.SetSeed(seed);
+		noiseGen.SetSeed(seed);*/
 
 
 		//	Base noise generated from POI position
 		noiseX = (int)zone.POI.position.x;
 		noiseY = (int)zone.POI.position.z;
+		ResetNoise();
 	}
 
+	//	Generate new deterministic noise value
 	void ResetNoise()
 	{
 		noise = noiseGen.GetNoise01(noiseX, noiseY);
@@ -64,65 +65,6 @@ public class LSystem
 		noiseX += increment;
 		noiseY += increment;
 	}
-
-	public struct Line
-	{
-		public readonly Int2 start, end;
-		public Line(Int2 start, Int2 end)
-		{
-			this.start = start;
-			this.end = end;
-		}
-	}
-
-	/*public struct Building
-	{
-		public readonly List<int[]> bounds;
-		public readonly List<Int2> joints;
-		public readonly List<Zone.Side> jointSides;
-
-		public readonly List<int>[] layerIndices;
-		
-		public List<Line> lines;
-
-		public Building(List<int[]> bounds, List<Int2> joints, List<Zone.Side> jointSides, List<int>[] layerIndices)
-		{
-			this.bounds = bounds;
-			this.joints = joints;
-			this.jointSides = jointSides;
-			this.layerIndices = layerIndices;
-
-			Int2 centerMain = LSystem.BoundsCenter(bounds[0]);
-
-			lines = new List<Line>();
-
-			//	master line extends all the way
-			//	all other lines meet it
-			if(layerIndices.Length > 1)
-			{
-				foreach(int i in layerIndices[1])
-				{
-					Line line;
-					if((int)jointSides[i] < 2)
-					{
-						line = new Line(joints[i], new Int2(centerMain.x, joints[i].z));
-					}
-					else
-					{
-						line = new Line(joints[i], new Int2(joints[i].x, centerMain.z));
-					}
-					Debug.Log("drew line:"+i+" "+line.start.x+" "+line.end.x);
-					lines.Add(line);
-				}
-			}
-
-			foreach(Line l in lines)
-			{
-
-				
-			}
-		}
-	}*/
 
 	//	Operations and comparisons with regards to current square orientaion
 # region Rotation
@@ -217,6 +159,7 @@ public class LSystem
 
 # region Basic Bounds
 
+	//	Square inside perimeter bounds
 	public bool SquareInBounds(int[] perimeterBounds, Zone.Side perimeterSide, float positionOnSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
 	{
 		Int2 originPoint;
@@ -227,10 +170,10 @@ public class LSystem
 
 		return GenerateSquare(0, originPoint, perimeterSide, perimeterBounds, false, minWidth, maxWidth, minLength, maxLength);
 	}
+	//	Square from edge of square inside perimeter bounds
 	public bool ConnectedSquare(int[] perimeterBounds, int parentIndex, Zone.Side parentSide = 0, bool bestSide = false, float positionOnSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
 	{
 		int index = currentBounds.Count;
-		//int[] newBounds;
 		Int2 originPoint;
 		Zone.Side originSide;
 
@@ -253,11 +196,8 @@ public class LSystem
 	{
 		Vector3 global = MatrixToGlobal(originPoint);
 		ResetNoise();
-		Debug.Log(noise);
 		//	Rotate script values to face the same way as this square
 		Rotate(originSide);
-
-		Debug.Log(originSide + " "+originPoint.x+" "+originPoint.z);
 
 		int rightAdjacent;
 		int leftAdjacent;
@@ -320,8 +260,6 @@ public class LSystem
 
 		int squareWidth = Distance(bounds[left], bounds[right]);
 		int squareLength = Distance(bounds[front], bounds[back]);
-
-		Debug.Log(squareWidth+" x "+squareLength);
 
 		if(squareWidth < minWidth || squareLength < minLength)
 			return false;
@@ -487,23 +425,7 @@ public class LSystem
 
 	}
 
-	Int2 RandomPointOnLine(Line line)
-	{
-		int x;
-		int z;
-		if(line.start.x == line.end.x)
-		{
-			z = RandomRange(line.start.z, line.end.z);
-			x = line.start.x;
-		}
-		else
-		{
-			x = RandomRange(line.start.x, line.end.x);
-			z = line.start.z;
-		}
-		return new Int2(x,z);
-	}
-
+	//	Get position on side from 0-1 float
 	Int2 PositionOnSide(int side, int[] bounds, float position)
 	{
 		int sideSize;
@@ -530,54 +452,7 @@ public class LSystem
 
 #endregion
 
-	public void SegmentBounds(int segmentWidth, int segmentLength, int[] bounds, Zone.Side backSide, out int[] horizontalDivides, out int[] verticalDivides)
-	{
-		Rotate(backSide);
-		int width = Distance(bounds[right], bounds[left]);
-		int length = Distance(bounds[front], bounds[back]);
-
-		horizontalDivides = new int[(width/segmentWidth) - 1];
-		verticalDivides = new int[(length/segmentLength) - 1];
-
-		int[] currentHorizontal;
-		int[] currentVertical;
-
-		//	Define length/width of segments relative to back side but return arrays relative to global orientation
-		if((int)currentBack > 1)
-		{
-			currentHorizontal = horizontalDivides;
-			currentVertical = verticalDivides;
-		}
-		else
-		{
-			currentHorizontal = verticalDivides;
-			currentVertical = horizontalDivides;
-		}
-
-
-		for(int i = 1; i <= horizontalDivides.Length; i++)
-		{
-			currentHorizontal[i-1] = Mathf.Min(bounds[right], bounds[left]) + (i * segmentWidth);
-		}
-		for(int i = 1; i <= verticalDivides.Length; i++)
-		{
-			currentVertical[i-1] = Mathf.Min(bounds[front], bounds[back]) + (i * segmentLength);			
-		}
-	}
-
 # region Drawing
-
-	/*public void DrawBuilding(Building building, int[,] matrix)
-	{
-		foreach(int[] b in building.bounds)
-		{
-			DrawBoundsBorder(b, matrix, 1);
-		}
-		foreach(Line l in building.lines)
-		{
-			DrawLine(l, matrix, 1);
-		}
-	}*/
 
 	public void DefineArea()
 	{
@@ -597,26 +472,6 @@ public class LSystem
 		SetColumnMaps(poi);
 	}
 
-	public void DrawLine(Line line, int[,] matrix, int value)
-	{
-		if(line.start.x == line.end.x)
-		{
-			int sign = (int)Mathf.Sign(line.end.z - line.start.z);
-			for(int z = line.start.z; z != line.end.z; z+=sign)
-			{
-				matrix[line.start.x,z] = value;
-			}
-		}
-		else
-		{
-			int sign = (int)Mathf.Sign(line.end.x - line.start.x);
-			for(int x = line.start.x; x != line.end.x; x+=sign)
-			{
-				matrix[x,line.start.z] = value;
-			}
-		}
-	}
-
 	public void DrawBoundsBorder(int[] bounds, int[,] matrix, int value)
 	{
 		for(int x = bounds[1]; x <= bounds[0]; x++)
@@ -629,37 +484,6 @@ public class LSystem
 		{
 			matrix[bounds[1], z] = 1;
 			matrix[bounds[0], z] = 1;
-		}
-	}
-
-	public void DrawBoundsBorderWithSegments(int[] bounds, int[] horizontalDivides, int[] verticalDivides, int[,] matrix, int value)
-	{
-		for(int x = bounds[1]; x <= bounds[0]; x++)
-		{
-			matrix[x, bounds[3]] = value;
-			matrix[x, bounds[2]] = value;
-
-			if(x > bounds[1] && x < bounds[0])
-			{
-				foreach(int divide in verticalDivides)
-				{
-					matrix[x, divide] = value;
-				}
-			}
-		}
-
-		for(int z = bounds[3]; z <= bounds[2]; z++)
-		{
-			matrix[bounds[1], z] = value;
-			matrix[bounds[0], z] = value;
-
-			if(z > bounds[3] && z < bounds[2])
-			{
-				foreach(int divide in horizontalDivides)
-				{
-					matrix[divide, z] = value;
-				}
-			}
 		}
 	}
 
@@ -765,10 +589,4 @@ public class LSystem
 							0,
 							(int)zone.POI.position.z + (zone.z*World.chunkSize) + local.z);
 	}
-
-	public int CurrentIndex()
-	{
-		return currentBounds.Count - 1;
-	}
-
 }

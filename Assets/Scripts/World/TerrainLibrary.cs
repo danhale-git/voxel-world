@@ -14,7 +14,7 @@ public class TerrainLibrary
 		public float smoothRadius = 0.2f;
 		public bool handleSmoothOverlap = false;
 
-		public POILibrary.POI structures;
+		public POILibrary.POI POIs;
 		public float spawnStructuresAtNoise;
 
 		public WorldBiomes()
@@ -266,7 +266,7 @@ public class TerrainLibrary
 	{
 		public TestBiomes() : base()
 		{
-			structures = new POILibrary.POI();
+			POIs = new POILibrary.POI();
 
 			smoothRadius = 0.6f;
 			SetBiomeFrequency(0.01f);

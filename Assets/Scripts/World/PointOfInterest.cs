@@ -14,11 +14,17 @@ public class PointOfInterest
 	public int width = 0;
 	public int height = 0;
 
+	//	Columns that are part of the POI
 	int[,] baseMatrix;
+	//	Edge columns that are adjacent to the same biome
 	int[,] exposedEdgeMatrix;
+	//	Edge columns that are adjacent to a different biome
 	int[,] boundaryEdgeMatrix;
+	//	All edge columns
 	int[,] edgeMatrix;
+	//	Columns where a zone has been generated
 	int[,] occupiedMatrix;
+	//	Matrix to Column class instance reference
 	public Column[,] columnMatrix;
 
 	List<Zone> zones = new List<Zone>();
@@ -38,22 +44,25 @@ public class PointOfInterest
 		//	Load all connected POI eligible columns
 		List<Column> allCreated = DiscoverCells(initialColumn);
 
-		Debug.Log("POI created with "+allColumns.Count+" columns");
-		Debug.Log("From X: "+left+" to "+right+"\nFrom: Z "+bottom+" to "+top);
-
 		//	Create integer matrix showing eligible columns as 1
 		MapMatrix();
 
 		//	Generate noise to be used in pseudo random decision making
 		noise = Mathf.PerlinNoise(position.x, position.y);
 
+		//	Find largest square
 		zones.Add(LargestSquare(occupiedMatrix));
+		//	Set above square's columns as occupied in matrix
 		UpdateOccupied(zones[0].matrix);
+		//	Process new zone
 		ProcessZone(zones[0]);
 
+		//	System for creating random building arrangements
 		LSystem lSystem = new LSystem(zones[0]);
-		TerrainGenerator.worldBiomes.structures.GenerateMatrixes(lSystem, zones[0]);
+		//	Generate building from POI library
+		TerrainGenerator.worldBiomes.POIs.GenerateMatrixes(lSystem, zones[0]);
 
+		//	Generate column topologies
 		foreach(Column column in allCreated)
 		{
 			world.GenerateColumnTopology(column);
@@ -196,15 +205,6 @@ public class PointOfInterest
 		occupiedMatrix = baseMatrix.Clone() as int[,];
 	}
 
-	Int2 ChooseEntrance()
-	{
-		List<Column> edgeList = exposedEdge.Count == 0 ? boundaryEdge : exposedEdge;
-		int index = Mathf.FloorToInt(edgeList.Count * noise);
-		Vector3 localPosition = LocalPosition(edgeList[index].position);
-
-		return new Int2((int)localPosition.x, (int)localPosition.z);
-	}
-
 	//	Find the largest square of 1s in an int matrix
 	Zone LargestSquare(int[,] baseMatrix, int minX = 0, int minZ = 0, int maxX = 0, int maxZ = 0)
 	{
@@ -267,6 +267,7 @@ public class PointOfInterest
 
 	#region Zone Processing
 
+	//	Determine which sides of zone are back/front i.e. least/most exposed
 	void ProcessZone(Zone e)
 	{
 		int[,] testMatrix = new int[width,height];
@@ -276,13 +277,14 @@ public class PointOfInterest
 		int topScore = 0;
 		int bottomScore = 0;
 
+		//	Iterate over squares on each side, scoring for openness
 		for(int z = e.bottom; z <= e.top; z++)
 			{
 				int x = e.right;
-				if(exposedEdgeMatrix[x,z] == 1) rightScore -= 1;
-				else if(boundaryEdgeMatrix[x,z] == 1) rightScore -= 2;
-				else if(x+1 < width && edgeMatrix[x+1,z] == 0) rightScore += 2;
-				else rightScore += 1;
+				if(exposedEdgeMatrix[x,z] == 1) rightScore -= 1;				//	Exposed edge
+				else if(boundaryEdgeMatrix[x,z] == 1) rightScore -= 2;			//	Boundary edge
+				else if(x+1 < width && edgeMatrix[x+1,z] == 0) rightScore += 2;	//	No edge or adjacent edge
+				else rightScore += 1;											//	No edge
 				
 				x = e.left;
 				if(exposedEdgeMatrix[x,z] == 1) leftScore -= 1;
@@ -300,14 +302,15 @@ public class PointOfInterest
 				else topScore += 1;
 
 				z = e.bottom;
-				if(exposedEdgeMatrix[x,z] == 1) bottomScore -= 1;	//	Exposed edge
-				else if(boundaryEdgeMatrix[x,z] == 1) bottomScore -= 2;	//	Boundary edge
-				else if(z-1 >= 0 && edgeMatrix[x,z-1] == 0) bottomScore += 2;	//	No edge or adjacent edge
-				else bottomScore += 1;	//	No edge
+				if(exposedEdgeMatrix[x,z] == 1) bottomScore -= 1;
+				else if(boundaryEdgeMatrix[x,z] == 1) bottomScore -= 2;
+				else if(z-1 >= 0 && edgeMatrix[x,z-1] == 0) bottomScore += 2;	
+				else bottomScore += 1;	
 			}
 
 		int[] scores = new int[] { rightScore, leftScore, topScore, bottomScore };
 
+		//	Check scores
 		e.back = (Zone.Side)Util.MinIntIndex(scores);
 		e.front = (Zone.Side)Util.MaxIntIndex(scores);
 
@@ -327,7 +330,7 @@ public class PointOfInterest
 				break;
 		}
 
-		DebugMatrix(testMatrix, Color.cyan, 1.2f);
+		//DebugMatrix(testMatrix, Color.cyan, 1.2f);
 	}
 
 	#endregion
