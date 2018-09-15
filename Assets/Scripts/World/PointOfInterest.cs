@@ -349,6 +349,7 @@ public class PointOfInterest
 		return matrix;
 	}
 
+	//	List of columns to int matrix with those columns as 1
 	int[,] ColumnsToMatrix(List<Column> columns)
 	{
 		int[,] matrix = new int[width,height];
@@ -377,6 +378,7 @@ public class PointOfInterest
 		return (worldPosition - this.position) / World.chunkSize;
 	}
 
+	//	Draw lines around columns with value 1 in matrix
 	void DebugMatrix(int[,] matrix, Color color, float divisor)
 	{
 		for(int z = 0; z < height; z++)
