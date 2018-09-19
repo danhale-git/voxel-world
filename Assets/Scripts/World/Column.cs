@@ -134,9 +134,12 @@ public class Column
 	public int LocalY(int globalY)
 	{
 		int localY = globalY;
+		int iterationLimit = 500;
 		while(localY >= 16)
 		{
 			localY -= chunkSize;
+			iterationLimit--;
+			if(iterationLimit < 1) break;
 		}
 		return localY;
 	}

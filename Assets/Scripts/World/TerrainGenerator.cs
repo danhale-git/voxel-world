@@ -5,7 +5,7 @@ using UnityEngine;
 public class TerrainGenerator
 {
 	//	Static reference for current world
-	public static TerrainLibrary.WorldBiomes worldBiomes = new TerrainLibrary.TestBiomes();
+	public static TerrainLibrary.WorldBiomes worldBiomes = new TerrainLibrary.ExampleWorld();
 
 	//	Hold values used in topology smoothing
 	private struct Topology
