@@ -322,7 +322,7 @@ public class Chunk
 		mesh.SetTriangles(triangles, 0);
 		mesh.SetColors(colors);
 		mesh.SetUVs(0, UVs);
-		mesh.RecalculateNormals();
+		//mesh.RecalculateNormals();
 		UnityEditor.MeshUtility.Optimize(mesh);
 
 		filter = gameObject.AddComponent<MeshFilter>();

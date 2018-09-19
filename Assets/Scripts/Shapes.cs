@@ -150,7 +150,7 @@ public static class Shapes
 
 				triArrays[i].CopyTo( allTris,  triIndexOffset);
 
-				//UVArrays[i].CopyTo(	 allUVs, vertIndexOffset);
+				UVArrays[i].CopyTo(	 allUVs, vertIndexOffset);
 
 				vertIndexOffset += vertArrays[i].Length;
 				triIndexOffset += triArrays[i].Length;
