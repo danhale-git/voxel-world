@@ -32,21 +32,20 @@ public class POILibrary
 		public void GenerateMatrixes(LSystem lSystem, Zone zone)
 		{
 
-			if(lSystem.SquareInBounds(zone.bufferedBounds, zone.back, positionOnSide: 0.5f, minWidth:40, maxWidth:50, minLength:50, maxLength:80))
+			if(lSystem.SquareInBounds(zone.bufferedBounds, zone.back, positionOnSide: 0.5f, minWidth:80, maxWidth:100, minLength:80, maxLength:100))
 				//lSystem.DrawBoundsBorder(lSystem.currentBounds[0], zone.debugMatrix, 1);
 
-			if(lSystem.ConnectedSquare(zone.bufferedBounds, 0, bestSide:true, minWidth:10, maxWidth:20, minLength:10, maxLength:20))
-				//lSystem.DrawBoundsBorder(lSystem.currentBounds[1], zone.debugMatrix, 1);
-
-
-			if(lSystem.ConnectedSquare(zone.bufferedBounds, 0, bestSide:true, minWidth:10, maxWidth:20, minLength:10, maxLength:20))
-				//lSystem.DrawBoundsBorder(lSystem.currentBounds[2], zone.debugMatrix, 1);
+			lSystem.GenerateRooms(lSystem.currentBounds[0]);
 
 			foreach(int[] bounds in lSystem.currentBounds)
 			{
 				//lSystem.DrawPoint(LSystem.BoundsCenter(bounds), zone.debugMatrix, 2);
 				lSystem.DrawBoundsBorder(bounds, zone.debugMatrix, 1);
 			}
+
+			lSystem.DrawRooms(zone.debugMatrix, 1);
+
+			//lSystem.DrawCorridors(zone.debugMatrix, 1);
 			foreach(Int2 point in lSystem.originPoints)
 			{
 				//lSystem.DrawPoint(point, zone.debugMatrix, 3);

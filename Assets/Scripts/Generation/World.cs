@@ -82,6 +82,9 @@ public class World : MonoBehaviour
 		//	Generate column class instances (heightmaps and other 2D terrain data)
 		//	+1 buffer allows adjacent column lookups without TryGetValue
 		AddCoroutine(CreateColumnsInSquare(centerChunk, radius+1, 20));
+		//	Generate cellular data and check POI eligibility in Column constructor
+		//	If a point of interest (POI) is detected, generate all chunks in the point of interest before continuing
+		//	Generate height maps
 
 		//	Determine the highest and lowest chunk in each column that must be generated/drawn
 		AddCoroutine(ChunksInSquare(centerChunk, radius, GetColumnSize, 20));
