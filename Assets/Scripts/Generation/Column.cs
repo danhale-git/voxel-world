@@ -98,6 +98,8 @@ public class Column
 
 				if(walls)
 				{
+					if(POIWalls[x,z] == 0) continue;
+
 					int ly = LocalY(heightMap[x,z]);
 
 					if(currentChunk == null)
@@ -106,21 +108,36 @@ public class Column
 						currentChunk = World.chunks[new Vector3(position.x, chunkY, position.z)];
 					}
 
-					if(POIWalls[x,z] == 1)
+					Chunk newChunk = null;
+					if(BlockOwnerChunk(new Vector3(x,ly,z), currentChunk, out newChunk))
 					{
-						Chunk newChunk = null;
-						if(BlockOwnerChunk(new Vector3(x,ly,z), currentChunk, out newChunk))
-						{
-							currentChunk = newChunk;
-							allAlteredChunks.Add(newChunk);
-						}
+						currentChunk = newChunk;
+						allAlteredChunks.Add(newChunk);
+					}
 
-						for(int i = 0; i < POIType.wallHeight; i++)
-						{
-							int y = ly + i;
-							currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
-							if(!hasBlocks) hasBlocks = true;
-						}
+					switch(POIWalls[x,z])
+					{
+						case 1:
+							for(int i = 0; i < POIType.wallHeight; i++)
+							{
+								int y = ly + i;
+								currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
+								if(!hasBlocks) hasBlocks = true;
+							}
+							break;
+						
+						case 2:
+							for(int i = 0; i < POIType.wallHeight; i++)
+							{
+								if(i<3) continue;
+								int y = ly + i;
+								currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
+								if(!hasBlocks) hasBlocks = true;
+							}
+							break;
+
+						default:
+							break;
 					}
 				}
 			}

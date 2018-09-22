@@ -401,7 +401,6 @@ public class LSystem
 		}
 	}
 
-	//	TODO: Remove adjacentRooms?
 	struct Room
 	{
 		public readonly List<Line> edges;
@@ -417,29 +416,53 @@ public class LSystem
 		}
 	}
 
+	struct Wing
+	{
+		int[] bounds;
+		List<Int2> entrances;
+		List<Room> rooms;
+
+		public Wing(int[] bounds, List<Int2> entrances, List<Room> rooms)
+		{
+			this.bounds = bounds;
+			this.entrances = entrances;
+			this.rooms = rooms;
+		}
+	}
+
 	public void GenerateRooms(int[] buildingBounds)
 	{
-		Room firstRoom = new Room(	BoundsToEdges(buildingBounds),
-									new List<WallType> { WallType.OUTSIDE, WallType.OUTSIDE, WallType.OUTSIDE, WallType.OUTSIDE },
-									buildingBounds,
-									new Int2(0,0));
+		rooms.Clear();
 
-		SplitRoom(firstRoom, corridorWidth:5);
+		int width = buildingBounds[0] - buildingBounds[1];
+		int height = buildingBounds[2] - buildingBounds[3];
+
+		rooms.Add(new Room(	BoundsToEdges(buildingBounds),
+							new List<WallType> { WallType.OUTSIDE, WallType.OUTSIDE, WallType.OUTSIDE, WallType.OUTSIDE },
+							buildingBounds,
+							new Int2(0,0)));
 
 		List<Room> roomsCopy = new List<Room>(rooms);
 		
 		foreach(Room room in roomsCopy)
 		{
-			SplitRoom(room);
+			SplitRoom(room, split:0.5f, corridorWidth:7);
 		}
 
 		roomsCopy = new List<Room>(rooms);
 
 		foreach(Room room in roomsCopy)
 		{
-			SplitRoom(room);
+			SplitRoom(room, split:0.5f, corridorWidth:5);
 		}
 		
+		roomsCopy = new List<Room>(rooms);
+
+		foreach(Room room in roomsCopy)
+		{
+			SplitRoom(room, split:0.5f, corridorWidth:5);
+		}
+
 		roomsCopy = new List<Room>(rooms);
 
 		foreach(Room room in roomsCopy)
@@ -481,12 +504,12 @@ public class LSystem
 		return edges;
 	}
 
-	void SplitRoom(Room room, float point = 0, int corridorWidth = 0)
+	void SplitRoom(Room room, int point = 0, float split = 0, int corridorWidth = 0)
 	{
-		if(point == 0)
+		if(point == 0 && split == 0)
 		{
 			ResetNoise();
-			point = noise;
+			split = noise;
 		}
 
 		if(room.edges.Count != 4)
@@ -498,124 +521,86 @@ public class LSystem
 		int width = room.bounds[0] - room.bounds[1];
 		int height = room.bounds[2] - room.bounds[3];
 
-		WallType newWallType = corridorWidth > 0 ? WallType.EXIT : WallType.INSIDE;
+		WallType wallTypeA = corridorWidth > 0 ? WallType.EXIT : WallType.INSIDE;
+		WallType wallTypeB = wallTypeA;
+
+		Int2 doorA = new Int2(0,0);
+		Int2 doorB = new Int2(0,0);
+
+		List<WallType> wallsA;
+		List<WallType> wallsB;
+
+		int[] boundsA;
+		int[] boundsB;
 
 		//	Wider than tall
 		if(width > height)
 		{
-			Debug.Log("wide");
-			int splitPoint = (int)(room.bounds[1] + (width * point));
-			int[] boundsLeft = new int[] { splitPoint - (corridorWidth/2), room.bounds[1], room.bounds[2], room.bounds[3] };
-			int[] boundsRight = new int[] { room.bounds[0], splitPoint + (corridorWidth/2), room.bounds[2], room.bounds[3] };
+			int splitPoint = point == 0 ? (int)(room.bounds[1] + (width * split)) : point;
+			boundsA = new int[] { splitPoint - (corridorWidth/2), room.bounds[1], room.bounds[2], room.bounds[3] };
+			boundsB = new int[] { room.bounds[0], splitPoint + (corridorWidth/2), room.bounds[2], room.bounds[3] };
 
 			rooms.Remove(room);
-
-			WallType rightWallType = newWallType;
-			WallType leftWallType = newWallType;
-			Int2 rightDoor = new Int2(0,0);
-			Int2 leftDoor = new Int2(0,0);
 
 			if(corridorWidth == 0 && room.wallTypes[2] != WallType.EXIT && room.wallTypes[3] != WallType.EXIT)
 			{	
 				if(room.wallTypes[0] == WallType.EXIT)
-					leftWallType = WallType.EXIT;
+					wallTypeA = WallType.EXIT;
 				else
-					rightWallType = WallType.EXIT;
+					wallTypeB = WallType.EXIT;
 			}
 
-			List<WallType> leftWalls = new List<WallType> { leftWallType, room.wallTypes[1], room.wallTypes[2], room.wallTypes[3] };
-			List<WallType> rightWalls = new List<WallType> { room.wallTypes[0], rightWallType, room.wallTypes[2], room.wallTypes[3] };
-
-			for(int i = 0; i < 4; i++)
-			{
-				if(leftWalls[i] == WallType.EXIT)
-				{
-					leftDoor = RandomPointOnSide(i, boundsLeft);
-					break;
-				}
-			}
-			for(int i = 0; i < 4; i++)
-			{
-				if(rightWalls[i] == WallType.EXIT)
-				{
-					rightDoor = RandomPointOnSide(i, boundsRight);
-					break;
-				}
-			}
-
-			Room leftRoom = new Room(BoundsToEdges(boundsLeft),
-									leftWalls,
-									boundsLeft,
-									leftDoor);
-			Room rightRoom = new Room(BoundsToEdges(boundsRight),
-									rightWalls,
-									boundsRight,
-									rightDoor);
-
-			rooms.Add(leftRoom);
-			rooms.Add(rightRoom);
+			wallsA = new List<WallType> { wallTypeA, room.wallTypes[1], room.wallTypes[2], room.wallTypes[3] };
+			wallsB = new List<WallType> { room.wallTypes[0], wallTypeB, room.wallTypes[2], room.wallTypes[3] };
 		}
+		//	Taller than wide
 		else
 		{
-			Debug.Log("tall");
-			int splitPoint = (int)(room.bounds[3] + (height * point));
-			int[] boundsBottom = new int[] { room.bounds[0], room.bounds[1], splitPoint - (corridorWidth/2), room.bounds[3] };
-			int[] boundsTop = new int[] { room.bounds[0], room.bounds[1], room.bounds[2], splitPoint + (corridorWidth/2) };
+			int splitPoint = point == 0 ? (int)(room.bounds[3] + (height * split)) : point;
+			boundsA = new int[] { room.bounds[0], room.bounds[1], splitPoint - (corridorWidth/2), room.bounds[3] };
+			boundsB = new int[] { room.bounds[0], room.bounds[1], room.bounds[2], splitPoint + (corridorWidth/2) };
 
 			rooms.Remove(room);
-
-			WallType topWallType = newWallType;
-			WallType bottomWallType = newWallType;
-			Int2 topDoor = new Int2(0,0);
-			Int2 bottomDoor = new Int2(0,0);
 
 			if(corridorWidth == 0 && room.wallTypes[0] != WallType.EXIT && room.wallTypes[1] != WallType.EXIT)
 			{	
 				if(room.wallTypes[2] == WallType.EXIT)
-					bottomWallType = WallType.EXIT;
+					wallTypeA = WallType.EXIT;
 				else
-					topWallType = WallType.EXIT;
+					wallTypeB = WallType.EXIT;
 			}
 
-			List<WallType> bottomWalls = new List<WallType> { room.wallTypes[0], room.wallTypes[1], bottomWallType, room.wallTypes[3] };
-			List<WallType> topWalls = new List<WallType> { room.wallTypes[0], room.wallTypes[1], room.wallTypes[2], topWallType };
-
-			for(int i = 0; i < 4; i++)
-			{
-				if(bottomWalls[i] == WallType.EXIT)
-				{
-					bottomDoor = RandomPointOnSide(i, boundsBottom);
-					break;
-				}
-			}
-			for(int i = 0; i < 4; i++)
-			{
-				if(topWalls[i] == WallType.EXIT)
-				{
-					topDoor = RandomPointOnSide(i, boundsTop);
-					break;
-				}
-			}
-
-			Room bottomRoom = new Room(BoundsToEdges(boundsBottom),
-									bottomWalls,
-									boundsBottom,
-									bottomDoor);
-			Room topRoom = new Room(BoundsToEdges(boundsTop),
-									topWalls,
-									boundsTop,
-									topDoor);
-
-			rooms.Add(bottomRoom);
-			rooms.Add(topRoom);
+			wallsA = new List<WallType> { room.wallTypes[0], room.wallTypes[1], wallTypeA, room.wallTypes[3] };
+			wallsB = new List<WallType> { room.wallTypes[0], room.wallTypes[1], room.wallTypes[2], wallTypeB };
 		}
 
+		for(int i = 0; i < 4; i++)
+			{
+				if(wallsA[i] == WallType.EXIT)
+				{
+					doorA = RandomPointOnSide(i, boundsA);
+					break;
+				}
+			}
+		
+		for(int i = 0; i < 4; i++)
+		{
+			if(wallsB[i] == WallType.EXIT)
+			{
+				doorB = RandomPointOnSide(i, boundsB);
+				break;
+			}
+		}
 
-
+		rooms.Add(new Room(BoundsToEdges(boundsA),
+								wallsA,
+								boundsA,
+								doorA));
+		rooms.Add(new Room(BoundsToEdges(boundsB),
+								wallsB,
+								boundsB,
+								doorB));
 	}
-
-
-
 
 #endregion
 
@@ -725,15 +710,15 @@ public class LSystem
 		}
 	}
 
-	public void DrawRooms(int[,] matrix, int value)
+	public void DrawRooms(int[,] matrix)
 	{
 		foreach(Room room in rooms)
 		{
-			DrawBoundsBorder(room.bounds, matrix, value);
+			DrawBoundsBorder(room.bounds, matrix, 1);
 		}
 		foreach(Room room in rooms)
 		{
-			DrawPoint(room.door, matrix, value+1);
+			DrawPoint(room.door, matrix, 2);
 		}
 	}
 
