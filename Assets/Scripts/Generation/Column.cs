@@ -121,6 +121,7 @@ public class Column
 							for(int i = 0; i < POIType.wallHeight; i++)
 							{
 								int y = ly + i;
+								if(y > 15) continue;	//	DEBUG !!!kS
 								currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
 								if(!hasBlocks) hasBlocks = true;
 							}
@@ -131,6 +132,7 @@ public class Column
 							{
 								if(i<3) continue;
 								int y = ly + i;
+								if(y > 15) continue;	//	DEBUG !!!kS
 								currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
 								if(!hasBlocks) hasBlocks = true;
 							}

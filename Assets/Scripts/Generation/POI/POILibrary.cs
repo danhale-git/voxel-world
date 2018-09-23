@@ -8,7 +8,7 @@ public class POILibrary
 
 	public class POI
 	{
-		public int wallHeight = 6;
+		public int wallHeight = 5;
 
 		public void GenerateMatrixes(LSystem lSystem, Zone zone)
 		{
@@ -18,7 +18,7 @@ public class POILibrary
 			//	Generate rooms with corridors at chosen points
 			//	Grow two smaller squares off chosen points
 
-			if(lSystem.SquareInBounds(zone.bufferedBounds, zone.back, positionOnSide: 0.5f, minWidth:40, maxWidth:50, minLength:40, maxLength:50))
+			/*if(lSystem.SquareInBounds(zone.bufferedBounds, zone.back, positionOnSide: 0.5f, minWidth:40, maxWidth:50, minLength:40, maxLength:50))
 			{
 				lSystem.ConnectedSquare(zone.bufferedBounds, 0, bestSide:true, minWidth:20, maxWidth:30, minLength:20, maxLength:30);
 			}
@@ -43,7 +43,9 @@ public class POILibrary
 			foreach(Int2 point in lSystem.originPoints)
 			{
 				//lSystem.DrawPoint(point, zone.debugMatrix, 3);
-			}
+			}/* */
+
+			lSystem.GenerateBuilding();
 
 			lSystem.DefineArea();
 

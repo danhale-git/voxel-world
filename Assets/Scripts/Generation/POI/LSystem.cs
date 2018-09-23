@@ -45,8 +45,8 @@ public class LSystem
 		noiseGen.SetInterp(FastNoise.Interp.Linear);
 		noiseGen.SetFrequency(0.9f);	
 
-		/*//	Randomise seed for debugging
-		int seed = Random.Range(0,10000);
+		//	Randomise seed for debugging
+		/*int seed = Random.Range(0,10000);
 		Debug.Log("SEED: "+ seed);
 		noiseGen.SetSeed(seed);*/
 
@@ -171,7 +171,7 @@ public class LSystem
 		return GenerateSquare(0, originPoint, perimeterSide, perimeterBounds, false, minWidth, maxWidth, minLength, maxLength);
 	}
 	//	Square from edge of square inside perimeter bounds
-	public bool ConnectedSquare(int[] perimeterBounds, int parentIndex, Zone.Side parentSide = 0, bool bestSide = false, float positionOnSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
+	/*public bool ConnectedSquare(int[] perimeterBounds, int parentIndex, Zone.Side parentSide = 0, bool bestSide = false, float positionOnSide = 0, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
 	{
 		int index = currentBounds.Count;
 		Int2 originPoint;
@@ -188,6 +188,21 @@ public class LSystem
 			originPoint = RandomPointOnSide((int)parentSide, parentBounds);
 
 		originSide = Zone.Opposite(parentSide);
+
+		return GenerateSquare(index, originPoint, originSide, perimeterBounds, false, minWidth, maxWidth, minLength, maxLength);
+	}*/
+	public bool SquareFromPoint(int[] perimeterBounds, Int2 originPoint, int[] parentBounds, int minWidth = 0, int maxWidth = 0, int minLength = 0, int maxLength = 0)
+	{
+		int index = currentBounds.Count;
+		Zone.Side originSide = 0;
+
+		for(int i = 0; i < 4; i++)
+		{
+			if(originPoint.x == parentBounds[i] || originPoint.z == parentBounds[i])
+				originSide = Zone.Opposite((Zone.Side)i);
+
+		}
+		Debug.Log(originSide);
 
 		return GenerateSquare(index, originPoint, originSide, perimeterBounds, false, minWidth, maxWidth, minLength, maxLength);
 	}
@@ -262,7 +277,10 @@ public class LSystem
 		int squareLength = Distance(bounds[front], bounds[back]);
 
 		if(squareWidth < minWidth || squareLength < minLength)
+		{
+			Debug.Log("square too large: "+squareWidth+" x "+squareLength);
 			return false;
+		}
 		else
 		{
 			AddNewSquare(bounds, originPoint, originSide);
@@ -387,8 +405,6 @@ public class LSystem
 	int corridorWidth = 5;
 	int roomWidth = 10;
 
-	List<Room> rooms = new List<Room>();
-
 	enum WallType { NONE, EXIT, OUTSIDE, INSIDE }
 
 	struct Line
@@ -418,70 +434,110 @@ public class LSystem
 
 	struct Wing
 	{
-		int[] bounds;
-		List<Int2> entrances;
-		List<Room> rooms;
+		public int[] bounds;
+		public List<Room> rooms;
+		public List<Int2> entrances;
+		public int minRoomSize;
+		public int maxCorridorSize;
+		public float doorNoise;
 
-		public Wing(int[] bounds, List<Int2> entrances, List<Room> rooms)
+		public Wing(int[] bounds, int minRoomSize, int maxCorridorSize, float doorNoise)
 		{
 			this.bounds = bounds;
-			this.entrances = entrances;
-			this.rooms = rooms;
+			this.rooms = new List<Room>();
+			this.entrances = new List<Int2>();
+			this.minRoomSize = minRoomSize;
+			this.maxCorridorSize = maxCorridorSize;
+			this.doorNoise = doorNoise;
 		}
 	}
 
-	public void GenerateRooms(int[] buildingBounds)
+	public void GenerateBuilding()
 	{
-		rooms.Clear();
+		int minRoomSize = 7;
+		int maxCorridorSize = 10;
+		List<Wing> wings = new List<Wing>();
+		if(SquareInBounds(zone.bufferedBounds, zone.back, positionOnSide: 0.5f, minWidth:50, maxWidth:70, minLength:50, maxLength:70))
+		{
+			int[] newBounds = currentBounds[0];
 
-		int width = buildingBounds[0] - buildingBounds[1];
-		int height = buildingBounds[2] - buildingBounds[3];
+			Wing newWing = new Wing(newBounds, minRoomSize, maxCorridorSize, noise);
+			GenerateRooms(newWing);
 
-		rooms.Add(new Room(	BoundsToEdges(buildingBounds),
+			DrawRooms(zone.wallMatrix, newWing);
+			DrawBoundsBorder(newBounds, zone.wallMatrix, 1);
+
+			foreach(Int2 point in newWing.entrances)
+			{
+				if(SquareFromPoint(zone.bufferedBounds, point, newWing.bounds, 10, 50, 10, 50))
+				{
+					int[] newBounds2 = currentBounds[currentBounds.Count - 1];
+
+					Wing newWing2 = new Wing(newBounds2, minRoomSize, maxCorridorSize, noise);
+					GenerateRooms(newWing2, point);
+
+					DrawRooms(zone.wallMatrix, newWing2);
+					DrawBoundsBorder(newBounds2, zone.wallMatrix, 1);
+					
+				}
+			}		
+
+			foreach(Int2 point in newWing.entrances)
+			{
+				DrawPoint(point, zone.wallMatrix, 3);
+			}
+			
+		}
+	}
+
+	void GenerateRooms(Wing wing, Int2? entrancePoint = null)
+	{
+		int width = wing.bounds[0] - wing.bounds[1];
+		int height = wing.bounds[2] - wing.bounds[3];
+
+		wing.rooms.Add(new Room(	BoundsToEdges(wing.bounds),
 							new List<WallType> { WallType.OUTSIDE, WallType.OUTSIDE, WallType.OUTSIDE, WallType.OUTSIDE },
-							buildingBounds,
+							wing.bounds,
 							new Int2(0,0)));
 
-		List<Room> roomsCopy = new List<Room>(rooms);
+		int corridorIterations = Mathf.Max(width, height) / (wing.minRoomSize*3);
+		int corridorWidth = Mathf.Max(width, height)/10;
+
+		SplitRoom(wing.rooms[0], wing, entrancePoint, corridorWidth < 5 ? 5 : corridorWidth);
+
+		List<Room> roomsCopy;
+
+		for(int i = 0; i < corridorIterations-1; i++)
+		{
+			corridorWidth -= 2;
+			int cWidth = corridorWidth < 5 ? 5 : corridorWidth;
+			roomsCopy = new List<Room>(wing.rooms);
 		
-		foreach(Room room in roomsCopy)
-		{
-			SplitRoom(room, split:0.5f, corridorWidth:7);
+			foreach(Room room in roomsCopy)
+			{
+				SplitRoom(room, wing, corridorWidth:cWidth);
+			}
 		}
 
-		roomsCopy = new List<Room>(rooms);
-
-		foreach(Room room in roomsCopy)
+		bool roomsCreated = true;
+		int iterationCount = 0;
+		while(roomsCreated && iterationCount < 5000)
 		{
-			SplitRoom(room, split:0.5f, corridorWidth:5);
-		}
-		
-		roomsCopy = new List<Room>(rooms);
+			ResetNoise();
+			wing.doorNoise = noise;
+			iterationCount++;
+			if(iterationCount > 4999) Debug.Log("Too many iterations");
 
-		foreach(Room room in roomsCopy)
-		{
-			SplitRoom(room, split:0.5f, corridorWidth:5);
-		}
+			roomsCopy = new List<Room>(wing.rooms);
 
-		roomsCopy = new List<Room>(rooms);
+			roomsCreated = false;
 
-		foreach(Room room in roomsCopy)
-		{
-			SplitRoom(room);
-		}
+			foreach(Room room in roomsCopy)
+			{
+				if(SplitRoom(room, wing) && !roomsCreated)
+					roomsCreated = true;
+			}
 
-		roomsCopy = new List<Room>(rooms);
-
-		foreach(Room room in roomsCopy)
-		{
-			SplitRoom(room);
-		}
-
-		roomsCopy = new List<Room>(rooms);
-
-		foreach(Room room in roomsCopy)
-		{
-			SplitRoom(room);
 		}
 	}
 
@@ -504,18 +560,17 @@ public class LSystem
 		return edges;
 	}
 
-	void SplitRoom(Room room, int point = 0, float split = 0, int corridorWidth = 0)
+	bool SplitRoom(Room room, Wing wing, Int2? point = null, int corridorWidth = 0)
 	{
-		if(point == 0 && split == 0)
+		if(point == null)
 		{
 			ResetNoise();
-			split = noise;
 		}
 
 		if(room.edges.Count != 4)
 		{
 			Debug.Log("Can only split a rectangular room");
-			return;
+			return false;
 		}
 
 		int width = room.bounds[0] - room.bounds[1];
@@ -533,14 +588,81 @@ public class LSystem
 		int[] boundsA;
 		int[] boundsB;
 
-		//	Wider than tall
-		if(width > height)
+		int splitPoint = 0;
+		bool splitX = false;
+
+		if(point != null)
 		{
-			int splitPoint = point == 0 ? (int)(room.bounds[1] + (width * split)) : point;
+			Int2 startPoint = (Int2)point;
+			if((int)PointSide(startPoint, room.bounds) < 2)
+			{
+				splitX = false;
+				splitPoint = startPoint.z;
+			}
+			else
+			{
+				splitX = true;
+				splitPoint = startPoint.x;
+			}
+		}
+		else if(width > height)
+		{
+			splitX = true;
+			int splitValue = (int)(width * noise);
+
+			if(Mathf.Min(splitValue, width - splitValue) < wing.minRoomSize)
+			{
+				if(width >= wing.minRoomSize*2)
+					splitValue = wing.minRoomSize;
+				else
+					return false;
+			}
+
+			splitPoint = (int)(room.bounds[1] + splitValue);
+
+			if(corridorWidth > 0)
+			{
+				if(2 != (int)zone.back && room.bounds[2] == wing.bounds[2])
+					wing.entrances.Add(new Int2(splitPoint, room.bounds[2]));
+				else if(3 != (int)zone.back && room.bounds[3] == wing.bounds[3])
+					wing.entrances.Add(new Int2(splitPoint, room.bounds[3]));
+			}
+
+			
+		}
+		else
+		{
+			splitX = false;
+			int splitValue = (int)(height * noise);
+
+			if(Mathf.Min(splitValue, height - splitValue) < wing.minRoomSize)
+			{
+				if(height >= wing.minRoomSize*2)
+					splitValue = wing.minRoomSize;
+				else
+					return false;
+			}
+
+			splitPoint = (int)(room.bounds[3] + splitValue);
+
+			if(corridorWidth > 0)
+			{
+				if(0 != (int)zone.back && room.bounds[0] == wing.bounds[0])
+					wing.entrances.Add(new Int2(room.bounds[0], splitPoint));
+				else if(1 != (int)zone.back && room.bounds[1] == wing.bounds[1])
+					wing.entrances.Add(new Int2(room.bounds[1], splitPoint));
+			}
+
+			
+		}
+
+		//	Wider than tall
+		if(splitX)
+		{
 			boundsA = new int[] { splitPoint - (corridorWidth/2), room.bounds[1], room.bounds[2], room.bounds[3] };
 			boundsB = new int[] { room.bounds[0], splitPoint + (corridorWidth/2), room.bounds[2], room.bounds[3] };
 
-			rooms.Remove(room);
+			wing.rooms.Remove(room);
 
 			if(corridorWidth == 0 && room.wallTypes[2] != WallType.EXIT && room.wallTypes[3] != WallType.EXIT)
 			{	
@@ -556,11 +678,10 @@ public class LSystem
 		//	Taller than wide
 		else
 		{
-			int splitPoint = point == 0 ? (int)(room.bounds[3] + (height * split)) : point;
 			boundsA = new int[] { room.bounds[0], room.bounds[1], splitPoint - (corridorWidth/2), room.bounds[3] };
 			boundsB = new int[] { room.bounds[0], room.bounds[1], room.bounds[2], splitPoint + (corridorWidth/2) };
 
-			rooms.Remove(room);
+			wing.rooms.Remove(room);
 
 			if(corridorWidth == 0 && room.wallTypes[0] != WallType.EXIT && room.wallTypes[1] != WallType.EXIT)
 			{	
@@ -575,31 +696,33 @@ public class LSystem
 		}
 
 		for(int i = 0; i < 4; i++)
+		{
+			if(wallsA[i] == WallType.EXIT)
 			{
-				if(wallsA[i] == WallType.EXIT)
-				{
-					doorA = RandomPointOnSide(i, boundsA);
-					break;
-				}
+				doorA = PositionOnSide(i, boundsA, wing.doorNoise);
+				break;
 			}
+		}
 		
 		for(int i = 0; i < 4; i++)
 		{
 			if(wallsB[i] == WallType.EXIT)
 			{
-				doorB = RandomPointOnSide(i, boundsB);
+				doorB = PositionOnSide(i, boundsB, wing.doorNoise);
 				break;
 			}
 		}
 
-		rooms.Add(new Room(BoundsToEdges(boundsA),
+		wing.rooms.Add(new Room(BoundsToEdges(boundsA),
 								wallsA,
 								boundsA,
 								doorA));
-		rooms.Add(new Room(BoundsToEdges(boundsB),
+		wing.rooms.Add(new Room(BoundsToEdges(boundsB),
 								wallsB,
 								boundsB,
 								doorB));
+
+		return true;
 	}
 
 #endregion
@@ -629,7 +752,7 @@ public class LSystem
 	}
 
 	//	Get pseudo random point on side of bounds using coherent noise
-	Int2 RandomPointOnSide(int side, int[] bounds, int lowOffset = 0, int highOffset = 0)
+	Int2 RandomPointOnSide(int side, int[] bounds, int lowOffset = 1, int highOffset = 1)
 	{
 		int x;
 		int z;
@@ -710,13 +833,13 @@ public class LSystem
 		}
 	}
 
-	public void DrawRooms(int[,] matrix)
+	void DrawRooms(int[,] matrix, Wing wing)
 	{
-		foreach(Room room in rooms)
+		foreach(Room room in wing.rooms)
 		{
 			DrawBoundsBorder(room.bounds, matrix, 1);
 		}
-		foreach(Room room in rooms)
+		foreach(Room room in wing.rooms)
 		{
 			DrawPoint(room.door, matrix, 2);
 		}
@@ -845,5 +968,17 @@ public class LSystem
 		return new Vector3(	(int)zone.POI.position.x + (zone.x*World.chunkSize) + local.x,
 							0,
 							(int)zone.POI.position.z + (zone.z*World.chunkSize) + local.z);
+	}
+
+	Zone.Side PointSide(Int2 point, int[] bounds)
+	{
+		for(int i = 0; i < 4; i++)
+		{
+			if(point.x == bounds[i] || point.z == bounds[i])
+				return Zone.Opposite((Zone.Side)i);
+		}
+		
+		Debug.Log("No side found for point");
+		return 0;
 	}
 }

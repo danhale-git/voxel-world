@@ -293,9 +293,9 @@ public class Chunk
 
 					Color color = (Color)Blocks.colors[(int)blockTypes[x,y,z]];
 
-					/*if(column.POIDebug != null && column.POIDebug[x,z] == 1) color = Color.black;
-					else if(column.POIDebug != null && column.POIDebug[x,z] == 2) color = Color.red;
-					else if(column.POIDebug != null && column.POIDebug[x,z] == 3) color = Color.green;
+					if(column.POIWalls != null && column.POIWalls[x,z] == 1) color = Color.black;
+					else if(column.POIWalls != null && column.POIWalls[x,z] == 2) color = Color.red;
+					else if(column.POIWalls != null && column.POIWalls[x,z] == 3) color = Color.green;
 					/*else if(column.POIHeightGradient != null)
 					{
 						float colVal = ((float)column.POIHeightGradient[x,z])/10;
