@@ -187,14 +187,14 @@ public class Column
 				}
 		}*/
 
-	public byte GetBitMask(Vector3 voxel, POILibrary.Tiles tile)
+	/*public byte GetBitMask(Vector3 voxel, POILibrary.Tiles tile)
 	{
 		Vector3[] neighbours = Util.HorizontalBlockNeighbours(voxel);
 		int value = 1;
 		int total = 0;
 
 		Column owner;
-
+*
 		for(int i = 0; i < neighbours.Length; i++)
 		{
 			Vector3 pos;
@@ -218,7 +218,7 @@ public class Column
 			value *= 2;
 		}
 		return (byte)total;
-	}
+	}*/
 
 	bool BlockOwnerColumn(Vector3 pos, out Column column)
 	{
