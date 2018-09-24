@@ -334,13 +334,11 @@ public class BuildingGenerator
 	}
 
 	//	TODO: Second corridor split is always perpendicular to first
-	//	TODO: Separate into SplitRoom(), SplitRoomAtConnector - SplitHorizontal(), SplitVertical()
+	//	TODO: Separate into SplitRoom(), SplitRoomAtConnector()
+	//	TODO: Replace numbers int values in array arranglements with word variables, make word variables constant
 	bool SplitRoom(Room room, Wing wing, Wing? connectedWing = null, int connectionIndex = 0, int corridorWidth = 0, bool firstSplit = false)
 	{
-		if(connectedWing == null)
-			ResetNoise();
-
-		
+		if(connectedWing == null) ResetNoise();
 
 		int width = room.bounds[0] - room.bounds[1];
 		int height = room.bounds[2] - room.bounds[3];
@@ -348,95 +346,77 @@ public class BuildingGenerator
 		WallType wallTypeA = corridorWidth > 0 ? WallType.EXIT : WallType.INSIDE;
 		WallType wallTypeB = wallTypeA;
 
-		Int2 doorA = new Int2(0,0);
-		Int2 doorB = new Int2(0,0);
-
-		WallType[] wallsA;
-		WallType[] wallsB;
-
-		int[] boundsA;
-		int[] boundsB;
+		WallType[] wallsA, wallsB;
+		int[] boundsA, boundsB;
 
 		int splitPoint = 0;
-		bool splitX = false;
+		bool VerticalSplit = false;
 
-		//	Connected wing defines corridor position and axis
+		//	Wing connection defines corridor position and axis
 		if(connectedWing != null)
 		{
 			Wing cWing = (Wing)connectedWing;
 			Int2 startPoint = cWing.entrances[connectionIndex];
 			corridorWidth = cWing.entranceSizes[connectionIndex];
 
-			//	Add connector to current wing as entrance
-			//wing.AddEntrance(startPoint, cWing.entranceSizes[connectionIndex]);
-
 			if((int)Zone.Opposite(Side(startPoint, cWing.bounds)) < 2)
 			{
-				splitX = false;
+				VerticalSplit = false;
 				splitPoint = startPoint.z;
 			}
 			else
 			{
-				splitX = true;
+				VerticalSplit = true;
 				splitPoint = startPoint.x;
 			}
 		}
 		//	Room split along smallest axis to help squarify
-		else if(width > height)
-		{
-			splitX = true;
-
-			int splitValue = (int)(width * noise);
-
-			//	If split results in room that's to small adjust or abandon split
-			if(Mathf.Min(splitValue, width - splitValue) < wing.minRoomSize)
-			{
-				if(width >= wing.minRoomSize*2)
-					splitValue = wing.minRoomSize;
-				else
-					return false;
-			}
-
-			splitPoint = (int)(room.bounds[1] + splitValue);	
-		}
 		else
 		{
-			splitX = false;
+			if(width > height)
+				VerticalSplit = true;
+			else
+				VerticalSplit = false;
 
-			int splitValue = (int)(height * noise);
+			//	Values depending on angle of split
+			int bisectBreadth = VerticalSplit? width : height;
+			int parallelLow = VerticalSplit ? left : bottom;
 
-			if(Mathf.Min(splitValue, height - splitValue) < wing.minRoomSize)
-			{
-				if(height >= wing.minRoomSize*2)
+			int splitValue = (int)(bisectBreadth * noise);
+
+			if(Mathf.Min(splitValue, bisectBreadth - splitValue) < wing.minRoomSize)
+				if(bisectBreadth >= wing.minRoomSize*2)
 					splitValue = wing.minRoomSize;
 				else
 					return false;
-			}
 
-			splitPoint = (int)(room.bounds[3] + splitValue);
+			splitPoint = (int)(room.bounds[parallelLow] + splitValue);	
 		}
 
-		int bisectHigh = splitX? top : right;
-		int bisectLow = splitX?  bottom : left;
-		int parallelHigh = splitX? right : top;
-		int bisectBreadth = splitX? width : height;
+		//	Values depending on angle of split
+		int bisectHigh = VerticalSplit ? top : right;
+		int bisectLow = VerticalSplit ?  bottom : left;
+		int parallelHigh = VerticalSplit ? right : top;
 
 		if(corridorWidth > 0)
 		{
+			//	Corridor reaches edge of wing, create entrance
 			if(room.bounds[bisectHigh] == wing.bounds[bisectHigh] && room.bounds[bisectHigh] != zone.bufferedBounds[bisectHigh])
-				wing.AddEntrance(SetInt2(splitPoint, room.bounds[bisectHigh], splitX), corridorWidth);
+				wing.AddEntrance(SetInt2(splitPoint, room.bounds[bisectHigh], VerticalSplit), corridorWidth);
 			if(room.bounds[bisectLow] == wing.bounds[bisectLow] && room.bounds[bisectLow] != zone.bufferedBounds[bisectLow])
-				wing.AddEntrance(SetInt2(splitPoint, room.bounds[bisectLow], splitX), corridorWidth);
+				wing.AddEntrance(SetInt2(splitPoint, room.bounds[bisectLow], VerticalSplit), corridorWidth);
 		}
 		else if(room.wallTypes[bisectHigh] != WallType.EXIT && room.wallTypes[bisectLow] != WallType.EXIT)
 		{	
+			//	One of rooms has no access to corridor, place connecting door
 			if(room.wallTypes[parallelHigh] == WallType.EXIT)
 				wallTypeA = WallType.EXIT;
 			else
 				wallTypeB = WallType.EXIT;
 		}
 
-		if(splitX)
+		//	Arrange arrays depending on angle of split
+		if(VerticalSplit)
 		{
 			boundsA = new int[] { splitPoint - (corridorWidth/2), room.bounds[1], room.bounds[2], room.bounds[3] };
 			boundsB = new int[] { room.bounds[0], splitPoint + (corridorWidth/2), room.bounds[2], room.bounds[3] };
@@ -444,7 +424,6 @@ public class BuildingGenerator
 			wallsA = new WallType[] { wallTypeA, room.wallTypes[1], room.wallTypes[2], room.wallTypes[3] };
 			wallsB = new WallType[] { room.wallTypes[0], wallTypeB, room.wallTypes[2], room.wallTypes[3] };
 		}
-		//	Split Z axis
 		else
 		{
 			boundsA = new int[] { room.bounds[0], room.bounds[1], splitPoint - (corridorWidth/2), room.bounds[3] };
@@ -525,14 +504,14 @@ public class BuildingGenerator
 		if(side < 2)
 		{
 			sideSize = Distance(bounds[top], bounds[bottom]);
-			boundsOffset = Mathf.Min(bounds[top], bounds[bottom]);
+			boundsOffset = bounds[bottom];
 			x = bounds[side];
 			z = Mathf.Clamp(Mathf.RoundToInt(sideSize * position), 0, sideSize) + boundsOffset;
 		}
 		else
 		{
 			sideSize = Distance(bounds[right], bounds[left]);
-			boundsOffset = Mathf.Min(bounds[right], bounds[left]);
+			boundsOffset = bounds[left];
 			x = Mathf.Clamp(Mathf.RoundToInt(sideSize * position), 0, sideSize) + boundsOffset;
 			z = bounds[side];
 		}
