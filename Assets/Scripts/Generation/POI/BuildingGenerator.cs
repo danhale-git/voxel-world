@@ -58,11 +58,15 @@ public class BuildingGenerator
 
 	public void Generate()
 	{
-		GenerateMainWing(0, minWidth:40, maxWidth:50, minHeight:80, maxHeight:100);
+		GenerateMainWing(-1, minWidth:40, maxWidth:50, minHeight:40, maxHeight:50);
 		GenerateRooms(wings[0]);
-		GenerateWing(wings[0].entrances[0], wings[0], minWidth:40, maxWidth:60, minHeight:40, maxHeight:60);
+
+		GenerateWing(wings[0].entrances[0], wings[0], minWidth:30, maxWidth:40, minHeight:120, maxHeight:150);
 		GenerateRooms(wings[1], wings[0], 0);
-		GenerateWing(RandomPointOnSide(1, wings[0].bounds), wings[0], minWidth:40, maxWidth:60, minHeight:40, maxHeight:60);
+
+		GenerateWing(wings[1].entrances[0], wings[1], minWidth:20, maxWidth:30, minHeight:90, maxHeight:120);
+		GenerateRooms(wings[2], wings[1], 0);
+
 		//GenerateWing(RandomPointOnSide(3, wings[2].bounds), wings[2], minWidth:20, maxWidth:40, minHeight:20, maxHeight:40);
 	}
 
@@ -77,13 +81,14 @@ public class BuildingGenerator
 		switch(startPoint)
 		{
 			case -1:
-				bounds[right] = zone.bufferedBounds[right];
-				bounds[left] = zone.bufferedBounds[right] - width;
+				bounds[left] = zone.bufferedBounds[left];
+				bounds[right] = zone.bufferedBounds[left] + width;
 				break;
 		
 			case 1:
-				bounds[left] = zone.bufferedBounds[left];
-				bounds[right] = zone.bufferedBounds[left] + width;
+				
+				bounds[right] = zone.bufferedBounds[right];
+				bounds[left] = zone.bufferedBounds[right] - width;
 				break;
 		
 			case 0:
@@ -324,6 +329,7 @@ public class BuildingGenerator
 	}
 
 	//	TODO: Second corridor split is always perpendicular to first
+	//	TODO: Separate into SplitRoom(), SplitRoomAtConnector - SplitHorizontal(), SplitVertical()
 	bool SplitRoom(Room room, Wing wing, Wing? connectedWing = null, int connectionIndex = 0, int corridorWidth = 0, bool firstSplit = false)
 	{
 		if(connectedWing == null)
@@ -403,36 +409,15 @@ public class BuildingGenerator
 			splitPoint = (int)(room.bounds[3] + splitValue);
 		}
 
-		if(splitX)
-		{
-			int splitA = top;		//	Split
-			int splitB = bottom;
-			int perpA = right;		//	Perpendicular
-			int perpB = left;
-			int breadth = width;	//	Breadth of split sides
-			int length = height;	//	Length of split line
-		}
-		else
-		{
-			int splitA = right;
-			int splitB = left;
-			int perpA = top;
-			int perpB = bottom;
-			int breadth = height;
-			int length = width;
-		}
-
 		//	Split X axis
 		if(splitX)
 		{
-			
-
 			//	If corridor reaches edge of wing create entrance
 			if(corridorWidth > 0)
 			{
-				if(2 != (int)zone.back && room.bounds[2] == wing.bounds[2])
+				if(room.bounds[2] == wing.bounds[2] && room.bounds[2] != zone.bufferedBounds[2])
 					wing.AddEntrance(new Int2(splitPoint, room.bounds[2]), corridorWidth);
-				else if(3 != (int)zone.back && room.bounds[3] == wing.bounds[3])
+				if(room.bounds[3] == wing.bounds[3] && room.bounds[3] != zone.bufferedBounds[3])
 					wing.AddEntrance(new Int2(splitPoint, room.bounds[3]), corridorWidth);
 			}
 
@@ -462,10 +447,10 @@ public class BuildingGenerator
 
 			if(corridorWidth > 0)
 			{
-				if(0 != (int)zone.back && room.bounds[0] == wing.bounds[0])
+				if(room.bounds[0] == wing.bounds[0] && room.bounds[0] != zone.bufferedBounds[0])
 					wing.AddEntrance(new Int2(room.bounds[0], splitPoint), corridorWidth);
-				else if(1 != (int)zone.back && room.bounds[1] == wing.bounds[1])
-					wing.AddEntrance(new Int2(room.bounds[1], splitPoint), corridorWidth);
+				if(room.bounds[1] == wing.bounds[1] && room.bounds[1] != zone.bufferedBounds[1])
+					wing.AddEntrance(new Int2(room.bounds[1], splitPoint), corridorWidth); 
 			}
 
 			boundsA = new int[] { room.bounds[0], room.bounds[1], splitPoint - (corridorWidth/2), room.bounds[3] };
@@ -609,8 +594,14 @@ public class BuildingGenerator
 		{
 			foreach(int i in wing.connectedEntrances)
 			{
-				Debug.Log("drawing connector at "+wing.entrances[i]);
 				DrawConnector(zone.wallMatrix, 0, wing.entrances[i], Side(wing.entrances[i], wing.bounds), wing.entranceSizes[i]);
+			}
+		}
+		foreach(Wing wing in wings)
+		{
+			foreach(Int2 e in wing.entrances)
+			{
+				DrawPoint(e, zone.wallMatrix, 3);
 			}
 		}
 
