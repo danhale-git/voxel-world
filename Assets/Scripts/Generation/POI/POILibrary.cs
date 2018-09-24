@@ -10,13 +10,11 @@ public class POILibrary
 	{
 		public int wallHeight = 5;
 
-		public void GenerateMatrixes(LSystem lSystem, Zone zone)
+		public void GenerateMatrixes(BuildingGenerator buildingGenerator, Zone zone)
 		{
-			lSystem.GenerateBuilding();
+			buildingGenerator.Generate();
 
-			lSystem.DefineArea();
-
-			lSystem.ApplyMaps(this);
+			buildingGenerator.ApplyMaps(this);
 		}
 
 

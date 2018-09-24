@@ -189,7 +189,6 @@ public class LSystem
 
 	bool GenerateRect(int index, Int2 originPoint, Zone.Side originSide, int[] perimeterBounds, bool adjacentOverride, int minWidth, int maxWidth, int minLength, int maxLength)
 	{
-		Vector3 global = MatrixToGlobal(originPoint);
 		ResetNoise();
 		//	Rotate script values to face the same way as this square
 		Rotate(originSide);

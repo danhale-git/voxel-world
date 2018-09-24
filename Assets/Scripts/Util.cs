@@ -154,6 +154,25 @@ public static class Util
 		return System.Math.Round(value, decimalPlaces);
 	}
 
+	public static int Wrap0(int value, int max)
+	{
+		if(value > max)
+		{
+			while(value > max)
+			{
+				value -= (max + 1);
+			}
+		}
+		else if(value < 0)
+		{
+			while(value < 0)
+			{
+				value += (max + 1);	
+			}
+		}
+		return 0 + value;
+	}
+
 	public static int MinInt(int[] values)
 	{
 		int min = values[0];
