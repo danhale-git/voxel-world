@@ -262,6 +262,11 @@ public class BuildingGenerator
 			entrances.Add(point);
 			entranceSizes.Add(size);
 		}
+
+		void NewRoom(WallType[] walls, int[] bounds, Int2 door)
+		{
+			rooms.Add(new Room(walls, bounds, door));
+		}
 	}
 
 	void GenerateRooms(Wing wing, Wing? connectedWing = null, int connectionIndex = 0)
@@ -334,6 +339,8 @@ public class BuildingGenerator
 	{
 		if(connectedWing == null)
 			ResetNoise();
+
+		
 
 		int width = room.bounds[0] - room.bounds[1];
 		int height = room.bounds[2] - room.bounds[3];
@@ -409,95 +416,68 @@ public class BuildingGenerator
 			splitPoint = (int)(room.bounds[3] + splitValue);
 		}
 
-		//	Split X axis
+		int bisectHigh = splitX? top : right;
+		int bisectLow = splitX?  bottom : left;
+		int parallelHigh = splitX? right : top;
+		int bisectBreadth = splitX? width : height;
+
+		if(corridorWidth > 0)
+		{
+			if(room.bounds[bisectHigh] == wing.bounds[bisectHigh] && room.bounds[bisectHigh] != zone.bufferedBounds[bisectHigh])
+				wing.AddEntrance(SetInt2(splitPoint, room.bounds[bisectHigh], splitX), corridorWidth);
+			if(room.bounds[bisectLow] == wing.bounds[bisectLow] && room.bounds[bisectLow] != zone.bufferedBounds[bisectLow])
+				wing.AddEntrance(SetInt2(splitPoint, room.bounds[bisectLow], splitX), corridorWidth);
+		}
+		else if(room.wallTypes[bisectHigh] != WallType.EXIT && room.wallTypes[bisectLow] != WallType.EXIT)
+		{	
+			if(room.wallTypes[parallelHigh] == WallType.EXIT)
+				wallTypeA = WallType.EXIT;
+			else
+				wallTypeB = WallType.EXIT;
+		}
+
 		if(splitX)
 		{
-			//	If corridor reaches edge of wing create entrance
-			if(corridorWidth > 0)
-			{
-				if(room.bounds[2] == wing.bounds[2] && room.bounds[2] != zone.bufferedBounds[2])
-					wing.AddEntrance(new Int2(splitPoint, room.bounds[2]), corridorWidth);
-				if(room.bounds[3] == wing.bounds[3] && room.bounds[3] != zone.bufferedBounds[3])
-					wing.AddEntrance(new Int2(splitPoint, room.bounds[3]), corridorWidth);
-			}
-
-			//	Two new bounds
 			boundsA = new int[] { splitPoint - (corridorWidth/2), room.bounds[1], room.bounds[2], room.bounds[3] };
 			boundsB = new int[] { room.bounds[0], splitPoint + (corridorWidth/2), room.bounds[2], room.bounds[3] };
 
-			wing.rooms.Remove(room);
-
-			//	Split cuts off room from corridor access, assign exit wall for door to be placed
-			if(corridorWidth == 0 && room.wallTypes[2] != WallType.EXIT && room.wallTypes[3] != WallType.EXIT)
-			{	
-				if(room.wallTypes[0] == WallType.EXIT)
-					wallTypeA = WallType.EXIT;
-				else
-					wallTypeB = WallType.EXIT;
-			}
-
-			//	Wall types
 			wallsA = new WallType[] { wallTypeA, room.wallTypes[1], room.wallTypes[2], room.wallTypes[3] };
 			wallsB = new WallType[] { room.wallTypes[0], wallTypeB, room.wallTypes[2], room.wallTypes[3] };
 		}
 		//	Split Z axis
 		else
 		{
-			
-
-			if(corridorWidth > 0)
-			{
-				if(room.bounds[0] == wing.bounds[0] && room.bounds[0] != zone.bufferedBounds[0])
-					wing.AddEntrance(new Int2(room.bounds[0], splitPoint), corridorWidth);
-				if(room.bounds[1] == wing.bounds[1] && room.bounds[1] != zone.bufferedBounds[1])
-					wing.AddEntrance(new Int2(room.bounds[1], splitPoint), corridorWidth); 
-			}
-
 			boundsA = new int[] { room.bounds[0], room.bounds[1], splitPoint - (corridorWidth/2), room.bounds[3] };
 			boundsB = new int[] { room.bounds[0], room.bounds[1], room.bounds[2], splitPoint + (corridorWidth/2) };
-
-			wing.rooms.Remove(room);
-
-			if(corridorWidth == 0 && room.wallTypes[0] != WallType.EXIT && room.wallTypes[1] != WallType.EXIT)
-			{	
-				if(room.wallTypes[2] == WallType.EXIT)
-					wallTypeA = WallType.EXIT;
-				else
-					wallTypeB = WallType.EXIT;
-			}
 
 			wallsA = new WallType[] { room.wallTypes[0], room.wallTypes[1], wallTypeA, room.wallTypes[3] };
 			wallsB = new WallType[] { room.wallTypes[0], room.wallTypes[1], room.wallTypes[2], wallTypeB };
 		}
 
-		//	Place doors
-		for(int i = 0; i < 4; i++)
-		{
-			if(wallsA[i] == WallType.EXIT)
-			{
-				doorA = PositionOnSide(i, boundsA, wing.doorNoise);
-				break;
-			}
-		}
-		
-		for(int i = 0; i < 4; i++)
-		{
-			if(wallsB[i] == WallType.EXIT)
-			{
-				doorB = PositionOnSide(i, boundsB, wing.doorNoise);
-				break;
-			}
-		}
-
 		//	Add rooms to list
-		wing.rooms.Add(new Room(wallsA,
-								boundsA,
-								doorA));
-		wing.rooms.Add(new Room(wallsB,
-								boundsB,
-								doorB));
+		wing.rooms.Add(NewRoom(wallsA, boundsA, wing));
+		wing.rooms.Add(NewRoom(wallsB, boundsB, wing));
+
+		wing.rooms.Remove(room);		
 
 		return true;
+	}
+
+	Room NewRoom(WallType[] walls, int[] bounds, Wing wing)
+	{
+		Int2 door = new Int2(0,0);
+		for(int i = 0; i < 4; i++)
+			if(walls[i] == WallType.EXIT)
+			{
+				door = PositionOnSide(i, bounds, wing.doorNoise);
+				break;
+			}
+		return new Room(walls, bounds, door);
+	}
+
+	Int2 SetInt2(int set, int other, bool setX)
+	{
+		return setX? new Int2(set, other) : new Int2(other, set);
 	}
 
 	#endregion
@@ -577,6 +557,8 @@ public class BuildingGenerator
 		Debug.Log("No side found for point");
 		return 0;
 	}
+
+
 
 #endregion
 
