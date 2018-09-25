@@ -20,6 +20,42 @@ public class BuildingGenerator
 	int width;
 	int height;
 
+	struct Wing
+	{
+		public int[] bounds;
+		public float noise;
+		public int minRoomSize;
+		
+		public List<Room> rooms;
+		public List<Int2> entrances;
+		public List<int> entranceSizes;
+		public List<int> connectedEntrances;
+		
+
+		public Wing(int[] bounds, int minRoomSize, int maxCorridorSize, float doorNoise)
+		{
+			this.bounds = bounds;
+			this.noise = doorNoise;
+			this.minRoomSize = minRoomSize;
+
+			this.rooms = new List<Room>();
+			this.entrances = new List<Int2>();
+			this.entranceSizes = new List<int>();
+			this.connectedEntrances = new List<int>();
+		}
+
+		public void AddEntrance(Int2 point, int size)
+		{
+			entrances.Add(point);
+			entranceSizes.Add(size);
+		}
+
+		void NewRoom(WallType[] walls, int[] bounds, Int2 door)
+		{
+			rooms.Add(new Room(walls, bounds, door));
+		}
+	}
+
 	public BuildingGenerator(Zone zone)
 	{
 		//	Zone and size in blocks
@@ -46,7 +82,7 @@ public class BuildingGenerator
 
 	//	TODO: update values before assigning new noise because it's more readable
 	//	Generate new deterministic noise value
-	void ResetNoise()
+	float ResetNoise()
 	{
 		//	Generate and store noise
 		noise = noiseGen.GetNoise01(noiseX, noiseY);
@@ -54,30 +90,36 @@ public class BuildingGenerator
 		//	Update values used next time
 		noiseX += increment;
 		noiseY += increment;
+		return noise;
 	}
 
 	public void Generate()
 	{
-		GenerateMainWing(-1, minWidth:40, maxWidth:50, minHeight:40, maxHeight:50);
+		GenerateMainWing(0, minWidth:30, maxWidth:40, minHeight:60, maxHeight:60);
 		GenerateRooms(wings[0]);
 
-		GenerateWing(wings[0].entrances[0], wings[0], minWidth:30, maxWidth:40, minHeight:120, maxHeight:150);
-		GenerateRooms(wings[1], wings[0], 0);
+		int mainBest = BestEntrance(wings[0]);
 
-		GenerateWing(wings[1].entrances[0], wings[1], minWidth:20, maxWidth:30, minHeight:90, maxHeight:120);
-		GenerateRooms(wings[2], wings[1], 0);
+		GenerateWing(wings[0].entrances[mainBest], wings[0], minWidth:80, maxWidth:100, minHeight:40, maxHeight:50);
+		GenerateRooms(wings[1], wings[0], mainBest);
 
-		//GenerateWing(RandomPointOnSide(3, wings[2].bounds), wings[2], minWidth:20, maxWidth:40, minHeight:20, maxHeight:40);
+		int oneBest = BestEntrance(wings[1]);
+
+		GenerateWing(wings[1].entrances[oneBest], wings[1], minWidth:20, maxWidth:30, minHeight:90, maxHeight:120);
+		GenerateRooms(wings[2], wings[1], oneBest);
 	}
 
-	//	TODO: if width/height == 0 generate random values
+	//	TODO: 	if max/min width/height == 0 generate random values
+	//			
 	void GenerateMainWing(int startPoint, int minWidth = 0, int maxWidth = 0, int minHeight = 0, int maxHeight = 0)
 	{
 		int[] bounds = new int[4];
 
+		//	Random size
 		int width = RandomRange(minWidth, maxWidth);
 		int height = RandomRange(minHeight, maxHeight);
 
+		//	Left, right or middle
 		switch(startPoint)
 		{
 			case -1:
@@ -132,40 +174,49 @@ public class BuildingGenerator
 			int side = sideIndices[i];
 
 			//	Start with distance from bounds
-			space[side] = Distance(PointAxis(point, side), zone.bufferedBounds[side]);
-
-			//	Check all other wings
-			for(int w = 0; w < wings.Count; w++)
-			{
-				//	Ignore parent
-				if(wings[w].bounds == parent.bounds)
-					continue;
-
-				//	Other wing is overlapping
-				if(InOrEitherSide(bounds, wings[w].bounds, side))
-				{
-					//	Opposide side on overlapping wing
-					int oppositeBounds = wings[w].bounds[Zone.Opposite(side)];
-
-					//	Overlapping wing is outwards from this side (not on the other side)
-					if( OutwardFrom(bounds[side], oppositeBounds, side) )
-					{
-						//	If closer than current closest distance, store
-						int distanceToWing = Distance(bounds[side], oppositeBounds);
-						if(distanceToWing < space[side]) space[side] = distanceToWing;
-					}
-				}
-			}
+			space[side] = CheckSpace(point, side, bounds, parent);
 
 			//	Size of extension
 			int size = i < 2 ? PointAxis(dimentions, side)/2 : PointAxis(dimentions, side);
 
-			bounds[side] = ExtendBound( 	Mathf.Min(space[side], size),
-									bounds[side],
-									side);
+			bounds[side] = ExtendBound(
+				Mathf.Min(space[side], size),
+				bounds[side],
+				side);
 		}
 
 		wings.Add(new Wing(bounds, 10, 10, noise));
+	}
+
+	//	Get amount of space out from point on side of parent
+	int CheckSpace(Int2 point, int side, int[] bounds, Wing parent)
+	{
+		int space = Distance(PointAxis(point, side), zone.bufferedBounds[side]);
+
+		//	Check all other wings
+		for(int w = 0; w < wings.Count; w++)
+		{
+			//	Ignore parent
+			if(wings[w].bounds == parent.bounds)
+				continue;
+
+			//	Other wing is overlapping
+			if(InOrEitherSide(bounds, wings[w].bounds, side))
+			{
+				//	Opposide side on overlapping wing
+				int oppositeBounds = wings[w].bounds[Zone.Opposite(side)];
+
+				//	Overlapping wing is outwards from this side (not on the other side)
+				if( OutwardFrom(bounds[side], oppositeBounds, side) )
+				{
+					//	If closer than current closest distance, store
+					int distanceToWing = Distance(bounds[side], oppositeBounds);
+					if(distanceToWing < space) space = distanceToWing;
+				}
+			}
+		}
+
+		return space;
 	}
 
 	//	Is B outwards from A per side
@@ -216,9 +267,38 @@ public class BuildingGenerator
 			return point.z;
 	}
 
+	//	Entrance with the most space outward from it
+	int BestEntrance(Wing checkWing)
+	{
+		int entranceIndex = 0;
+		int largestDistance = 0;
+		for(int i = 0; i < checkWing.entrances.Count; i++)
+		{
+			Int2 point = checkWing.entrances[i];
+			int side = (int)Side(checkWing.entrances[i], checkWing.bounds);
+
+			int[] bounds = new int[] { point.x, point.x, point.z, point.z };
+
+			foreach(Wing wing in wings)
+			{
+				if(wing.bounds == checkWing.bounds) continue;
+
+				int newDistance = CheckSpace(point, side, bounds, checkWing);
+				if(newDistance > largestDistance)
+				{
+					entranceIndex = i;
+					largestDistance = newDistance;
+				}
+			}
+		}
+
+		return entranceIndex;
+	} 
+
 	# region Room generation
 
 	enum WallType { NONE, EXIT, OUTSIDE, INSIDE }
+	enum SplitAxis { NONE, HORIZONTAL, VERTICAL }
 
 	struct Room
 	{
@@ -233,178 +313,179 @@ public class BuildingGenerator
 		}
 	}
 
-	struct Wing
-	{
-		public int[] bounds;
-		public float doorNoise;
-		public int minRoomSize;
-		
-		public List<Room> rooms;
-		public List<Int2> entrances;
-		public List<int> entranceSizes;
-		public List<int> connectedEntrances;
-		
-
-		public Wing(int[] bounds, int minRoomSize, int maxCorridorSize, float doorNoise)
-		{
-			this.bounds = bounds;
-			this.doorNoise = doorNoise;
-			this.minRoomSize = minRoomSize;
-
-			this.rooms = new List<Room>();
-			this.entrances = new List<Int2>();
-			this.entranceSizes = new List<int>();
-			this.connectedEntrances = new List<int>();
-		}
-
-		public void AddEntrance(Int2 point, int size)
-		{
-			entrances.Add(point);
-			entranceSizes.Add(size);
-		}
-
-		void NewRoom(WallType[] walls, int[] bounds, Int2 door)
-		{
-			rooms.Add(new Room(walls, bounds, door));
-		}
-	}
-
 	void GenerateRooms(Wing wing, Wing? connectedWing = null, int connectionIndex = 0)
 	{
 		int width = wing.bounds[0] - wing.bounds[1];
 		int height = wing.bounds[2] - wing.bounds[3];
 
+		//	Number and size of corridors based on wing size
+		int corridorIterations = Mathf.Max( ((width + height) /2) / (wing.minRoomSize*3), 1 );
+		int corridorWidth = Mathf.Max(Mathf.Max(width, height)/10, 5);
+
+		List<Room> roomsCopy;
+
+		//	Generate entire bounds as room, all other rooms are split from this
+		wing.rooms.Add(NewRoom(
+			new WallType[] { WallType.OUTSIDE, WallType.OUTSIDE, WallType.OUTSIDE, WallType.OUTSIDE },
+			wing.bounds,
+			wing));
+
+		bool badFirstSplit = false;
+		bool horizontalSplit = false;
+
+		//	First split, connects with connecting wing
 		if(connectedWing != null)
 		{
 			Wing cWing = (Wing)connectedWing;
 			cWing.connectedEntrances.Add(connectionIndex);
+			SplitRoom(wing.rooms[0], wing, cWing, connectionIndex, corridorWidth, true);
+
+			//	First split bisects longest sides, bad first split
+			int side = (int)Side(cWing.entrances[connectionIndex], cWing.bounds);
+			horizontalSplit = (side < 2);
+			if(horizontalSplit != (width > height)) badFirstSplit = true;
 		}
-
-		//	Generate entire bounds as room, all other rooms are split from this
-		wing.rooms.Add(new Room(new WallType[] { WallType.OUTSIDE, WallType.OUTSIDE, WallType.OUTSIDE, WallType.OUTSIDE },
-								wing.bounds,
-								new Int2(0,0)));
-
-		//	Number and size of corridors based on wing size
-		int corridorIterations = ((width + height) /2) / (wing.minRoomSize*3);
-		int corridorWidth = Mathf.Max(width, height)/10;
-
-		//	First split, connects with connecting wing
-		SplitRoom(wing.rooms[0], wing, connectedWing, connectionIndex, corridorWidth < 5 ? 5 : corridorWidth, true);
-
-		//	Used to iterate while altering rooms list
-		List<Room> roomsCopy;
+		else
+			SplitRoom(wing.rooms[0], wing, corridorWidth, true);
 
 		//	Split with corridors of decreasing size
-		for(int i = 0; i < corridorIterations-1; i++)
+		for(int i = 0; i < corridorIterations; i++)
 		{
+			Debug.Log("iterating");
 			corridorWidth -= 2;
-			int cWidth = corridorWidth < 5 ? 5 : corridorWidth;
+			corridorWidth = corridorWidth < 5 ? 5 : corridorWidth;
 			roomsCopy = new List<Room>(wing.rooms);
 		
-			foreach(Room room in roomsCopy)
-			{
-				SplitRoom(room, wing, corridorWidth:cWidth);
-			}
+			if(connectedWing == null || !badFirstSplit || i != 0)
+				foreach(Room room in roomsCopy)
+					SplitRoom(
+						room, wing,
+						corridorWidth);
+			//	Correct bad first split by making second set of splits perpendicular to longest side			
+			else
+				foreach(Room room in roomsCopy)
+					SplitRoom(
+						room, wing,
+						corridorWidth,
+						split:(horizontalSplit ? SplitAxis.VERTICAL : SplitAxis.HORIZONTAL));
 		}
 
-		//	Split without corridoors until no more rooms of acceptable size can be created
+		wing.noise = ResetNoise();
+
+		//	Split without corridoors until no more rooms of minimum size can be created
 		bool roomsCreated = true;
 		int iterationCount = 0;
-		while(roomsCreated && iterationCount < 5000)
+		while(roomsCreated)
 		{
 			//	Safety
 			iterationCount++;
-			if(iterationCount > 4999) Debug.Log("Too many iterations");
-
-			//	Noise used for door position is changed less often to create more artificial looking layout
-			ResetNoise();
-			wing.doorNoise = noise;
+			if(iterationCount > 100)
+				break;
 
 			roomsCopy = new List<Room>(wing.rooms);
 
+			//	Split all rooms in wing
 			roomsCreated = false;
 			foreach(Room room in roomsCopy)
-			{
-				if(SplitRoom(room, wing) && !roomsCreated)
+				if(SplitRoom(room, wing, random:false) && !roomsCreated)
 					if(!roomsCreated) roomsCreated = true;
-			}
 
 		}
 	}
 
 	//	TODO: Second corridor split is always perpendicular to first
-	//	TODO: Separate into SplitRoom(), SplitRoomAtConnector()
-	//	TODO: Replace numbers int values in array arranglements with word variables, make word variables constant
-	bool SplitRoom(Room room, Wing wing, Wing? connectedWing = null, int connectionIndex = 0, int corridorWidth = 0, bool firstSplit = false)
-	{
-		if(connectedWing == null) ResetNoise();
 
+	//	Split room at connection
+	bool SplitRoom(Room room, Wing wing, Wing connectedWing, int connectionIndex = 0, int corridorWidth = 0, bool firstSplit = false)
+	{
+		int splitPoint = 0;
+		bool verticalSplit = false;
+
+		//	Wing connection defines corridor position and axis
+		Wing cWing = (Wing)connectedWing;
+		Int2 startPoint = cWing.entrances[connectionIndex];
+		corridorWidth = cWing.entranceSizes[connectionIndex];
+
+		if((int)Zone.Opposite(Side(startPoint, cWing.bounds)) < 2)
+		{
+			verticalSplit = false;
+			splitPoint = startPoint.z;
+		}
+		else
+		{
+			verticalSplit = true;
+			splitPoint = startPoint.x;
+		}
+
+		Split(room, wing, verticalSplit, splitPoint, corridorWidth);	
+
+		return true;
+	}
+
+	//	Split room
+	bool SplitRoom(Room room, Wing wing, int corridorWidth = 0, bool firstSplit = false, bool random = true, SplitAxis split = 0)
+	{
 		int width = room.bounds[0] - room.bounds[1];
 		int height = room.bounds[2] - room.bounds[3];
 
+		int splitPoint = 0;
+		bool verticalSplit = false;
+
+		switch(split)
+		{
+			case SplitAxis.HORIZONTAL:
+				verticalSplit = false;
+				break;
+
+			case SplitAxis.VERTICAL:
+				verticalSplit = true;
+				break;
+
+			default:
+				verticalSplit = firstSplit ? (height > width) : (width > height);
+			break;
+		}
+
+		//	Values depending on angle of split
+		int bisectBreadth = verticalSplit? width : height;
+		int parallelLow = verticalSplit ? left : bottom;
+
+		int splitValue = (int)(bisectBreadth * (random ? ResetNoise() : wing.noise));
+
+		//	Room is too small to split, split more evenly or return false
+		if(Mathf.Min(splitValue, bisectBreadth - splitValue) < wing.minRoomSize)
+			if(bisectBreadth >= wing.minRoomSize*2)
+				splitValue = wing.minRoomSize;
+			else
+				return false;
+
+		splitPoint = (int)(room.bounds[parallelLow] + splitValue);	
+
+		Split(room, wing, verticalSplit, splitPoint, corridorWidth);	
+
+		return true;
+	}
+
+	void Split(Room room, Wing wing, bool verticalSplit, int splitPoint, int corridorWidth)
+	{
 		WallType wallTypeA = corridorWidth > 0 ? WallType.EXIT : WallType.INSIDE;
 		WallType wallTypeB = wallTypeA;
 
 		WallType[] wallsA, wallsB;
 		int[] boundsA, boundsB;
 
-		int splitPoint = 0;
-		bool VerticalSplit = false;
-
-		//	Wing connection defines corridor position and axis
-		if(connectedWing != null)
-		{
-			Wing cWing = (Wing)connectedWing;
-			Int2 startPoint = cWing.entrances[connectionIndex];
-			corridorWidth = cWing.entranceSizes[connectionIndex];
-
-			if((int)Zone.Opposite(Side(startPoint, cWing.bounds)) < 2)
-			{
-				VerticalSplit = false;
-				splitPoint = startPoint.z;
-			}
-			else
-			{
-				VerticalSplit = true;
-				splitPoint = startPoint.x;
-			}
-		}
-		//	Room split along smallest axis to help squarify
-		else
-		{
-			if(width > height)
-				VerticalSplit = true;
-			else
-				VerticalSplit = false;
-
-			//	Values depending on angle of split
-			int bisectBreadth = VerticalSplit? width : height;
-			int parallelLow = VerticalSplit ? left : bottom;
-
-			int splitValue = (int)(bisectBreadth * noise);
-
-			if(Mathf.Min(splitValue, bisectBreadth - splitValue) < wing.minRoomSize)
-				if(bisectBreadth >= wing.minRoomSize*2)
-					splitValue = wing.minRoomSize;
-				else
-					return false;
-
-			splitPoint = (int)(room.bounds[parallelLow] + splitValue);	
-		}
-
 		//	Values depending on angle of split
-		int bisectHigh = VerticalSplit ? top : right;
-		int bisectLow = VerticalSplit ?  bottom : left;
-		int parallelHigh = VerticalSplit ? right : top;
+		int bisectHigh = verticalSplit ? top : right;
+		int bisectLow = verticalSplit ?  bottom : left;
+		int parallelHigh = verticalSplit ? right : top;
 
 		if(corridorWidth > 0)
 		{
 			//	Corridor reaches edge of wing, create entrance
 			if(room.bounds[bisectHigh] == wing.bounds[bisectHigh] && room.bounds[bisectHigh] != zone.bufferedBounds[bisectHigh])
-				wing.AddEntrance(SetInt2(splitPoint, room.bounds[bisectHigh], VerticalSplit), corridorWidth);
+				wing.AddEntrance(SetInt2(splitPoint, room.bounds[bisectHigh], verticalSplit), corridorWidth);
 			if(room.bounds[bisectLow] == wing.bounds[bisectLow] && room.bounds[bisectLow] != zone.bufferedBounds[bisectLow])
-				wing.AddEntrance(SetInt2(splitPoint, room.bounds[bisectLow], VerticalSplit), corridorWidth);
+				wing.AddEntrance(SetInt2(splitPoint, room.bounds[bisectLow], verticalSplit), corridorWidth);
 		}
 		else if(room.wallTypes[bisectHigh] != WallType.EXIT && room.wallTypes[bisectLow] != WallType.EXIT)
 		{	
@@ -416,30 +497,28 @@ public class BuildingGenerator
 		}
 
 		//	Arrange arrays depending on angle of split
-		if(VerticalSplit)
+		if(verticalSplit)
 		{
-			boundsA = new int[] { splitPoint - (corridorWidth/2), room.bounds[1], room.bounds[2], room.bounds[3] };
-			boundsB = new int[] { room.bounds[0], splitPoint + (corridorWidth/2), room.bounds[2], room.bounds[3] };
+			boundsA = new int[] { splitPoint - (corridorWidth/2), room.bounds[left], room.bounds[top], room.bounds[bottom] };
+			boundsB = new int[] { room.bounds[right], splitPoint + (corridorWidth/2), room.bounds[top], room.bounds[bottom] };
 
-			wallsA = new WallType[] { wallTypeA, room.wallTypes[1], room.wallTypes[2], room.wallTypes[3] };
-			wallsB = new WallType[] { room.wallTypes[0], wallTypeB, room.wallTypes[2], room.wallTypes[3] };
+			wallsA = new WallType[] { wallTypeA, room.wallTypes[left], room.wallTypes[top], room.wallTypes[bottom] };
+			wallsB = new WallType[] { room.wallTypes[right], wallTypeB, room.wallTypes[top], room.wallTypes[bottom] };
 		}
 		else
 		{
-			boundsA = new int[] { room.bounds[0], room.bounds[1], splitPoint - (corridorWidth/2), room.bounds[3] };
-			boundsB = new int[] { room.bounds[0], room.bounds[1], room.bounds[2], splitPoint + (corridorWidth/2) };
+			boundsA = new int[] { room.bounds[right], room.bounds[left], splitPoint - (corridorWidth/2), room.bounds[bottom] };
+			boundsB = new int[] { room.bounds[right], room.bounds[left], room.bounds[top], splitPoint + (corridorWidth/2) };
 
-			wallsA = new WallType[] { room.wallTypes[0], room.wallTypes[1], wallTypeA, room.wallTypes[3] };
-			wallsB = new WallType[] { room.wallTypes[0], room.wallTypes[1], room.wallTypes[2], wallTypeB };
+			wallsA = new WallType[] { room.wallTypes[right], room.wallTypes[left], wallTypeA, room.wallTypes[bottom] };
+			wallsB = new WallType[] { room.wallTypes[right], room.wallTypes[left], room.wallTypes[top], wallTypeB };
 		}
 
 		//	Add rooms to list
 		wing.rooms.Add(NewRoom(wallsA, boundsA, wing));
 		wing.rooms.Add(NewRoom(wallsB, boundsB, wing));
 
-		wing.rooms.Remove(room);		
-
-		return true;
+		wing.rooms.Remove(room);	
 	}
 
 	Room NewRoom(WallType[] walls, int[] bounds, Wing wing)
@@ -448,20 +527,20 @@ public class BuildingGenerator
 		for(int i = 0; i < 4; i++)
 			if(walls[i] == WallType.EXIT)
 			{
-				door = PositionOnSide(i, bounds, wing.doorNoise);
+				door = PositionOnSide(i, bounds, wing.noise);
 				break;
 			}
 		return new Room(walls, bounds, door);
 	}
 
+	#endregion
+
+	# region Positions and points
+
 	Int2 SetInt2(int set, int other, bool setX)
 	{
 		return setX? new Int2(set, other) : new Int2(other, set);
 	}
-
-	#endregion
-
-	# region Positions and points
 
 	//	Get pseudo random number in range using coherent noise
 	int RandomRange(int a, int b, bool debug = false)

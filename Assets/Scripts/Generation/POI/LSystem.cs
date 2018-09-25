@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿/*using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -46,9 +46,9 @@ public class LSystem
 		noiseGen.SetFrequency(0.9f);	
 
 		//	Randomise seed for debugging
-		/*int seed = Random.Range(0,10000);
+		int seed = Random.Range(0,10000);
 		Debug.Log("SEED: "+ seed);
-		noiseGen.SetSeed(seed);*/
+		noiseGen.SetSeed(seed);
 
 
 		//	Base noise generated from POI position
@@ -992,4 +992,4 @@ public class LSystem
 		Debug.Log("No side found for point");
 		return 0;
 	}
-}
+}*/
