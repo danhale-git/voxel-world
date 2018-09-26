@@ -96,46 +96,56 @@ public class Column
 			for(int z = 0; z < chunkSize; z++)
 			{
 
-				if(walls)
+				if(!walls || POIWalls[x,z] == 0) continue;
+
+				int ly = LocalY(heightMap[x,z]);
+
+				//	Get starting chunk
+				int chunkY = Mathf.FloorToInt(heightMap[x,z] / chunkSize) * chunkSize;
+				currentChunk = World.chunks[new Vector3(position.x, chunkY, position.z)];
+
+				//	Handle POI with different heights at different points
+				Chunk newChunk = null;
+				if(BlockOwnerChunk(new Vector3(x,ly,z), currentChunk, out newChunk))
 				{
-					if(POIWalls[x,z] == 0) continue;
+					currentChunk = newChunk;
+					allAlteredChunks.Add(newChunk);
+					if(currentChunk.composition != Chunk.Composition.MIX) currentChunk.composition = Chunk.Composition.MIX;
+				}
+				
+				int iterationReset = 0;
 
-					int ly = LocalY(heightMap[x,z]);
+				for(int i = 0; i < POIType.wallHeight; i++)
+				{
+					int y = (ly + i) - iterationReset;
 
-					if(currentChunk == null)
+					//	Iteration has moved out of current chunk
+					if(y > 15)
 					{
-						int chunkY = Mathf.FloorToInt(heightMap[x,z] / chunkSize) * chunkSize;
-						currentChunk = World.chunks[new Vector3(position.x, chunkY, position.z)];
-					}
+						bool gotChunk = BlockOwnerChunk(new Vector3(x,y,z), currentChunk, out currentChunk);
+						if(currentChunk.composition != Chunk.Composition.MIX) currentChunk.composition = Chunk.Composition.MIX;
 
-					Chunk newChunk = null;
-					if(BlockOwnerChunk(new Vector3(x,ly,z), currentChunk, out newChunk))
-					{
-						currentChunk = newChunk;
-						allAlteredChunks.Add(newChunk);
+						//	Offset i to zero for new chunk
+						iterationReset = i;
+						//	Local y to zero for new chunk
+						ly = 0;
+						//	New y value for new chunk
+						y = (ly + i) - iterationReset;
 					}
-
+									
 					switch(POIWalls[x,z])
 					{
 						case 1:
-							for(int i = 0; i < POIType.wallHeight; i++)
-							{
-								int y = ly + i;
-								if(y > 15) continue;	//	DEBUG !!!kS
-								currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
-								if(!hasBlocks) hasBlocks = true;
-							}
+							//if(y > 15 || y < 0) continue;	//	DEBUG !!!kS
+							currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
+							if(!hasBlocks) hasBlocks = true;
 							break;
 						
 						case 2:
-							for(int i = 0; i < POIType.wallHeight; i++)
-							{
-								if(i<3) continue;
-								int y = ly + i;
-								if(y > 15) continue;	//	DEBUG !!!kS
-								currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
-								if(!hasBlocks) hasBlocks = true;
-							}
+							if(i<3) continue;
+							//if(y > 15 || y < 0) continue;	//	DEBUG !!!kS
+							currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
+							if(!hasBlocks) hasBlocks = true;
 							break;
 
 						default:
@@ -231,7 +241,7 @@ public class Column
 		if		(pos.z < 0) 				z = -1;
 		else if (pos.z > World.chunkSize-1) 	z = 1;
 
-		//	Voxel is in this chunk
+		//	Voxel is in this column
 		if(x == 0 && z == 0)
 		{	
 			column = null;
@@ -268,8 +278,6 @@ public class Column
 
 		//	The edge 
 		Vector3 edge = new Vector3(x, y, z);		
-
-		Debug.Log(currentChunk.position + (edge * World.chunkSize));
 
 		chunk = World.chunks[currentChunk.position + (edge * World.chunkSize)];
 		return true;

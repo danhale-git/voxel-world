@@ -357,7 +357,7 @@ public class World : MonoBehaviour
 		//debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2f);
 		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2f);
 
-		//debug.OutlineChunk(new Vector3(position.x, column.topChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
+		//debug.OutlineChunk(new Vector3(position.x, column.topChunkDraw, position.z), Color.white, removePrevious: false, sizeDivision: 3f);
 		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
 
 		column.sizeCalculated = true;
@@ -426,6 +426,7 @@ public class World : MonoBehaviour
 		Chunk chunk = chunks[position];
 
 		if(chunk.status == Chunk.Status.GENERATED) return;
+		//debug.OutlineChunk(new Vector3(position.x, position.y, position.z), Color.white, sizeDivision: 3.5f);	//	//	//
 
 		chunk.GenerateBlocks();
 	}

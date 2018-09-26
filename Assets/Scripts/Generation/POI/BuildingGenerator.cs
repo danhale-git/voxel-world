@@ -71,7 +71,7 @@ public class BuildingGenerator
 		//	Randomise seed for debugging
 		//int seed = Random.Range(0,10000);
 		//Debug.Log("SEED: "+ seed);
-		noiseGen.SetSeed(9099);
+		noiseGen.SetSeed(9770);
 
 
 		//	Base noise generated from POI position
@@ -351,7 +351,6 @@ public class BuildingGenerator
 		//	Split with corridors of decreasing size
 		for(int i = 0; i < corridorIterations; i++)
 		{
-			Debug.Log("iterating");
 			corridorWidth -= 2;
 			corridorWidth = corridorWidth < 5 ? 5 : corridorWidth;
 			roomsCopy = new List<Room>(wing.rooms);
@@ -771,6 +770,9 @@ public class BuildingGenerator
 						column.POIHeightGradient[cx,cz] = zone.heightMatrix[mx,mz];
 						column.POIDebug[cx,cz] = zone.debugMatrix[mx,mz];
 						column.POIWalls[cx,cz] = zone.wallMatrix[mx,mz];
+
+						//int POIheight = column.heightMap[cx,cz] + poi.wallHeight;
+						//if(POIheight > column.highestPoint) column.highestPoint = POIheight;
 					}
 			}
 	}

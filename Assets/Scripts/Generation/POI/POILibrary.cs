@@ -8,7 +8,7 @@ public class POILibrary
 
 	public class POI
 	{
-		public int wallHeight = 5;
+		public int wallHeight = 10;
 
 		public void GenerateMatrixes(BuildingGenerator buildingGenerator, Zone zone)
 		{
