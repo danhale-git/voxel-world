@@ -81,6 +81,7 @@ public class Column
 		return false;
 	}
 
+	//	TODO: Iterate over y then x and z for less chunk swapping
 	public void GeneratePOIBlocks()
 	{
 		if(!IsPOI) return;

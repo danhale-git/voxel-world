@@ -128,19 +128,6 @@ public class Chunk
 		composition = Composition.EMPTY;
 	}
 
-	//	Generate bitmask representing surrounding blocks and chose slope type
-	/*public void SmoothBlocks()
-	{
-		for(int x = 0; x < size; x++)
-			for(int z = 0; z < size; z++)
-				for(int y = 0; y < size; y++)
-				{
-					Vector3 blockPosition = new Vector3(x,y,z);
-					blockBytes[x,y,z] = World.GetBitMask(blockPosition + this.position);
-					Shapes.SetSlopes(this, blockPosition);
-				}
-	}*/
-
 	public void SmoothBlocks()
 	{
 		//	*This is not completely deterministic - the order in which chunks are processed could impact the final terrain in some cases
@@ -293,7 +280,7 @@ public class Chunk
 
 					Color color = (Color)Blocks.colors[(int)blockTypes[x,y,z]];
 
-					if(column.POIWalls != null && column.POIWalls[x,z] == 1) color = Color.black;
+					/*if(column.POIWalls != null && column.POIWalls[x,z] == 1) color = Color.black;
 					else if(column.POIWalls != null && column.POIWalls[x,z] == 2) color = Color.red;
 					else if(column.POIWalls != null && column.POIWalls[x,z] == 3) color = Color.green;
 					/*else if(column.POIHeightGradient != null)
