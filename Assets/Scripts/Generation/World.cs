@@ -82,6 +82,9 @@ public class World : MonoBehaviour
 		//	Generate column class instances (heightmaps and other 2D terrain data)
 		//	+1 buffer allows adjacent column lookups without TryGetValue
 		AddCoroutine(CreateColumnsInSquare(centerChunk, radius+1, 20));
+		//	Generate cellular data and check POI eligibility in Column constructor
+		//	If a point of interest (POI) is detected, generate all chunks in the point of interest before continuing
+		//	Generate height maps
 
 		//	Determine the highest and lowest chunk in each column that must be generated/drawn
 		AddCoroutine(ChunksInSquare(centerChunk, radius, GetColumnSize, 20));
@@ -354,7 +357,7 @@ public class World : MonoBehaviour
 		//debug.OutlineChunk(new Vector3(position.x, column.topChunkGenerate, position.z), Color.black, removePrevious: false, sizeDivision: 2f);
 		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkGenerate, position.z), Color.blue, removePrevious: false, sizeDivision: 2f);
 
-		//debug.OutlineChunk(new Vector3(position.x, column.topChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
+		//debug.OutlineChunk(new Vector3(position.x, column.topChunkDraw, position.z), Color.white, removePrevious: false, sizeDivision: 3f);
 		//debug.OutlineChunk(new Vector3(position.x, column.bottomChunkDraw, position.z), Color.red, removePrevious: false, sizeDivision: 3f);
 
 		column.sizeCalculated = true;
@@ -423,6 +426,7 @@ public class World : MonoBehaviour
 		Chunk chunk = chunks[position];
 
 		if(chunk.status == Chunk.Status.GENERATED) return;
+		//debug.OutlineChunk(new Vector3(position.x, position.y, position.z), Color.white, sizeDivision: 3.5f);	//	//	//
 
 		chunk.GenerateBlocks();
 	}

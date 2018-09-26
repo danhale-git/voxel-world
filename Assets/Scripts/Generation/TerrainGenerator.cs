@@ -157,19 +157,24 @@ public class TerrainGenerator
 					finalTopology = currentTolopogy;
 				}
 
+				int POIheight = 0;
+
 				//	Where points of interest exist, flatten terrain
 				if(column.POIHeightGradient != null && column.POIHeightGradient[x,z] != 0)
 				{
 					float interpValue = (float)column.POIHeightGradient[x,z] / chunkSize;
 					Topology POITopology = new Topology(0.5f, finalTopology.height, 0.5f);
 					finalTopology = SmoothToPOI(POITopology, finalTopology, interpValue);
+
+					//	Adjust heighest point
+					POIheight = column.POIType.wallHeight;
 				}
 
 				//	Generate final height value for chunk data
 				column.heightMap[x,z] = (int)Mathf.Lerp(0, finalTopology.height, finalTopology.baseNoise * finalTopology.noise);
 
 				//	Update highest and lowest block in chunk column
-				column.CheckHighest(column.heightMap[x,z]);
+				column.CheckHighest(column.heightMap[x,z] + POIheight);
 				column.CheckLowest(column.heightMap[x,z]);
 			}
 	}

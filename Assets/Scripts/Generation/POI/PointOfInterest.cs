@@ -58,9 +58,9 @@ public class PointOfInterest
 		ProcessZone(zones[0]);
 
 		//	System for creating random building arrangements
-		LSystem lSystem = new LSystem(zones[0]);
+		BuildingGenerator building = new BuildingGenerator(zones[0]);
 		//	Generate building from POI library
-		TerrainGenerator.worldBiomes.POIs.GenerateMatrixes(lSystem, zones[0]);
+		TerrainGenerator.worldBiomes.POIs.GenerateMatrixes(building, zones[0]);
 
 		//	Generate column topologies
 		foreach(Column column in allCreated)

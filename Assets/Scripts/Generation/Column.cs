@@ -81,6 +81,7 @@ public class Column
 		return false;
 	}
 
+	//	TODO: Iterate over y then x and z for less chunk swapping
 	public void GeneratePOIBlocks()
 	{
 		if(!IsPOI) return;
@@ -95,32 +96,59 @@ public class Column
 		for(int x = 0; x < chunkSize; x++)
 			for(int z = 0; z < chunkSize; z++)
 			{
+				if(!walls || POIWalls[x,z] == 0) continue;
 
-				if(walls)
+				int ly = LocalY(heightMap[x,z]);
+
+				//	Get starting chunk
+				int chunkY = Mathf.FloorToInt(heightMap[x,z] / chunkSize) * chunkSize;
+				currentChunk = World.chunks[new Vector3(position.x, chunkY, position.z)];
+
+				//	Handle POI with different heights at different points
+				Chunk newChunk = null;
+				if(BlockOwnerChunk(new Vector3(x,ly,z), currentChunk, out newChunk))
 				{
-					int ly = LocalY(heightMap[x,z]);
+					currentChunk = newChunk;
+					allAlteredChunks.Add(currentChunk);
+				}
+				
+				int iterationReset = 0;
 
-					if(currentChunk == null)
+				for(int i = 0; i < POIType.wallHeight; i++)
+				{
+					int y = (ly + i) - iterationReset;
+
+					//	Iteration has moved out of current chunk
+					if(y > 15)
 					{
-						int chunkY = Mathf.FloorToInt(heightMap[x,z] / chunkSize) * chunkSize;
-						currentChunk = World.chunks[new Vector3(position.x, chunkY, position.z)];
+						bool gotChunk = BlockOwnerChunk(new Vector3(x,y,z), currentChunk, out currentChunk);
+						allAlteredChunks.Add(currentChunk);
+
+						//	Offset i to zero for new chunk
+						iterationReset = i;
+						//	Local y to zero for new chunk
+						ly = 0;
+						//	New y value for new chunk
+						y = (ly + i) - iterationReset;
 					}
-
-					if(POIWalls[x,z] == 1)
+									
+					switch(POIWalls[x,z])
 					{
-						Chunk newChunk = null;
-						if(BlockOwnerChunk(new Vector3(x,ly,z), currentChunk, out newChunk))
-						{
-							currentChunk = newChunk;
-							allAlteredChunks.Add(newChunk);
-						}
-
-						for(int i = 0; i < POIType.wallHeight; i++)
-						{
-							int y = ly + i;
+						case 1:
+							//if(y > 15 || y < 0) continue;	//	DEBUG !!!kS
 							currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
 							if(!hasBlocks) hasBlocks = true;
-						}
+							break;
+						
+						case 2:
+							if(i<3) continue;
+							//if(y > 15 || y < 0) continue;	//	DEBUG !!!kS
+							currentChunk.blockTypes[x,y,z] = Blocks.Types.STONE;
+							if(!hasBlocks) hasBlocks = true;
+							break;
+
+						default:
+							break;
 					}
 				}
 			}
@@ -144,38 +172,14 @@ public class Column
 		return localY;
 	}
 
-
-	/*if(column.IsPOI)
-		{
-			bool walls = column.POIWalls != null;
-
-			for(int x = 0; x < World.chunkSize; x++)
-				for(int z = 0; z < World.chunkSize; z++)
-				{
-					if(walls)
-					{
-						if(column.POIWalls[x,z] == 1)
-						{
-							int groundHeight = column.heightMap[x,z];
-							for(int i = 0; i < column.POIType.wallHeight; i++)
-							{
-								int y = groundHeight + i;
-								blockTypes[x,y,z] = Blocks.Types.STONE;
-								if(!hasBlocks) hasBlocks = true;
-							}
-						}
-					}
-				}
-		}*/
-
-	public byte GetBitMask(Vector3 voxel, POILibrary.Tiles tile)
+	/*public byte GetBitMask(Vector3 voxel, POILibrary.Tiles tile)
 	{
 		Vector3[] neighbours = Util.HorizontalBlockNeighbours(voxel);
 		int value = 1;
 		int total = 0;
 
 		Column owner;
-
+*
 		for(int i = 0; i < neighbours.Length; i++)
 		{
 			Vector3 pos;
@@ -199,7 +203,7 @@ public class Column
 			value *= 2;
 		}
 		return (byte)total;
-	}
+	}*/
 
 	bool BlockOwnerColumn(Vector3 pos, out Column column)
 	{
@@ -212,7 +216,7 @@ public class Column
 		if		(pos.z < 0) 				z = -1;
 		else if (pos.z > World.chunkSize-1) 	z = 1;
 
-		//	Voxel is in this chunk
+		//	Voxel is in this column
 		if(x == 0 && z == 0)
 		{	
 			column = null;
@@ -249,8 +253,6 @@ public class Column
 
 		//	The edge 
 		Vector3 edge = new Vector3(x, y, z);		
-
-		Debug.Log(currentChunk.position + (edge * World.chunkSize));
 
 		chunk = World.chunks[currentChunk.position + (edge * World.chunkSize)];
 		return true;
