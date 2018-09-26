@@ -101,12 +101,12 @@ public class BuildingGenerator
 		int mainBest = BestEntrance(wings[0]);
 
 		GenerateWing(wings[0].entrances[mainBest], wings[0], minWidth:80, maxWidth:100, minHeight:40, maxHeight:50);
-		GenerateRooms(wings[1], wings[0], mainBest);
+		//GenerateRooms(wings[1], wings[0], mainBest);
 
-		int oneBest = BestEntrance(wings[1]);
+		//int oneBest = BestEntrance(wings[1]);
 
-		GenerateWing(wings[1].entrances[oneBest], wings[1], minWidth:20, maxWidth:30, minHeight:90, maxHeight:120);
-		GenerateRooms(wings[2], wings[1], oneBest);
+		//GenerateWing(wings[1].entrances[oneBest], wings[1], minWidth:20, maxWidth:30, minHeight:90, maxHeight:120);
+		//GenerateRooms(wings[2], wings[1], oneBest);
 	}
 
 	//	TODO: 	if max/min width/height == 0 generate random values
