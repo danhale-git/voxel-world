@@ -770,9 +770,6 @@ public class BuildingGenerator
 						column.POIHeightGradient[cx,cz] = zone.heightMatrix[mx,mz];
 						column.POIDebug[cx,cz] = zone.debugMatrix[mx,mz];
 						column.POIWalls[cx,cz] = zone.wallMatrix[mx,mz];
-
-						//int POIheight = column.heightMap[cx,cz] + poi.wallHeight;
-						//if(POIheight > column.highestPoint) column.highestPoint = POIheight;
 					}
 			}
 	}

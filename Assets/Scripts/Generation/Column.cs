@@ -95,7 +95,6 @@ public class Column
 		for(int x = 0; x < chunkSize; x++)
 			for(int z = 0; z < chunkSize; z++)
 			{
-
 				if(!walls || POIWalls[x,z] == 0) continue;
 
 				int ly = LocalY(heightMap[x,z]);
