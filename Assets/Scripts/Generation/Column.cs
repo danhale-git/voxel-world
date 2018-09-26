@@ -108,8 +108,7 @@ public class Column
 				if(BlockOwnerChunk(new Vector3(x,ly,z), currentChunk, out newChunk))
 				{
 					currentChunk = newChunk;
-					allAlteredChunks.Add(newChunk);
-					if(currentChunk.composition != Chunk.Composition.MIX) currentChunk.composition = Chunk.Composition.MIX;
+					allAlteredChunks.Add(currentChunk);
 				}
 				
 				int iterationReset = 0;
@@ -122,7 +121,7 @@ public class Column
 					if(y > 15)
 					{
 						bool gotChunk = BlockOwnerChunk(new Vector3(x,y,z), currentChunk, out currentChunk);
-						if(currentChunk.composition != Chunk.Composition.MIX) currentChunk.composition = Chunk.Composition.MIX;
+						allAlteredChunks.Add(currentChunk);
 
 						//	Offset i to zero for new chunk
 						iterationReset = i;
@@ -171,30 +170,6 @@ public class Column
 		}
 		return localY;
 	}
-
-
-	/*if(column.IsPOI)
-		{
-			bool walls = column.POIWalls != null;
-
-			for(int x = 0; x < World.chunkSize; x++)
-				for(int z = 0; z < World.chunkSize; z++)
-				{
-					if(walls)
-					{
-						if(column.POIWalls[x,z] == 1)
-						{
-							int groundHeight = column.heightMap[x,z];
-							for(int i = 0; i < column.POIType.wallHeight; i++)
-							{
-								int y = groundHeight + i;
-								blockTypes[x,y,z] = Blocks.Types.STONE;
-								if(!hasBlocks) hasBlocks = true;
-							}
-						}
-					}
-				}
-		}*/
 
 	/*public byte GetBitMask(Vector3 voxel, POILibrary.Tiles tile)
 	{
