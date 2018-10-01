@@ -60,8 +60,8 @@ public class BuildingGenerator
 	{
 		//	Zone and size in blocks
 		this.zone = zone;
-		width = zone.size * World.chunkSize;
-		height = zone.size * World.chunkSize;
+		width = zone.size * WorldManager.chunkSize;
+		height = zone.size * WorldManager.chunkSize;
 
 		//	Leightweight noise algorithm
 		noiseGen.SetNoiseType(FastNoise.NoiseType.Simplex);
@@ -712,7 +712,7 @@ public class BuildingGenerator
 
 	void DrawHeightGradient(int[] bounds)
 	{
-		int spread = World.chunkSize;
+		int spread = WorldManager.chunkSize;
 		for(int i = spread; i > 0; i--)
 		{
 			int xLow = bounds[left]-i;
@@ -747,7 +747,7 @@ public class BuildingGenerator
 
 	void SetColumnMaps(POILibrary.POI poi)
 	{
-		int chunkSize = World.chunkSize;
+		int chunkSize = WorldManager.chunkSize;
 
 		for(int x = 0; x < zone.size; x++)
 			for(int z = 0; z < zone.size; z++)

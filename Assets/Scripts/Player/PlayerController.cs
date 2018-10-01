@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class PlayerController : MonoBehaviour {
 
 	public Chunk currentChunk;
-	public World world;
+	public WorldManager world;
 	public Shapes.Types blockPlaceShape;
 	public Blocks.Types blockPlaceType;
 	//	First person controls
@@ -56,7 +56,7 @@ public class PlayerController : MonoBehaviour {
 		GetCurrentChunk();
 
 
-		World.debug.Output("Player facing", " x:"+Util.RoundToDP(transform.forward.x, 1).ToString()+" y:"+Util.RoundToDP(transform.forward.y, 1).ToString()+" z:"+Util.RoundToDP(transform.forward.z, 1).ToString());
+		WorldManager.debug.Output("Player facing", " x:"+Util.RoundToDP(transform.forward.x, 1).ToString()+" y:"+Util.RoundToDP(transform.forward.y, 1).ToString()+" z:"+Util.RoundToDP(transform.forward.z, 1).ToString());
 
 		//	Break block
 		if(Input.GetButtonDown("Fire1") && !Input.GetKeyDown(KeyCode.LeftControl))
@@ -98,7 +98,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = Util.RoundVector3(pointInCube);
 
-			World.debug.Output("biome cellular: ", Mathf.InverseLerp(-1, 1, TerrainGenerator.worldBiomes.biomeNoiseGen.GetCellular((int)voxel.x, (int)voxel.z)).ToString());
+			WorldManager.debug.Output("biome cellular: ", Mathf.InverseLerp(-1, 1, TerrainGenerator.worldBiomes.biomeNoiseGen.GetCellular((int)voxel.x, (int)voxel.z)).ToString());
 
 		}
 
@@ -124,7 +124,7 @@ public class PlayerController : MonoBehaviour {
         {
 			Chunk chunk;			
 			//	Check if chunk exists
-            if(World.chunks.TryGetValue(hit.transform.position, out chunk))
+            if(WorldManager.chunks.TryGetValue(hit.transform.position, out chunk))
 			{
 				//	Initialise currentChunk
 				if(currentChunk == null){ currentChunk = chunk; }
@@ -135,7 +135,7 @@ public class PlayerController : MonoBehaviour {
 					currentChunk = chunk;
 
 					//	Generate chunks around player location
-					world.LoadChunks(currentChunk.gameObject.transform.position, World.viewDistance);
+					world.LoadChunks(currentChunk.gameObject.transform.position, WorldManager.viewDistance);
 				}
 			}
 			else
@@ -227,7 +227,7 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = Util.RoundVector3(pointInCube);
 
-			Chunk chunk = World.VoxelOwnerChunk(voxel);
+			Chunk chunk = WorldManager.VoxelOwnerChunk(voxel);
 			Vector3 local = voxel - chunk.position;
 			int x = (int)local.x, y = (int)local.y, z = (int)local.z;
 			Debug.Log(chunk.blockShapes[x,y,z]);
@@ -244,7 +244,7 @@ public class PlayerController : MonoBehaviour {
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = Util.RoundVector3(pointInCube);
-			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
+			Chunk chunk = WorldManager.chunks[WorldManager.VoxelOwner(voxel)];
 
 			Column column = Column.Get(chunk.position);
 			
@@ -265,7 +265,7 @@ public class PlayerController : MonoBehaviour {
 			//	get voxel position
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = Util.RoundVector3(pointInCube);
-			Chunk chunk = World.chunks[World.VoxelOwner(voxel)];
+			Chunk chunk = WorldManager.chunks[WorldManager.VoxelOwner(voxel)];
 		}
 	}
 
@@ -279,9 +279,9 @@ public class PlayerController : MonoBehaviour {
 			Vector3 pointInCube = hit.point - (hit.normal * 0.1f);
 			Vector3 voxel = Util.RoundVector3(pointInCube);
 			Chunk chunk;
-			if(!World.chunks.TryGetValue(World.VoxelOwner(voxel), out chunk))
+			if(!WorldManager.chunks.TryGetValue(WorldManager.VoxelOwner(voxel), out chunk))
 			{
-				Debug.Log(World.VoxelOwner(voxel));
+				Debug.Log(WorldManager.VoxelOwner(voxel));
 			}
 			world.RemoveChunk(chunk.position);
 		}
@@ -293,7 +293,7 @@ public class PlayerController : MonoBehaviour {
 		Chunk chunk;
 		if (Physics.Raycast(ray, out hit))
 		{
-			World.chunks.TryGetValue(hit.transform.position, out chunk);
+			WorldManager.chunks.TryGetValue(hit.transform.position, out chunk);
 
 			chunk.Redraw();
 		}

@@ -113,7 +113,7 @@ public class TerrainGenerator
 	//	using Cellular value and distance-to-edge noise respectively
 	public void GetTopologyData(Column column)
 	{	
-		int chunkSize = World.chunkSize;
+		int chunkSize = WorldManager.chunkSize;
 		column.heightMap = new int[chunkSize,chunkSize];
 
 
@@ -181,7 +181,7 @@ public class TerrainGenerator
 
 	public void GetCellData(Column column)
 	{
-		int chunkSize = World.chunkSize;
+		int chunkSize = WorldManager.chunkSize;
 
 		column.edgeMap = new FastNoise.EdgeData[chunkSize,chunkSize];
 

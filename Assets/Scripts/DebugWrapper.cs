@@ -9,7 +9,7 @@ public class DebugWrapper : MonoBehaviour
 	List<Vector3> lineEnd = new List<Vector3>();
 	List<Color> lineColor = new List<Color>();
 	Shapes.Cube cube = new Shapes.Cube();
-	public World world;
+	public WorldManager world;
 
 	Dictionary<string, string> debugOutput = new Dictionary<string, string>();
 
@@ -63,7 +63,7 @@ public class DebugWrapper : MonoBehaviour
 			lineColor = new List<Color>();
 		}
 
-		Vector3 offset = position + ((Vector3.up + Vector3.forward + Vector3.right) *  (World.chunkSize / 2));
+		Vector3 offset = position + ((Vector3.up + Vector3.forward + Vector3.right) *  (WorldManager.chunkSize / 2));
 
 		for(int i = 0; i < 4; i++)
 		{
@@ -72,7 +72,7 @@ public class DebugWrapper : MonoBehaviour
 
 			for(int e = 0; e < vertices.Length; e++)
 			{
-				vertices[e] = (vertices[e] * (World.chunkSize / sizeDivision)) + offset;
+				vertices[e] = (vertices[e] * (WorldManager.chunkSize / sizeDivision)) + offset;
 			}
 
 			Line(vertices[0], vertices[1], color);

@@ -86,14 +86,14 @@ public static class Util
 
 	public static bool InChunk(float value, float offsetIn = 0)
 	{
-		if(value < 0 + offsetIn || value >= World.chunkSize - offsetIn) return false;
+		if(value < 0 + offsetIn || value >= WorldManager.chunkSize - offsetIn) return false;
 		return true;
 	}
 	public static bool InChunk(Vector3 value, float offsetIn = 0)
 	{
-		if(	(value.x < 0 + offsetIn || value.x >= World.chunkSize - offsetIn) ||
-			(value.y < 0 + offsetIn || value.y >= World.chunkSize - offsetIn) ||
-			(value.z < 0 + offsetIn || value.z >= World.chunkSize - offsetIn) ) return false;
+		if(	(value.x < 0 + offsetIn || value.x >= WorldManager.chunkSize - offsetIn) ||
+			(value.y < 0 + offsetIn || value.y >= WorldManager.chunkSize - offsetIn) ||
+			(value.z < 0 + offsetIn || value.z >= WorldManager.chunkSize - offsetIn) ) return false;
 		return true;
 	}
 
@@ -108,9 +108,9 @@ public static class Util
 		{
 			//	if below min then max
 			if(vector[i] == -1) 
-				vector[i] = World.chunkSize-1; 
+				vector[i] = WorldManager.chunkSize-1; 
 			//	if above max then min
-			else if(vector[i] == World.chunkSize) 
+			else if(vector[i] == WorldManager.chunkSize) 
 				vector[i] = 0;
 		}
 
@@ -138,7 +138,7 @@ public static class Util
 	//	TODO: make this faster
 	public static Vector3[] HorizontalChunkNeighbours(Vector3 position)
 	{
-		int chunkSize = World.chunkSize;
+		int chunkSize = WorldManager.chunkSize;
 		return new Vector3[] { 	(Vector3.right * chunkSize) + position,
 								(Vector3.left * chunkSize) + position,
 								(Vector3.forward * chunkSize) + position,

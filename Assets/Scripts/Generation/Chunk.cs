@@ -19,7 +19,7 @@ public class Chunk
 	MeshCollider collider;
 
 	//	World controller Monobehaviour
-	World world;
+	WorldManager world;
 
 	//	Chunk size and position in world
 	int size;
@@ -33,7 +33,7 @@ public class Chunk
 	public Shapes.Types[,,] blockShapes;
 	public int[,,] blockYRotation;
 
-	List<Shapes.Shape> shapes = World.shapeMeshes.shapes;
+	List<Shapes.Shape> shapes = WorldManager.shapeMeshes.shapes;
 
 	void InitialiseArrays()
 	{
@@ -43,7 +43,7 @@ public class Chunk
 		blockYRotation = new int[size,size,size];
 	}
 
-	public Chunk(Vector3 _position, World _world)
+	public Chunk(Vector3 _position, WorldManager _world)
 	{
 		//	Create GameObject
 		gameObject = new GameObject("chunk");
@@ -53,7 +53,7 @@ public class Chunk
 		position = _position;
 
 		//	Apply chunk size
-		size = World.chunkSize;
+		size = WorldManager.chunkSize;
 
 		//	initialise arrays
 		InitialiseArrays();
@@ -69,7 +69,7 @@ public class Chunk
 		if(status == Chunk.Status.GENERATED || status == Chunk.Status.DRAWN) return;
 
 		world.chunksGenerated++;
-		World.debug.Output("Chunks generated", world.chunksGenerated.ToString());
+		WorldManager.debug.Output("Chunks generated", world.chunksGenerated.ToString());
 
 		column = Column.Get(position);
 		int[,] heightMap = column.heightMap;
@@ -133,12 +133,12 @@ public class Chunk
 		//	*This is not completely deterministic - the order in which chunks are processed could impact the final terrain in some cases
 		if(this.composition != Composition.MIX) return;
 		//	Remove unwanted blocks from surface
-		for(int x = 0; x < World.chunkSize; x++)
-			for(int z = 0; z < World.chunkSize; z++)
+		for(int x = 0; x < WorldManager.chunkSize; x++)
+			for(int z = 0; z < WorldManager.chunkSize; z++)
 			{
 				int y = column.heightMap[x,z] - (int)this.position.y;
 
-				if(y > World.chunkSize-1 || y < 0) continue;
+				if(y > WorldManager.chunkSize-1 || y < 0) continue;
 
 				Blocks.Types type = blockTypes[x,y,z];
 
@@ -150,8 +150,8 @@ public class Chunk
 			}
 
 		//	Assign shapes to smooth terrain
-		for(int x = 0; x < World.chunkSize; x++)
-			for(int z = 0; z < World.chunkSize; z++)
+		for(int x = 0; x < WorldManager.chunkSize; x++)
+			for(int z = 0; z < WorldManager.chunkSize; z++)
 			{
 				int height = column.heightMap[x,z] - (int)this.position.y;
 				Shapes.Types previousShape = 0;
@@ -159,7 +159,7 @@ public class Chunk
 
 				for(int y = height; y > height - 2; y-- )
 				{
-					if(y > World.chunkSize-1 || y < 0) continue;
+					if(y > WorldManager.chunkSize-1 || y < 0) continue;
 
 					Blocks.Types type = blockTypes[x,y,z];
 					Vector3 blockPosition = new Vector3(x,y,z);
@@ -208,11 +208,11 @@ public class Chunk
 		int solidAdjacentChunkCount = 0;
 		for(int i = 0; i < 6; i++)
 		{
-			Vector3 adjacentPosition = this.position + (offsets[i] * World.chunkSize);
+			Vector3 adjacentPosition = this.position + (offsets[i] * WorldManager.chunkSize);
 
 			//World.debug.OutlineChunk(adjacentPosition, Color.green, sizeDivision: 3.5f);
 
-			Chunk adjacentChunk = World.chunks[adjacentPosition];
+			Chunk adjacentChunk = WorldManager.chunks[adjacentPosition];
 			if(adjacentChunk.composition == Chunk.Composition.SOLID)
 			{
 				solidAdjacentChunkCount++;
@@ -221,7 +221,7 @@ public class Chunk
 		}
 
 		world.chunksDrawn++;
-		World.debug.Output("Chunks drawn", world.chunksDrawn.ToString());
+		WorldManager.debug.Output("Chunks drawn", world.chunksDrawn.ToString());
 
 		List<Vector3> verts = new List<Vector3>();
 		List<Vector3> norms = new List<Vector3>();
@@ -234,9 +234,9 @@ public class Chunk
 		int exposedBlockCount = 0;
 
 		//	Generate mesh data
-		for(int x = 0; x < World.chunkSize; x++)
-			for(int z = 0; z < World.chunkSize; z++)
-				for(int y = 0; y < World.chunkSize; y++)
+		for(int x = 0; x < WorldManager.chunkSize; x++)
+			for(int z = 0; z < WorldManager.chunkSize; z++)
+				for(int y = 0; y < WorldManager.chunkSize; y++)
 				{
 					//	Check block type, skip drawing if air
 					Blocks.Types type = blockTypes[x,y,z];
@@ -404,13 +404,13 @@ public class Chunk
 		int x = 0, y = 0, z = 0;
 
 		if		(pos.x < 0) 				x = -1;
-		else if (pos.x > World.chunkSize-1) 	x = 1;
+		else if (pos.x > WorldManager.chunkSize-1) 	x = 1;
 
 		if		(pos.y < 0) 				y = -1;
-		else if (pos.y > World.chunkSize-1) 	y = 1;
+		else if (pos.y > WorldManager.chunkSize-1) 	y = 1;
 
 		if		(pos.z < 0) 				z = -1;
-		else if (pos.z > World.chunkSize-1) 	z = 1;
+		else if (pos.z > WorldManager.chunkSize-1) 	z = 1;
 
 		//	The edge
 		Vector3 edge = new Vector3(x, y, z);
@@ -418,7 +418,7 @@ public class Chunk
 		//	Voxel is in this chunk
 		if(edge == Vector3.zero) return this;
 
-		return World.chunks[this.position + (edge * World.chunkSize)];
+		return WorldManager.chunks[this.position + (edge * WorldManager.chunkSize)];
 	}
 	Vector3 BlockPosition(Chunk owner, Vector3 position)
 	{

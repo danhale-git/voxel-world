@@ -1,10 +1,11 @@
-﻿using System.Collections;
+﻿
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class PointOfInterest
 {
-	World world;
+	WorldManager world;
 
 	//	Bottom left column position
 	public Vector3 position;
@@ -35,7 +36,7 @@ public class PointOfInterest
 
 	float right = 0, left = 0, top = 0, bottom = 0;
 
-	public PointOfInterest(Column initialColumn, World world)
+	public PointOfInterest(Column initialColumn, WorldManager world)
 	{
 		this.world = world;
 
@@ -99,10 +100,10 @@ public class PointOfInterest
 			{
 				bool isEdge = false;
 				bool isBoundary = false;
-				Vector3[] neighbourPos = {	new Vector3(column.position.x + World.chunkSize, column.position.y, column.position.z),
-											new Vector3(column.position.x - World.chunkSize, column.position.y, column.position.z),
-											new Vector3(column.position.x, column.position.y, column.position.z + World.chunkSize),
-											new Vector3(column.position.x, column.position.y, column.position.z - World.chunkSize)	};
+				Vector3[] neighbourPos = {	new Vector3(column.position.x + WorldManager.chunkSize, column.position.y, column.position.z),
+											new Vector3(column.position.x - WorldManager.chunkSize, column.position.y, column.position.z),
+											new Vector3(column.position.x, column.position.y, column.position.z + WorldManager.chunkSize),
+											new Vector3(column.position.x, column.position.y, column.position.z - WorldManager.chunkSize)	};
 
 				//	Check adjacent columns
 				for(int i = 0; i < neighbourPos.Length; i++)
@@ -122,7 +123,7 @@ public class PointOfInterest
 					}
 					else
 					{
-						newColumn = World.columns[neighbourPos[i]];
+						newColumn = WorldManager.columns[neighbourPos[i]];
 					}
 
 					if(!isEdge && !newColumn.IsPOI)
@@ -179,8 +180,8 @@ public class PointOfInterest
 	void MapMatrix()
 	{
 		//	Difference divided by chunk size + 1
-		width = (int)(((Mathf.Max(right, left) - Mathf.Min(right, left)) / World.chunkSize) + 1);
-		height = (int)(((Mathf.Max(top, bottom) - Mathf.Min(top, bottom)) / World.chunkSize) + 1);
+		width = (int)(((Mathf.Max(right, left) - Mathf.Min(right, left)) / WorldManager.chunkSize) + 1);
+		height = (int)(((Mathf.Max(top, bottom) - Mathf.Min(top, bottom)) / WorldManager.chunkSize) + 1);
 
         //	World position of POI grid 0,0
         position = new Vector3(this.left, 0, this.bottom);
@@ -370,12 +371,12 @@ public class PointOfInterest
 
 	Vector3 WorldPosition(int x, int z)
 	{
-		return (new Vector3(x, 0, z) * World.chunkSize) + this.position;
+		return (new Vector3(x, 0, z) * WorldManager.chunkSize) + this.position;
 	}
 
 	Vector3 LocalPosition(Vector3 worldPosition)
 	{
-		return (worldPosition - this.position) / World.chunkSize;
+		return (worldPosition - this.position) / WorldManager.chunkSize;
 	}
 
 	//	Draw lines around columns with value 1 in matrix
@@ -387,7 +388,7 @@ public class PointOfInterest
 				Vector3 worldPos = WorldPosition(x, z) + (Vector3.up * 100);
 
 				if(matrix[x,z] == 1)
-					World.debug.OutlineChunk(worldPos, color, sizeDivision: divisor);
+					WorldManager.debug.OutlineChunk(worldPos, color, sizeDivision: divisor);
 			}
 	}
 

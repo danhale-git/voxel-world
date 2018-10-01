@@ -31,7 +31,7 @@ public class Zone
 	public Zone(PointOfInterest POI, int x, int z, int size, int[,] matrix)
 	{
 		this.POI = POI;
-		int chunkSize = World.chunkSize;
+		int chunkSize = WorldManager.chunkSize;
 		this.x = x;
 		this.z = z;
 		this.size = size;

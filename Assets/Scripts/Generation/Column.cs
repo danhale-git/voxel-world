@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class Column
 {
-	World world;
+	WorldManager world;
 
-	int chunkSize = World.chunkSize;
+	int chunkSize = WorldManager.chunkSize;
 	public Vector3 position;
 	public Chunk.Status spawnStatus;
 	public bool sizeCalculated = false;
@@ -34,7 +34,7 @@ public class Column
 	public int bottomChunkGenerate;
 	public int bottomChunkDraw;
 	
-	public Column(Vector3 position, World world)
+	public Column(Vector3 position, WorldManager world)
 	{
 		biomeLayers = new TerrainLibrary.BiomeLayer[chunkSize,chunkSize];
 
@@ -48,7 +48,7 @@ public class Column
 
 	public static Column Get(Vector3 position)
 	{
-		Column column = World.columns[new Vector3(position.x, 0, position.z)];
+		Column column = WorldManager.columns[new Vector3(position.x, 0, position.z)];
 		return column;
 	}
 
@@ -102,7 +102,7 @@ public class Column
 
 				//	Get starting chunk
 				int chunkY = Mathf.FloorToInt(heightMap[x,z] / chunkSize) * chunkSize;
-				currentChunk = World.chunks[new Vector3(position.x, chunkY, position.z)];
+				currentChunk = WorldManager.chunks[new Vector3(position.x, chunkY, position.z)];
 
 				//	Handle POI with different heights at different points
 				Chunk newChunk = null;
@@ -211,10 +211,10 @@ public class Column
 		int x = 0, z = 0;
 
 		if		(pos.x < 0) 				x = -1;
-		else if (pos.x > World.chunkSize-1) 	x = 1;
+		else if (pos.x > WorldManager.chunkSize-1) 	x = 1;
 
 		if		(pos.z < 0) 				z = -1;
-		else if (pos.z > World.chunkSize-1) 	z = 1;
+		else if (pos.z > WorldManager.chunkSize-1) 	z = 1;
 
 		//	Voxel is in this column
 		if(x == 0 && z == 0)
@@ -226,7 +226,7 @@ public class Column
 		//	The edge 
 		Vector3 edge = new Vector3(x, 0, z);		
 
-		column = World.columns[this.position + (edge * World.chunkSize)];
+		column = WorldManager.columns[this.position + (edge * WorldManager.chunkSize)];
 		return true;
 	}
 
@@ -236,13 +236,13 @@ public class Column
 		int x = 0, z = 0, y = 0;
 
 		if		(pos.x < 0) 				x = -1;
-		else if (pos.x > World.chunkSize-1) 	x = 1;
+		else if (pos.x > WorldManager.chunkSize-1) 	x = 1;
 
 		if		(pos.z < 0) 				z = -1;
-		else if (pos.z > World.chunkSize-1) 	z = 1;
+		else if (pos.z > WorldManager.chunkSize-1) 	z = 1;
 
 		if		(pos.y < 0) 				y = -1;
-		else if (pos.y > World.chunkSize-1) 	y = 1;
+		else if (pos.y > WorldManager.chunkSize-1) 	y = 1;
 
 		//	Voxel is in this chunk
 		if(currentChunk != null && x == 0 && z == 0 && y == 0)
@@ -254,7 +254,7 @@ public class Column
 		//	The edge 
 		Vector3 edge = new Vector3(x, y, z);		
 
-		chunk = World.chunks[currentChunk.position + (edge * World.chunkSize)];
+		chunk = WorldManager.chunks[currentChunk.position + (edge * WorldManager.chunkSize)];
 		return true;
 	}
 }
