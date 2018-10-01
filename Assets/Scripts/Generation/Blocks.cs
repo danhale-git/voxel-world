@@ -23,6 +23,15 @@ public static class Blocks
 														false		//	5	//	WATER
 														};
 
+	//	Block type is see-through
+	public static bool[] waterproof = new bool[] {		false,		//	0	//	AIR
+														true,		//	1	//	DIRT
+														true,		//	2	//	STONE
+														true,		//	3	//	GRASS
+														true,		//	4	//	LIGHTGRASS
+														true		//	5	//	WATER
+														};
+
 	//	Block type color
 	public static Color32[] colors = new Color32[]{	Color.white,					//	0	//	AIR
 													new Color32(80, 71, 10, 255),	//	1	//	DIRT
