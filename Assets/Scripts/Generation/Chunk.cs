@@ -32,7 +32,6 @@ public class Chunk
 	public byte[,,] blockBytes;
 	public Shapes.Types[,,] blockShapes;
 	public int[,,] blockYRotation;
-	public WaterBody[,,] blockWaterBodies;
 
 	List<Shapes.Shape> shapes = World.shapeMeshes.shapes;
 
@@ -42,7 +41,6 @@ public class Chunk
 		blockBytes = new byte[size,size,size];
 		blockShapes = new Shapes.Types[size,size,size];
 		blockYRotation = new int[size,size,size];
-		blockWaterBodies = new WaterBody[size,size,size];
 	}
 
 	public Chunk(Vector3 _position, World _world)
